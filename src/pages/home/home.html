@@ -1,0 +1,28 @@
+<ion-header>
+  <ion-navbar>
+    <button ion-button menuToggle>
+      <ion-icon name="menu"></ion-icon>
+    </button>
+    <!--<ion-title>Google Maps Test</ion-title>
+    <ion-buttons end>
+      <button ion-button (click)="addMarker()">
+        <ion-icon name="add"></ion-icon>Add Marker
+      </button>
+    </ion-buttons>-->
+    <ion-searchbar (ionInput)="getInfo($event)" placeholder="Suche"></ion-searchbar>
+    <ion-buttons end>
+        <button ion-button (click)="getCurrentPositionGPS()">GPS</button>
+    </ion-buttons>
+  </ion-navbar>
+</ion-header>
+
+<ion-content>
+  <div #map id="map"></div>  
+  <div ion-fixed class="listView" [@listViewInOut]="listViewState">
+    <ion-list>
+      <ion-item *ngFor="let room of allrooms" no-lines (click)="selectRoom(room)">
+        <b>{{ room.name }}</b> {{ room.desc }}
+      </ion-item>
+    </ion-list>
+  </div>
+</ion-content>

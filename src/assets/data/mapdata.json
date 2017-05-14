@@ -1,0 +1,37 @@
+{"styles": [
+            {                
+                "stylers": [
+                    { "visibility": "off" }
+                ]
+            },
+            {
+                "featureType": "road",
+                "stylers": [
+                    { "visibility": "on" }
+                ]
+            },
+            {
+                "featureType": "transit",
+                "stylers": [
+                    { "visibility": "on" }
+                ]
+            },
+            {
+                "featureType": "water",
+                "stylers": [
+                    { "visibility": "on" }
+                ]
+            },
+            {
+                "featureType": "poi",
+                "stylers": [
+                    { "visibility": "on" }
+                ]
+            },
+            {
+                "featureType": "poi.school",
+                "stylers": [
+                    { "visibility": "off" }
+                ]
+            }
+]}
