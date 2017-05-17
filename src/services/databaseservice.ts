@@ -32,6 +32,21 @@ export class DatabaseService {
         });
     }
 
+    getRoomList() {
+        this.allrooms = [];
+        let query = "SELECT * FROM allrooms";
+        this.sqlite.create(this.options).then((db: SQLiteObject) => {    
+            db.executeSql(query, {}).then((data) => { 
+                let rows = data.rows;
+                for (let i = 0; i < rows.length; i++) {
+                    this.allrooms.push({name: rows.item(i).name, desc: rows.item(i).desc, table: rows.item(i).table}).toString;
+                }
+                console.log("Number of allrooms in database = " + this.allrooms.length);
+            })
+        });
+        return Promise.resolve(this.allrooms);
+    }
+
     getRooms(table: String) {
         console.log("GETROOMS");
         let query = "SELECT * FROM " + table;
@@ -48,6 +63,30 @@ export class DatabaseService {
                     observer.complete();                    
                 })
             }); 
+        })
+    }
+
+    getRoomsPromise(table): any {
+        console.log("GETROOMS");
+        this.rooms = [];
+        let query = "SELECT * FROM " + table;
+        this.sqlite.create(this.options).then((db: SQLiteObject) => {    
+            db.executeSql(query, {}).then((data) => { 
+                for (let i = 0; i < data.rows.length; i++) {
+                    let rows = data.rows;
+                    this.rooms.push({name: rows.item(i).name, type: rows.item(i).type, desc: rows.item(i).desc, coordinates: rows.item(i).coordinates}).toString;
+                    console.log("Promise: " + this.rooms[i].coordinates);
+                    //console.log("OBSERVER NEXT: " + i);                        
+                }                
+            })
+            return this.rooms;
+        }); 
+        
+    }
+
+    getRoomsPromise2(table) {
+        return this.getRoomsPromise(table).then((data) => {
+            return data;
         })
     }
 

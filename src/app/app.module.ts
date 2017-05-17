@@ -12,10 +12,12 @@ import { BeaconPage } from '../pages/beacon/beacon';
 import { StatusBar } from '@ionic-native/status-bar';
 import { SplashScreen } from '@ionic-native/splash-screen';
 import { Geolocation } from '@ionic-native/geolocation';
+import { SQLite, SQLiteObject } from '@ionic-native/sqlite';
 import { IBeacon } from '@ionic-native/ibeacon';
 import { Keyboard } from '@ionic-native/keyboard';
 
-import { DatabaseService } from '../services/database';
+import { BeaconService } from '../services/beaconservice';
+import { DatabaseService } from '../services/databaseservice';
 import { MapService } from '../services/mapservice';
 import { WifiService } from '../services/wifiservice';
 
@@ -49,6 +51,8 @@ import { WifiService } from '../services/wifiservice';
     Geolocation,
     IBeacon,
     Keyboard,
+    SQLite,        
+    BeaconService,
     DatabaseService,
     MapService,
     WifiService,

@@ -40,8 +40,7 @@ public networks: any[] = [];
                         BSSID: a[x].BSSID,
                         level: a[x].level});    
                         console.log(this.networks[x].ssid);
-                }  
-                
+                }                  
             }
             WifiWizard.startScan(successNetwork, failNetwork);
             observer.complete();
