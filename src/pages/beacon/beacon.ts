@@ -11,22 +11,28 @@ import * as beacondata from '../../assets/data/beacondata.json';
 })
 export class BeaconPage {
 
-  constructor(public beaconService: BeaconService) {
-      
-  }
+    public beacons: any[] = [];
 
-  ionViewDidLoad() {
-    console.log('ionViewDidLoad IBeacon');    
-    this.beaconService.setupBeacons();
-    this.beaconService.startRangingBeacons();  
-  }     
+    constructor(public beaconService: BeaconService) {
+        
+    }
 
-  startRangingBeacons() {
-      this.beaconService.startRangingBeacons();  
-  }
+    ionViewDidLoad() {
+        console.log('ionViewDidLoad IBeacon');    
+        this.beaconService.setupBeacons();
+        //this.beaconService.startRangingBeacons();  
+    }    
 
-  stopRangingBeacons() {
-      this.beaconService.stopRangingBeacons();  
-  }
+    startRangingBeacon() {
+        this.beaconService.startRangingBeacon();  
+    } 
 
+    startRangingBeacons() {
+        this.beaconService.startRangingBeacons();  
+    }
+
+    stopRangingBeacons() {
+        this.beaconService.stopRangingBeacons(); 
+        this.beacons = this.beaconService.getBeacons();
+    }
 }

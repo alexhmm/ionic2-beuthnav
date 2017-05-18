@@ -22,9 +22,7 @@ export class BeaconService {
         this.iBeacon.requestAlwaysAuthorization();
 
         // create a new delegate and register it with the native layer
-        let delegate = this.iBeacon.Delegate();
-
-        
+        let delegate = this.iBeacon.Delegate();        
 
         // Subscribe to some of the delegate's event handlers
         delegate.didDetermineStateForRegion().
@@ -39,47 +37,45 @@ export class BeaconService {
         delegate.didRangeBeaconsInRegion()
         .subscribe(
             data => {
-                //console.log('didRangeBeaconsInRegion: ', JSON.stringify(data));
-                //pos = myArray.map(function(e) { return e.hello; }).indexOf('stevie');
-
                 let region = data.region;
-                let beacon = data.beacons;
-                
-                try {
-                    let index = this.beacons.map(function(e) { return e.identifier; }).indexOf(region.identifier);
-                    if (index != -1) {                    
-                      console.log("Index of " + region.identifier + ": " + index);
-                      this.beacons.splice(index, 1);
-                    }
-                } catch(e) {
-                    console.log("INDEX ERROR: " + e);
-                }
+                let beacon = data.beacons;  
                 
                 if (typeof beacon[0] !== 'undefined') {
+                    try {
+                        let index = this.beacons.map(function(e) { return e.identifier; }).indexOf(region.identifier);
+                        if (index != -1) {    
+                        this.beacons.splice(index, 1);
+                        }
+                    } catch(e) {
+                        console.log("Index Error:: " + e);
+                    }
+
                     // get coordinates of identified beacon
                     let indexData;
                     try {
                         indexData = this.beacondataStr.map(function(e) { return e.identifier; }).indexOf(region.identifier);
                     } catch(e) {
-                        console.log("INDEX DATA ERROR: " + e);
+                        console.log("Index Error: " + e);
                     }
-                    console.log("Region Identfier: " + region.identifier
+
+                    // own accuracy calc -- still testing
+                    let accuracyCalc = Math.pow(10, (beacon[0].tx - beacon[0].rssi) / (10 * 3.5));
+
+                    console.log("Region Identifier: " + region.identifier
                      + ", Accuracy: " + beacon[0].accuracy
+                     + ", AccuracyCalc: " + accuracyCalc
                      + ", TX: " + beacon[0].tx
                      + ", RSSI: " + beacon[0].rssi
-                     + ", Proximity: " + beacon[0].proximity);
-                    this.beacons.push({identifier: region.identifier, accuracy: beacon[0].accuracy, coordinates: this.beacondataStr[indexData].coordinates});
-                    console.log(this.beacons);
-                    //this.calculateCurrentPositionBeacon(this.beacons);
+                     + ", Proximity: " + beacon[0].proximity);     
+                    this.beacons.push({identifier: region.identifier, accuracy: beacon[0].accuracy, accuracyCalc: accuracyCalc, rssi: beacon[0].rssi, coordinates: this.beacondataStr[indexData].coordinates});
+                } else {
+                    console.log("Region Identifier: " + region.identifier + ", No signal received.")
                 }
             },
             error => console.error()
         );
 
         this.iBeacon.setDelegate(delegate);
-        //return delegate;
-        // let beaconRegion = this.ibeacon.BeaconRegion('QIsB','f7826da6-4fa2-4e98-8024-bc5b71e0893e', 14191, 1594);
-        // let beaconRegion2 = this.ibeacon.BeaconRegion('PWC8','f7826da6-4fa2-4e98-8024-bc5b71e0893e', 31092, 61454);
     }
 
     startRangingBeacons() {
@@ -96,6 +92,21 @@ export class BeaconService {
                 error => console.error('Native layer failed to begin monitoring: ', error)
             );
         }
+    }
+
+    startRangingBeacon() {
+        console.log("Started ranging single beacon.");
+        let beaconRegion = this.iBeacon.BeaconRegion(
+              beacondata.beacons[0].identifier,
+              beacondata.beacons[0].uuid,
+              beacondata.beacons[0].major,
+              beacondata.beacons[0].minor);
+
+        this.iBeacon.startRangingBeaconsInRegion(beaconRegion)
+        .then(
+                () => console.log('Native layer recieved the request to monitoring'),
+                error => console.error('Native layer failed to begin monitoring: ', error)
+        );
     }
 
     stopRangingBeacons() {
@@ -140,7 +151,10 @@ export class BeaconService {
         }
         centroid.lat = centroid.lat / points.length;
         centroid.lng = centroid.lng / points.length;
-         return centroid;
-    
+         return centroid;    
+    }
+
+    getBeacons() {
+        return this.beacons;
     }
 }

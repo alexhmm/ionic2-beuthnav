@@ -5,7 +5,7 @@
       <ion-icon name="menu"></ion-icon>
     </button>
     <ion-title>Beacon</ion-title>
-    <ion-buttons end>
+    <ion-buttons end><button ion-button (click)="startRangingBeacon()">Single</button>
         <button ion-button (click)="startRangingBeacons()">Start</button>
         <button ion-button (click)="stopRangingBeacons()">Stop</button>
     </ion-buttons>
@@ -22,7 +22,7 @@
       </ion-avatar>-->
       <h1>Beacon #{{beacon.identifier}}</h1>
       <!--<p style="float: right; color: #aaa;">{{beacon.timestamp | date:'h:mm:ss a'}}</p>-->
-      <p>Range: {{beacon.accuracy}}</p>
+      <p>TX: {{beacon.tx}}, RSSI: {{beacon.rssi}}, Range: {{beacon.accuracy}}, Calc: {{beacon.accuracyCalc}}</p>
     </ion-item>
   </ion-list>
 </ion-content>
