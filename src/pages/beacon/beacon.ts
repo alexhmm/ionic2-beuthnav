@@ -12,6 +12,7 @@ import * as beacondata from '../../assets/data/beacondata.json';
 export class BeaconPage {
 
     public beacons: any[] = [];
+    public rssis: any[] = [];
 
     constructor(public beaconService: BeaconService) {
         
@@ -34,5 +35,11 @@ export class BeaconPage {
     stopRangingBeacons() {
         this.beaconService.stopRangingBeacons(); 
         this.beacons = this.beaconService.getBeacons();
+    }
+
+    calcKalman() {
+        console.log("calcKalman()");
+        this.beaconService.calcKalmanTest();
+        //this.rssis = this.beaconService.getRssis();
     }
 }

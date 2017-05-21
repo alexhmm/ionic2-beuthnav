@@ -18,6 +18,7 @@ import { Keyboard } from '@ionic-native/keyboard';
 
 import { BeaconService } from '../services/beaconservice';
 import { DatabaseService } from '../services/databaseservice';
+import { KalmanService } from '../services/kalmanservice';
 import { MapService } from '../services/mapservice';
 import { WifiService } from '../services/wifiservice';
 
@@ -54,6 +55,7 @@ import { WifiService } from '../services/wifiservice';
     SQLite,        
     BeaconService,
     DatabaseService,
+    KalmanService,
     MapService,
     WifiService,
     {provide: ErrorHandler, useClass: IonicErrorHandler}
