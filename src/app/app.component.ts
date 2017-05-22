@@ -8,6 +8,7 @@ import { HomePage } from '../pages/home/home';
 import { ListPage } from '../pages/list/list';
 import { HotSpotPage } from '../pages/hotspot/hotspot';
 import { BeaconPage } from '../pages/beacon/beacon';
+import { MotionPage } from '../pages/motion/motion';
 
 @Component({
   templateUrl: 'app.html'
@@ -27,7 +28,8 @@ export class MyApp {
       { title: 'Home', component: HomePage },
       { title: 'List', component: ListPage },
       { title: 'Hotspot', component: HotSpotPage },
-      { title: 'Beacon', component: BeaconPage }
+      { title: 'Beacon', component: BeaconPage },
+      { title: 'Motion', component: MotionPage }
     ];
 
   }

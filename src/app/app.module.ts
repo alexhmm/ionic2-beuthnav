@@ -8,9 +8,12 @@ import { HomePage } from '../pages/home/home';
 import { ListPage } from '../pages/list/list';
 import { HotSpotPage } from '../pages/hotspot/hotspot';
 import { BeaconPage } from '../pages/beacon/beacon';
+import { MotionPage } from '../pages/motion/motion';
 
 import { StatusBar } from '@ionic-native/status-bar';
 import { SplashScreen } from '@ionic-native/splash-screen';
+import { DeviceMotion, DeviceMotionAccelerationData } from '@ionic-native/device-motion';
+import { DeviceOrientation, DeviceOrientationCompassHeading } from '@ionic-native/device-orientation';
 import { Geolocation } from '@ionic-native/geolocation';
 import { SQLite, SQLiteObject } from '@ionic-native/sqlite';
 import { IBeacon } from '@ionic-native/ibeacon';
@@ -20,6 +23,7 @@ import { BeaconService } from '../services/beaconservice';
 import { DatabaseService } from '../services/databaseservice';
 import { KalmanService } from '../services/kalmanservice';
 import { MapService } from '../services/mapservice';
+import { MotionService } from '../services/motionservice';
 import { WifiService } from '../services/wifiservice';
 
 @NgModule({
@@ -28,7 +32,8 @@ import { WifiService } from '../services/wifiservice';
     HomePage,
     ListPage,
     HotSpotPage,
-    BeaconPage
+    BeaconPage,
+    MotionPage
   ],
   imports: [
     BrowserModule,
@@ -44,11 +49,14 @@ import { WifiService } from '../services/wifiservice';
     HomePage,
     ListPage,
     HotSpotPage,
-    BeaconPage
+    BeaconPage,
+    MotionPage
   ],
   providers: [
     StatusBar,
     SplashScreen,
+    DeviceMotion,
+    DeviceOrientation,
     Geolocation,
     IBeacon,
     Keyboard,
@@ -57,6 +65,7 @@ import { WifiService } from '../services/wifiservice';
     DatabaseService,
     KalmanService,
     MapService,
+    MotionService,
     WifiService,
     {provide: ErrorHandler, useClass: IonicErrorHandler}
   ]
