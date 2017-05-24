@@ -24,6 +24,7 @@ import { DatabaseService } from '../services/databaseservice';
 import { KalmanService } from '../services/kalmanservice';
 import { MapService } from '../services/mapservice';
 import { MotionService } from '../services/motionservice';
+import { TriService } from '../services/triservice';
 import { WifiService } from '../services/wifiservice';
 
 @NgModule({
@@ -66,6 +67,7 @@ import { WifiService } from '../services/wifiservice';
     KalmanService,
     MapService,
     MotionService,
+    TriService,
     WifiService,
     {provide: ErrorHandler, useClass: IonicErrorHandler}
   ]

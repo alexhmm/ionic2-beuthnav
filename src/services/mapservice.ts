@@ -11,6 +11,9 @@ enum Roomcolor {
 
 @Injectable()
 export class MapService {  
+
+    public triPoints: any[] = [];
+
     constructor() {
 
     } 

@@ -25,8 +25,8 @@ export class MotionService {
         // Watch device acceleration
         console.log("Start watching acceleration.");
         return Observable.create(observer => {
-            this.subscriptionAcceleration = this.deviceMotion.watchAcceleration({frequency: 500}).subscribe((acceleration: DeviceMotionAccelerationData) => {
-                console.log(acceleration);
+            this.subscriptionAcceleration = this.deviceMotion.watchAcceleration({frequency: 100}).subscribe((acceleration: DeviceMotionAccelerationData) => {
+                //console.log(acceleration);
                 observer.next(acceleration);
             });
         });
@@ -48,8 +48,8 @@ export class MotionService {
     startWatchingOrientation() {
         console.log("Start watching orientation.");
         return Observable.create(observer => {
-            this.subscriptionOrientation = this.deviceOrientation.watchHeading({frequency: 500}).subscribe((orientation: DeviceOrientationCompassHeading) => {
-                console.log(orientation);
+            this.subscriptionOrientation = this.deviceOrientation.watchHeading().subscribe((orientation: DeviceOrientationCompassHeading) => {
+                //console.log(orientation);
                 observer.next(orientation);
             });
         });

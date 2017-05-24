@@ -175,7 +175,7 @@ export class HomePage {
         // SQLite Code with Observable
         this.dbService.getRooms("d00").subscribe(data => {  
             for (let x in data) {
-                console.log("LOADMAP: " + data[x].name + ", " + data[x].coordinates);
+                //console.log("LOADMAP: " + data[x].name + ", " + data[x].coordinates);
                 let room: any = {};
                 let paths: any[] = [];
 
