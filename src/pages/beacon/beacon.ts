@@ -49,7 +49,6 @@ export class BeaconPage {
         beacons.push({lat: 52.543938, lng: 13.352514, distance: 37.88, height: 37});
         beacons.push({lat: 52.543799, lng: 13.351237, distance: 51.85, height: 36});
         beacons.push({lat: 52.543671, lng: 13.351655, distance: 26.69, height: 36});
-        //this.triService.trilaterate(beacons);
-        this.triService.trilaterate2(beacons);
+        this.triService.trilaterate(beacons);
     }
 }

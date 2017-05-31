@@ -17,7 +17,7 @@ export class BeaconService {
         for (let i = 0; i < beacondata.beacons.length; i++) {
           this.beacondataStr.push({identifier: beacondata.beacons[i].identifier, coordinates: beacondata.beacons[i].coordinates});
           console.log(beacondata.beacons[i].identifier);
-      }      
+        }      
     } 
 
     setupBeacons() {
