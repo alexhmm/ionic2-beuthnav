@@ -2,6 +2,7 @@ import { Component, ViewChild, ElementRef, trigger, state, style, animate, trans
 import { NavController, Platform } from 'ionic-angular';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { Geolocation } from '@ionic-native/geolocation';
+import { Http } from '@angular/http';
 
 import { DatabaseService } from '../../services/databaseservice';
 import { MapService } from '../../services/mapservice';
@@ -16,11 +17,6 @@ enum Roomtype {
     lecture = <any>"#00FF00",
     wc = <any>"#00FFFF"
 }
-
-/*enum Floor {
-    d00 = beuthdata.d00,
-    d01 = beuthdata.d01
-}*/
 
 @Component({
   selector: 'page-home',
@@ -48,41 +44,14 @@ export class HomePage {
     public allrooms: any[] = [];
     public selectedRoom: any[] = [];
     public marker;
+    public googleKey = "AIzaSyCtPKTmtL83e8StfuawkBhXH74kgLcbNF0";
 
     constructor(public navCtrl: NavController,
                 public platform: Platform,
                 public geolocation: Geolocation,
                 public mapservice: MapService,
-                public dbService: DatabaseService ) {    
-        /*let d00 = "d00"
-        let floor = Floor[d00];*/
-        //this.allrooms = dbService.getAllRooms();
-
-        // console.log("FLOOR NAME: " + floor[0].name + floor[1].coordinates);  
-
-        this.initializeRooms();
-
-        // WORKING
-        /*for (let i = 0; i < beuthdata.d00.length; i++) {
-            let room = beuthdata.d00[i];
-            this.allrooms.push(room);
-        }
-        for (let i = 0; i < beuthdata.d01.length; i++) {
-            let room = beuthdata.d01[i];
-            this.allrooms.push(room);
-        }*/
-
-        // NOT WORKING
-        /*for (let floor in beuthdata) {            
-            for (let i = 0; i < floor.length; i++) {
-                let room = floor[i];
-                this.allrooms.push(room);
-            }
-        }*/      
-
-        //this.allrooms = floor;
-
-        //console.log("PUSHED ROOM TEST: " + this.allrooms[3].name);
+                public dbService: DatabaseService) {    
+        this.initializeRooms();        
     }
 
     ionViewDidLoad() {
@@ -90,6 +59,7 @@ export class HomePage {
             // placeholder: function to get nearest building
             let floortype = "d00";  
             this.loadMap(floortype);
+            this.getElevation(52.545090, 13.351338);
         });
     }
 
@@ -106,25 +76,7 @@ export class HomePage {
         this.listViewState = 'out';
     }
 
-    initializeRooms() {
-        // JSON Code
-        /*this.allrooms = [];
-        for (let i = 0; i < beuthdata.d00.length; i++) {
-            let room = beuthdata.d00[i];
-            this.allrooms.push(room);
-        }
-        for (let i = 0; i < beuthdata.d01.length; i++) {
-            let room = beuthdata.d01[i];
-            this.allrooms.push(room);
-        }*/
-
-        /*this.dbService.getRooms("allrooms").subscribe(data => {  
-            this.allrooms = data;
-            console.log("PUSHED ROOM TEST: " + this.allrooms[3].name);
-        })  */
-        //this.dbService.initializeDatabase();
-        //this.allrooms = this.dbService.getAllRooms();
-
+    initializeRooms() {    
         this.dbService.getRoomList().then(data => {
             this.allrooms = data;
         });
@@ -148,29 +100,6 @@ export class HomePage {
 
     loadMap(floor: any) { 
         this.loadMapStyles();
-
-        //let allrooms: any = Floor[floor];
-
-        // JSON Code
-        /*for (let x in allrooms) {
-            let type = allrooms[x].type;
-            let JSONcoordinates = allrooms[x].coordinates;
-            //console.log("TYPE: " + type + "COOR; " + JSONcoordinates);
-            let coordinates: String[] = JSONcoordinates.split("; ");
-
-            // split all coordinates to LatLng paths
-            let paths: any[] = this.mapservice.splitCoordinatesToLatLng(coordinates);
-
-            let polygon = new google.maps.Polygon();
-            polygon.setOptions(this.mapservice.createRoomPolygonOptions(paths, type));
-            polygon.setMap(this.map);   
-
-            let centroid = this.mapservice.getPolygonCentroid(paths);
-
-            google.maps.event.addListener(polygon, 'click', () => {
-                this.addMarker(centroid, allrooms[x].desc);
-            });
-        }*/
         
         // SQLite Code with Observable
         this.dbService.getRooms("d00").subscribe(data => {  
@@ -192,29 +121,21 @@ export class HomePage {
                 polygon.setMap(this.map);
             }    
         })  
+    }   
 
-        // PROMISE: Cannot read property 'xxx' of undefined
-        //this.dbService.getRoomsPromise(floor);
-        /*this.dbService.getRoomsPromise2(floor).then(data => {
-            console.log("DATA: " + data[0].coordinates);
-            for (let x in data) {
-                console.log("LOADMAP: " + data[x].name + ", " + data[x].coordinates);
-                let room: any = {};
-                let paths: any[] = [];
-
-                room = data[x];
-
-                let allCoordinates = room.coordinates;
-                let coordinates: String[] = allCoordinates.split("; ");
-
-                // split all coordinates to LatLng paths
-                paths = this.mapservice.splitCoordinatesToLatLng(coordinates);
-
-                let polygon = new google.maps.Polygon();
-                polygon.setOptions(this.mapservice.createRoomPolygonOptions(paths, room.type));
-                polygon.setMap(this.map);
-            }    
-        });*/        
+    /**
+     * Returns the altitude at specific position
+     * @param lat 
+     * @param lng 
+     */
+    public getElevation(lat, lng) {
+        let url = 'https://maps.googleapis.com/maps/api/elevation/json?locations=' + lat + ',' + lng + '&key=' + this.googleKey;
+        fetch(url).then(res => res.json()).then((results) => {
+            let jsonStr = JSON.stringify(results);
+            let jsonSub = jsonStr.substring(25);
+            let index = jsonSub.indexOf(",");
+            return jsonSub.substring(0, index);
+        }).catch(err => console.error(err));
     }
 
     public getRoomInfo(event: any) {
@@ -237,33 +158,7 @@ export class HomePage {
     }
 
     selectRoom(room: any) {
-        console.log("Selected room.name: " + room.name);
-
-        //this.allrooms = this.mapservice.getAllRooms(); 
-
-        // JSON Code
-        /*try {
-            let index = this.allrooms.map(function(e) { return e.name; }).indexOf(room.name);
-            let selectedRoom = this.allrooms[index];
-            console.log("Selected room index: " + selectedRoom.name);
-
-            let mapRoomAllCoordinates: any[] = [];
-            let mapRoomCoordinates: any[] = selectedRoom.coordinates.split("; ");
-
-            mapRoomAllCoordinates = this.mapservice.splitCoordinatesToLatLng(mapRoomCoordinates);
-
-            let mapRoomCentroid: any = {lat: 0, lng: 0};
-            mapRoomCentroid = this.mapservice.getPolygonCentroid(mapRoomAllCoordinates);
-
-            if (this.listViewState == 'in') {
-                this.toggleListView();
-            }
-
-            this.addMarker(mapRoomCentroid, selectedRoom.desc);
-
-        } catch (e) {
-            console.log ("Index error: " + e);
-        }*/
+        console.log("Selected room.name: " + room.name);        
 
         // Observable SQLite Code
         this.dbService.getRoom(room.name, room.table).subscribe(data => {
@@ -278,7 +173,6 @@ export class HomePage {
             if (this.listViewState == 'in') {
                 this.toggleListView();
             }
-
             this.addMarker(mapRoomCentroid, data.desc);
         });
     }
@@ -299,6 +193,11 @@ export class HomePage {
         this.map.panTo(center);
     }
 
+    /**
+     * Adds InfoWindow to marker position
+     * @param marker
+     * @param content 
+     */
     addInfoWindow(marker, content) {
         let infoWindow = new google.maps.InfoWindow({
             content: content
@@ -333,8 +232,6 @@ export class HomePage {
 
             // using global variable:
             this.map.panTo(center);
-
-
         }, (error) => {
             console.log("" + error);
         });

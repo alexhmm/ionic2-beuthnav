@@ -127,7 +127,7 @@ export class DatabaseService {
 
     getSelectedRoomCoordinates() {
         //return this.selectedRoomCoordinates;
-        return "TEST FICKEN MAN";
+        return "";
     }
 
     public setSelectedRoomCoordinates(coordinates: String) {

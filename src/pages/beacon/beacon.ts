@@ -14,6 +14,7 @@ export class BeaconPage {
 
     public beacons: any[] = [];
     public rssis: any[] = [];
+    public tricons: any[] = [];
 
     constructor(public beaconService: BeaconService, public triService: TriService) {
         
@@ -22,8 +23,21 @@ export class BeaconPage {
     ionViewDidLoad() {
         console.log('ionViewDidLoad IBeacon');    
         this.beaconService.setupBeacons();
-        //this.beaconService.startRangingBeacons();  
+        //this.beaconService.startRangingBeacons(); 
+        setInterval(() => { this.checkBeacons(); }, 3000);
     }    
+
+    checkBeacons() {
+        try {
+            this.tricons = this.beaconService.getBeacons();
+            for (let beacon in this.tricons) {
+                console.log(this.tricons[beacon]);
+            }
+            //this.beaconService.getBeaconsC();
+        } catch(e) {
+            console.log(e);
+        }
+    }
 
     startRangingBeacon() {
         this.beaconService.startRangingBeacon();  

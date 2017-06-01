@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core'; 
 import { IBeacon } from '@ionic-native/ibeacon';
 import { KalmanService } from './kalmanservice';
+import { Observable } from 'rxjs/Observable';
 
 import * as beacondata from '../assets/data/beacondata.json';
 
@@ -42,6 +43,7 @@ export class BeaconService {
                 let region = data.region;
                 let beacon = data.beacons;  
                 
+                // Checks for current Beacons Array
                 if (typeof beacon[0] !== 'undefined') {
                     try {
                         let index = this.beacons.map(function(e) { return e.identifier; }).indexOf(region.identifier);
@@ -159,37 +161,19 @@ export class BeaconService {
         }
     }
 
-    calculateCurrentPositionBeacon(points: any[]) {
-        
-        let centroidPoints: any[] = [];
-        let relationPoints: any[] = [];
-
-        for (let x in points) {
-            let coordinatesSplit: any[] = points[x].coordinates.split(", ");
-            let lat = coordinatesSplit[0];
-            let lng = coordinatesSplit[1];
-            lat = lat / points[x].accuracy;
-            lng = lng / points[x].accuracy;
-            relationPoints.push({lat: lat, lng: lng})
-        }
-
-        // relation accuracy
-        for (let x in points) {
-
-        }
-
-        let centroid: any = {lat: 0, lng: 0};
-        for (let x in points) {
-            centroid.lat += points[x].lat;
-            centroid.lng += points[x].lng;
-        }
-        centroid.lat = centroid.lat / points.length;
-        centroid.lng = centroid.lng / points.length;
-         return centroid;    
-    }
-
     getBeacons() {
         return this.beacons;
+    }
+
+    getBeaconsO() {
+        console.log(this.beacons);
+        return Observable.create(observer => {
+            observer.next(this.beacons);
+            observer.complete();
+        })
+    }
+    public getBeaconsC() {
+        console.log("C");
     }
 
     calcKalmanTest() {
