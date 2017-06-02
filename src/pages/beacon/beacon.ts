@@ -3,7 +3,6 @@ import { NavController, NavParams } from 'ionic-angular';
 
 import { BeaconService } from '../../services/beaconservice';
 import { MapService } from '../../services/mapservice';
-import { TriService } from '../../services/triservice';
 
 import * as beacondata from '../../assets/data/beacondata.json';
 
@@ -17,7 +16,7 @@ export class BeaconPage {
     public rssis: any[] = [];
     public tricons: any[] = [];
 
-    constructor(public beaconService: BeaconService, public mapService: MapService, public triService: TriService) {
+    constructor(public beaconService: BeaconService, public mapService: MapService) {
         
     }
 
