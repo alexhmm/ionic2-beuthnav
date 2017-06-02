@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { NavController, NavParams } from 'ionic-angular';
 
 import { BeaconService } from '../../services/beaconservice';
+import { MapService } from '../../services/mapservice';
 import { TriService } from '../../services/triservice';
 
 import * as beacondata from '../../assets/data/beacondata.json';
@@ -16,7 +17,7 @@ export class BeaconPage {
     public rssis: any[] = [];
     public tricons: any[] = [];
 
-    constructor(public beaconService: BeaconService, public triService: TriService) {
+    constructor(public beaconService: BeaconService, public mapService: MapService, public triService: TriService) {
         
     }
 
@@ -60,9 +61,9 @@ export class BeaconPage {
 
     calcTri() {
         let beacons: any[] = [];
-        beacons.push({lat: 52.543938, lng: 13.352514, distance: 37.88, height: 37});
-        beacons.push({lat: 52.543799, lng: 13.351237, distance: 51.85, height: 36});
-        beacons.push({lat: 52.543671, lng: 13.351655, distance: 26.69, height: 36});
-        this.triService.trilaterate(beacons);
+        beacons.push({lat: 52.543938, lng: 13.352514, distance: 38.16, height: 37});
+        beacons.push({lat: 52.543799, lng: 13.351237, distance: 51.96, height: 36});
+        beacons.push({lat: 52.543671, lng: 13.351655, distance: 26.99, height: 36});
+        this.mapService.trilaterate(beacons);
     }
 }

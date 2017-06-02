@@ -57,7 +57,7 @@ export class MotionPage {
             let prevSteps = this.steps;     
             this.steps = this.motion.stepDetection(this.accValueLowPass);  
             if (prevSteps < this.steps) {
-                this.currentPosition = this.mapService.calcCurrentCompassPosition(this.currentPosition, this.direction);
+                this.currentPosition = this.mapService.getCurrentCompassPosition(this.currentPosition, 0.63, this.direction);
             }
         });
         /*this.motion.startWatchingOrientation().subscribe(data => {
@@ -69,7 +69,7 @@ export class MotionPage {
 
     stopWatching() {
         this.motion.stopWatchingAcceleration();
-        this.motion.stopWatchingOrientation();
+        //this.motion.stopWatchingOrientation();
     }
 
     updatePage(x, y, z) {
