@@ -15,6 +15,11 @@ export class MotionPage {
     public magnDegree = 0;
     public trueDegree = 0;
     public accDegree = 0;
+    public direction;
+    public accValue;
+    public accValueLowPass;
+    public accValueLowPassTime;
+    public steps = 0;
 
     constructor(public platform: Platform, public motion: MotionService) {
 
@@ -24,14 +29,29 @@ export class MotionPage {
         this.platform.ready().then(() => {
             this.motion.getCurrentAcceleration();
             this.motion.getCurrentOrientation();
+
+            if ((<any>window).DeviceOrientationEvent) {
+                console.log("DeviceOrientationevent available");
+                window.addEventListener('deviceorientation', (eventData) => {
+                    var dir = eventData.alpha
+                    //deviceOrientationHandler(dir);
+                    this.direction = Math.ceil(dir);
+                    //console.log("Dir: " + this.direction);
+                }, false);
+            } else {
+                console.log("No DeviceOrientationEvent available");
+            };
         });
-    }
+    }    
 
     startWatching() {
         this.motion.startWatchingAcceleration().subscribe(data => {
             this.x = data.x;
             this.y = data.y;
             this.z = data.z;
+            this.accValue = this.motion.acceleration(this.x, this.y, this.z);
+            this.accValueLowPass = this.motion.accelerationLowPass(this.x, this.y, this.z);
+            this.steps = this.motion.stepDetection(this.accValueLowPass);  
         });
         this.motion.startWatchingOrientation().subscribe(data => {
             this.magnDegree = data.magneticHeading;
