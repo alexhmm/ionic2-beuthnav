@@ -90,7 +90,7 @@ export class MotionService {
         let accValue = Math.sqrt((Math.pow(this.linearAcceleration[0], 2),
                                     Math.pow(this.linearAcceleration[1], 2),
                                     Math.pow(this.linearAcceleration[2], 2)));
-        console.log(accValue);
+        //console.log(accValue);
         return accValue;
     }
 
@@ -111,7 +111,7 @@ export class MotionService {
             }
         }
         return this.steps;
-    }  
+    }      
 
     changeStatus() {
         this.status = 1;

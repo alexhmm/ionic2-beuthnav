@@ -82,5 +82,51 @@ export class MapService {
             paths.push({lat: lat, lng: lng});
         }
         return paths;
-    }    
+    }   
+
+    getRadians(degrees) {
+        return degrees * (Math.PI / 180);
+    }
+
+    getDegrees(radians) {
+        return radians * (180 / Math.PI);
+    }
+
+    calcEarthR(latitudeRadians) {
+        // http://en.wikipedia.org/wiki/Earth_radius
+        var a = 6378137;
+        var b = 6356752.3142;
+        var cos = Math.cos(latitudeRadians);
+        var sin = Math.sin(latitudeRadians);
+        let t1 = Math.pow((Math.pow(a, 2) * cos), 2) + Math.pow((Math.pow(b, 2) * sin), 2);
+        let t2 = Math.pow((a * cos), 2) + Math.pow((b * sin), 2);
+        let earthR = Math.sqrt(t1 / t2);
+        console.log("ER: " + earthR);
+        return earthR;
+    }
+
+    calcCurrentCompassPosition(currentPosition, direction) {  
+        let split = currentPosition.split(",");
+        let lat = parseFloat(split[0]);
+        let lng = parseFloat(split[1]);
+        let distance = 10;
+        let azimuth = direction;
+
+        console.log("OLD - LAT: " + lat + ", " + lng);
+        console.log("AZIMUTH: " + direction);
+
+        let radians = Math.PI / 180.0;
+        let degrees = 180.0 / Math.PI;
+        var latRadians = radians * lat;
+        var azRadians = radians * azimuth;
+        var earthRad = this.calcEarthR(latRadians);
+        var cosLat = Math.cos(latRadians);
+        var cosAz = Math.cos(azRadians);
+        var sinAz = Math.sin(azRadians);
+        var ratio = distance / earthRad;
+        var targetLat = lat + (degrees * cosAz * ratio);
+        var targetLon = lng + (degrees * (sinAz / cosLat) * ratio);
+        console.log("NEW - LAT: " + targetLat + ", " + targetLon);
+        return targetLat + ", " + targetLon;
+    } 
 }

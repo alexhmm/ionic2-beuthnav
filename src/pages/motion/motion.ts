@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { NavController, NavParams, Platform } from 'ionic-angular';
 
+import { MapService } from '../../services/mapservice';
 import { MotionService } from '../../services/motionservice';
 
 @Component({
@@ -20,8 +21,9 @@ export class MotionPage {
     public accValueLowPass;
     public accValueLowPassTime;
     public steps = 0;
+    public currentPosition = "52.502098, 13.492520";
 
-    constructor(public platform: Platform, public motion: MotionService) {
+    constructor(public platform: Platform, public mapService: MapService, public motion: MotionService) {
 
     }  
 
@@ -45,19 +47,24 @@ export class MotionPage {
     }    
 
     startWatching() {
-        this.motion.startWatchingAcceleration().subscribe(data => {
+        this.motion.startWatchingAcceleration().subscribe(data => {            
             this.x = data.x;
             this.y = data.y;
             this.z = data.z;
             this.accValue = this.motion.acceleration(this.x, this.y, this.z);
-            this.accValueLowPass = this.motion.accelerationLowPass(this.x, this.y, this.z);
+            this.accValueLowPass = this.motion.accelerationLowPass(this.x, this.y, this.z);      
+
+            let prevSteps = this.steps;     
             this.steps = this.motion.stepDetection(this.accValueLowPass);  
+            if (prevSteps < this.steps) {
+                this.currentPosition = this.mapService.calcCurrentCompassPosition(this.currentPosition, this.direction);
+            }
         });
-        this.motion.startWatchingOrientation().subscribe(data => {
+        /*this.motion.startWatchingOrientation().subscribe(data => {
             this.magnDegree = data.magneticHeading;
             this.trueDegree = data.trueHeading;
             this.accDegree = data.headingAccuracy;
-        });
+        });*/
     }
 
     stopWatching() {
