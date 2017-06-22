@@ -1,14 +1,22 @@
 import { Injectable } from '@angular/core'; 
 import { Geolocation } from '@ionic-native/geolocation';
+import { Observable } from 'rxjs/Observable';
 
 import * as math from 'mathjs'; // don't named as Math, this will conflict with Math in JS
 
 import * as beuthdata from '../assets/data/beuthdata.json';
 
 enum Roomcolor {
-    lab = <any>"#FF0000",
-    lecture = <any>"#00FF00",
-    wc = <any>"#00FFFF"
+    blank = <any>"#FFFFFF",
+    floor = <any>"#FFFFFF",
+    lab = <any>"#0098A1",
+    lecture = <any>"#39B7BC",
+    lift = <any>"#FFFFFF",
+    office = <any>"#BBBBBB",
+    service = <any>"#BEE2E2",
+    staircase = <any>"#FFFFFF",
+    wc = <any>"#BEE2E2",
+    wcPrivate = <any>"#BBBBBB"
 }
 
 @Injectable()
@@ -25,7 +33,9 @@ export class MapService {
     public wgs84e2;
     public wgs84ep;
 
-    constructor() {
+    public googleKey = "AIzaSyCtPKTmtL83e8StfuawkBhXH74kgLcbNF0";
+
+    constructor(private geolocation: Geolocation) {
         this.wgs84f = math.divide(math.subtract(this.wgs84a, this.wgs84b), this.wgs84a); 
         this.wgs84a2 = math.multiply(this.wgs84a, this.wgs84a);
         this.wgs84b2 = math.multiply(this.wgs84b, this.wgs84b);
@@ -46,8 +56,8 @@ export class MapService {
         return allrooms;
     }
 
-    createRoomPolygonOptions(paths: any, type: any) {
-        let roomPolygonOptions: any = {
+    createPolygonOptions(paths: any, type: any) {
+        let PolygonOptions: any = {
             paths: paths,
             strokeColor: '#000000',
             strokeOpacity: 0.5,
@@ -55,12 +65,23 @@ export class MapService {
             fillColor: Roomcolor[type],
             fillOpacity: 0.5
         }  
-        return roomPolygonOptions;
+        return PolygonOptions;
+    }
+
+    createPolylineOptions(points: any) {
+        let PolylineOptions: any = {
+          path: points,
+          geodesic: true,
+          strokeColor: '#FF0000',
+          strokeOpacity: 1.0,
+          strokeWeight: 2
+        }
+        return PolylineOptions;
     }
 
     createCircleOptions(position: any) {
         let circleOptions: any = {
-            center: {lat: position.coords.latitude, lng: position.coords.longitude},
+            center: {lat: position.lat, lng: position.lng},
             strokeWeight: 0,
             fillColor: '#0000FF',
             radius: 3
@@ -68,13 +89,34 @@ export class MapService {
         return circleOptions;
     }
 
+        /**
+     * Returns the altitude at specific position
+     * @param lat 
+     * @param lng 
+     */
+    public getElevation(lat, lng) {
+        return Observable.create(observer => {
+            let url = 'https://maps.googleapis.com/maps/api/elevation/json?locations=' + lat + ',' + lng + '&key=' + this.googleKey;
+            fetch(url).then(res => res.json()).then((results) => {
+                let jsonStr = JSON.stringify(results);
+                let jsonSub = jsonStr.substring(25);
+                let index = jsonSub.indexOf(",");
+                //return jsonSub.substring(0, index);
+                observer.next(parseFloat(jsonSub.substring(0, index)).toFixed(2));
+                observer.complete();
+            }).catch(err => console.error(err));
+        });
+    }
+
     /**
      * Calculates the centroid of a polygon
      * @param points 
      */
     getPolygonCentroid(points: any[]) {
+        console.log("TEST");
         let centroid: any = {lat: 0, lng: 0};
         for (let x in points) {
+            console.log("polygon: " + points[x].lat + ", " + points[x].lng);
             centroid.lat += points[x].lat;
             centroid.lng += points[x].lng;
         }
@@ -134,12 +176,27 @@ export class MapService {
         return N;
     }
 
+    getCurrentPositionGPS() {
+        return Observable.create(observer => {
+            this.geolocation.getCurrentPosition({enableHighAccuracy:true}).then((position) => {
+                //console.log("GPS POSITION: " + position.coords.latitude + ", " + position.coords.longitude);
+                let lat = position.coords.latitude;
+                let lng = position.coords.longitude;
+                //console.log([lat, lng]);
+                observer.next([lat, lng]);
+                observer.complete();
+            }, (error) => {
+                console.log("" + error);
+            });
+        });        
+    }
+
     /**
      * Calculates new position from measured compass azimuth and step length
      * @param currentPosition 
      * @param direction 
      */
-    getCurrentCompassPosition(currentPosition, dist, direction) {  
+    getCurrentPositionCompass(currentPosition, dist, direction) {  
         let split = currentPosition.split(",");
         let lat = parseFloat(split[0]);
         let lng = parseFloat(split[1]);
@@ -230,7 +287,8 @@ export class MapService {
 
         // transform LLA points to ECEF points
         for (let x in points) {
-            let ePoint = this.LLAtoECEF(points[x].lat, points[x].lng, points[x].height);
+            console.log("LLA: " + points[x].lat + ", " + points[x].lng + ", " + points[x].height);
+            let ePoint = this.LLAtoECEF(+points[x].lat, +points[x].lng, +points[x].height);            
             ePoints.push(ePoint);
         }
 
@@ -260,5 +318,6 @@ export class MapService {
 
         let triLatLng = this.ECEFtoLLA(triPt[0], triPt[1], triPt[2]);
         console.log(triLatLng);
+        return triLatLng;
     }     
 }

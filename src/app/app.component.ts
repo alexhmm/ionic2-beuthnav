@@ -6,6 +6,7 @@ import { Keyboard } from '@ionic-native/keyboard';
 
 import { HomePage } from '../pages/home/home';
 import { ListPage } from '../pages/list/list';
+import { DatabasePage } from '../pages/database/database';
 import { HotSpotPage } from '../pages/hotspot/hotspot';
 import { BeaconPage } from '../pages/beacon/beacon';
 import { MotionPage } from '../pages/motion/motion';
@@ -27,6 +28,7 @@ export class MyApp {
     this.pages = [
       { title: 'Home', component: HomePage },
       { title: 'List', component: ListPage },
+      { title: 'Database', component: DatabasePage },
       { title: 'Hotspot', component: HotSpotPage },
       { title: 'Beacon', component: BeaconPage },
       { title: 'Motion', component: MotionPage }

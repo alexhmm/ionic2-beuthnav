@@ -5,6 +5,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { MyApp } from './app.component';
 import { HomePage } from '../pages/home/home';
+import { DatabasePage } from '../pages/database/database';
 import { ListPage } from '../pages/list/list';
 import { HotSpotPage } from '../pages/hotspot/hotspot';
 import { BeaconPage } from '../pages/beacon/beacon';
@@ -30,6 +31,7 @@ import { WifiService } from '../services/wifiservice';
   declarations: [
     MyApp,
     HomePage,
+    DatabasePage,
     ListPage,
     HotSpotPage,
     BeaconPage,
@@ -48,6 +50,7 @@ import { WifiService } from '../services/wifiservice';
     MyApp,
     HomePage,
     ListPage,
+    DatabasePage,
     HotSpotPage,
     BeaconPage,
     MotionPage

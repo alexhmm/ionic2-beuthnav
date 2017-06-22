@@ -3,7 +3,7 @@ import { IBeacon } from '@ionic-native/ibeacon';
 import { KalmanService } from './kalmanservice';
 import { Observable } from 'rxjs/Observable';
 
-import * as beacondata from '../assets/data/beacondata.json';
+import * as beacondata from '../assets/data/beacondataL.json';
 
 @Injectable()
 export class BeaconService {  
@@ -78,7 +78,7 @@ export class BeaconService {
 
                     if (this.rssis.length > 0) {
                         let kalman = new KalmanService();
-                        var dataConstantKalman = this.rssis.map(function(v) {
+                        let dataConstantKalman = this.rssis.map(function(v) {
                             return kalman.filter(v, 2, 5, 1, 0, 1);
                         });
                         let index = dataConstantKalman.length - 1;
@@ -88,14 +88,14 @@ export class BeaconService {
 
                     let accuracyCalcKalman = (Math.pow(10, (beacon[0].tx - this.currentRSSI) / (10 * 3.5))).toFixed(2);
 
-                    console.log("Id: " + region.identifier
+                    /*console.log("Id: " + region.identifier
                      + ", Acc: " + beacon[0].accuracy
                      + ", AccuC: " + accuracyCalc
                      + ", AccuCK: " + accuracyCalcKalman
                      + ", TX: " + beacon[0].tx
                      + ", RSSI: " + beacon[0].rssi
                      + ", RSSI-K: " + this.currentRSSI
-                     + ", Prox: " + beacon[0].proximity);     
+                     + ", Prox: " + beacon[0].proximity);    */
                     this.beacons.push({identifier: region.identifier,
                          tx: beacon[0].tx,
                          rssi: beacon[0].rssi,
@@ -124,7 +124,7 @@ export class BeaconService {
               beacondata.beacons[i].minor);
             this.iBeacon.startRangingBeaconsInRegion(beaconRegion)
             .then(
-                () => console.log('Native layer recieved the request to monitoring'),
+                () => console.log('Native layer recieved the request to monitoring: ' + beacondata.beacons[i].identifier),
                 error => console.error('Native layer failed to begin monitoring: ', error)
             );
         }

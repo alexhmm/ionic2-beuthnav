@@ -37,7 +37,7 @@ export class MotionPage {
                 window.addEventListener('deviceorientation', (eventData) => {
                     var dir = eventData.alpha
                     //deviceOrientationHandler(dir);
-                    this.direction = Math.ceil(dir);
+                    this.direction = 360 - Math.ceil(dir);
                     //console.log("Dir: " + this.direction);
                 }, false);
             } else {
@@ -57,7 +57,7 @@ export class MotionPage {
             let prevSteps = this.steps;     
             this.steps = this.motion.stepDetection(this.accValueLowPass);  
             if (prevSteps < this.steps) {
-                this.currentPosition = this.mapService.getCurrentCompassPosition(this.currentPosition, 0.63, this.direction);
+                this.currentPosition = this.mapService.getCurrentPositionCompass(this.currentPosition, 10, this.direction);
             }
         });
         /*this.motion.startWatchingOrientation().subscribe(data => {
@@ -71,11 +71,4 @@ export class MotionPage {
         this.motion.stopWatchingAcceleration();
         //this.motion.stopWatchingOrientation();
     }
-
-    updatePage(x, y, z) {
-        this.x = x;
-        this.y = y;
-        this.z = z;
-    }
-
 }

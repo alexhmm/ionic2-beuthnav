@@ -15,8 +15,15 @@ export class DatabaseService {
     public selectedRoomName: any;
     public selectedRoomCoordinates: any;
 
-    constructor(private sqlite: SQLite) {
+    public database;
 
+    constructor(private sqlite: SQLite) {
+        this.database = new SQLite();
+            this.database.create(this.options).then(() => {
+                console.log("Database opened.");
+            }, (error) => {
+                console.log("ERROR: ", error);
+        });
     } 
 
     initializeDatabase() {
@@ -32,7 +39,30 @@ export class DatabaseService {
         });
     }
 
-    getRoomList() {
+    /*insertRoom(table) {
+        console.log("GETROOMS");
+        let query = "SELECT * FROM " + table;
+        let queryRoom = "INSERT INTO " + table + " (id, name) VALUES (7, 'Paul')";
+        return Observable.create(observer => {
+            this.sqlite.create(this.options).then((db: SQLiteObject) => {    
+                db.executeSql(query, {}).then((data) => { 
+                    for (let i = 0; i < data.rows.length; i++) {
+                        let rows = data.rows;
+                        this.rooms.push({name: rows.item(i).name, type: rows.item(i).type, desc: rows.item(i).desc, coordinates: rows.item(i).coordinates}).toString;
+                        //console.log("OBSERVER NEXT: " + i);                        
+                    }
+                    observer.next(this.rooms);
+                    console.log("Number of rooms in " + table + " = " + data.rows.length);
+                    //observer.complete();                    
+                })
+                db.executeSql(queryRoom, {}).then((data) => { 
+                    observer.complete();     
+                })   
+            }); 
+        })
+    }*/
+
+    selectRoomList() {
         this.allrooms = [];
         let query = "SELECT * FROM allrooms";
         this.sqlite.create(this.options).then((db: SQLiteObject) => {    
@@ -40,6 +70,7 @@ export class DatabaseService {
                 let rows = data.rows;
                 for (let i = 0; i < rows.length; i++) {
                     this.allrooms.push({name: rows.item(i).name, desc: rows.item(i).desc, table: rows.item(i).table}).toString;
+                    console.log(rows.item(i).name);
                 }
                 console.log("Number of allrooms in database = " + this.allrooms.length);
             })
@@ -47,7 +78,49 @@ export class DatabaseService {
         return Promise.resolve(this.allrooms);
     }
 
-    getRooms(table: String) {
+    selectRooms(tableAttributes: String, tableCoordinates: String) {
+        this.rooms = [];
+        console.log("SELECT ROOMS ATTRIBUTES");
+        let queryAttributes = "SELECT * FROM " + tableAttributes;
+        let queryCoordinates = "Select * FROM " + tableCoordinates;
+        return Observable.create(observer => {
+            this.sqlite.create(this.options).then((db: SQLiteObject) => {
+                db.executeSql(queryAttributes, []).then((data) => {
+                    for (let i = 0; i < data.rows.length; i++) {
+                        let rows = data.rows;
+                        this.rooms.push({shapeid: rows.item(i).shapeid, name: rows.item(i).name, type: rows.item(i).type, desc: rows.item(i).desc, coordinates: ""}).toString;
+                    }                    
+                })
+                db.executeSql(queryCoordinates, []).then((data) => {   
+                    for (let i = 0; i < this.rooms.length; i++) {
+                        let coordinateArray = [];
+                        let coordinatesStr = "";
+                        //let index = this.rooms.map(function(e) { return e.shapeid; }).indexOf(this.rooms[i].shapeid);
+                        for (let j = 0; j < data.rows.length; j++) {
+                            let rows = data.rows;
+                            if (rows.item(j).shapeid === this.rooms[i].shapeid) {
+                                coordinateArray.push(rows.item(j).y + ", " + rows.item(j).x + "; ");
+                                //coordinatesStr += rows.item(j).y + ", " + rows.item(j).x;
+                            }
+                        }
+                        // splice same end coordinate like start coordinate
+                        coordinateArray.splice(coordinateArray.length - 1, 1);
+                        for (let x in coordinateArray) {
+                            coordinatesStr += coordinateArray[x];
+                        }
+                        coordinatesStr = coordinatesStr.substring(0, coordinatesStr.length - 2);
+                        this.rooms[i].coordinates = coordinatesStr;         
+                        //console.log("NEW: " + this.rooms[i].name + " || " + this.rooms[i].coordinates);                                                
+                    }    
+                    observer.next(this.rooms);                
+                    observer.complete();
+                })
+                
+            })
+        })
+    }
+
+    /*selectRooms(table: String) {
         console.log("GETROOMS");
         let query = "SELECT * FROM " + table;
         return Observable.create(observer => {
@@ -64,37 +137,13 @@ export class DatabaseService {
                 })
             }); 
         })
-    }
+    }*/
 
-    getRoomsPromise(table): any {
-        console.log("GETROOMS");
-        this.rooms = [];
-        let query = "SELECT * FROM " + table;
-        this.sqlite.create(this.options).then((db: SQLiteObject) => {    
-            db.executeSql(query, {}).then((data) => { 
-                for (let i = 0; i < data.rows.length; i++) {
-                    let rows = data.rows;
-                    this.rooms.push({name: rows.item(i).name, type: rows.item(i).type, desc: rows.item(i).desc, coordinates: rows.item(i).coordinates}).toString;
-                    console.log("Promise: " + this.rooms[i].coordinates);
-                    //console.log("OBSERVER NEXT: " + i);                        
-                }                
-            })
-            return this.rooms;
-        }); 
-        
-    }
-
-    getRoomsPromise2(table) {
-        return this.getRoomsPromise(table).then((data) => {
-            return data;
-        })
-    }
-
-    getAllRooms() {
+    selectAllRooms() {
         return this.allrooms;
     }
 
-    getRoom(roomName: any, roomTable: any) {
+    selectRoom(roomName: any, roomTable: any) {
         console.log("# DB SERVICE GET ROOM #  " + roomName);
         let queryRoom = "SELECT * FROM " + roomTable + " WHERE name LIKE '%" + roomName + "%'";
         let selectedRoom: String[] = [];

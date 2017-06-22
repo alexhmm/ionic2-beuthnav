@@ -1,0 +1,34 @@
+<ion-header>
+
+  <ion-navbar>
+    <button ion-button menuToggle>
+      <ion-icon name="menu"></ion-icon>
+    </button>
+    <ion-title>Beacon</ion-title>
+    <ion-buttons end>
+      <button ion-button (click)="testSelect()">Select</button>
+      <button ion-button (click)="testInsert()">Insert</button>
+    </ion-buttons>
+  </ion-navbar>
+
+</ion-header>
+
+
+<ion-content padding>
+    <button ion-button (click)="calcKalman()">Filter</button>
+    <ion-list>
+        <ion-item *ngFor="let rssi of rssis">
+            {{rssi.original}}, {{rssi.kalman}}
+        </ion-item>
+    </ion-list>
+    <ion-list>
+        <ion-item *ngFor="let beacon of beacons">
+          <!--<ion-avatar item-left>
+            <img src="assets/images/beacons/{{beacon.key}}.png">
+          </ion-avatar>-->
+          <p><b>Beacon #{{beacon.identifier}}</b>: TX: {{beacon.tx}}, R: {{beacon.rssi}}, R-K: {{beacon.rssiK}}</p>
+          <!--<p style="float: right; color: #aaa;">{{beacon.timestamp | date:'h:mm:ss a'}}</p>-->
+          <p> Acc: {{beacon.acc}}, AccC: {{beacon.accC}}, AccCK: {{beacon.accCK}}</p>
+        </ion-item>
+    </ion-list>
+</ion-content>

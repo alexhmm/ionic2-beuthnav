@@ -3,6 +3,8 @@ import { DeviceMotion, DeviceMotionAccelerationData } from '@ionic-native/device
 import { DeviceOrientation, DeviceOrientationCompassHeading } from '@ionic-native/device-orientation';
 import { Observable } from 'rxjs/Observable';
 
+import * as math from 'mathjs'; // don't named as Math, this will conflict with Math in JS
+
 @Injectable()
 export class MotionService {  
 
@@ -98,7 +100,7 @@ export class MotionService {
         // fetch current acceleration value
         this.currentAVLP = accValue;
 
-        // count steps if acceleration is higher than before
+        // threshold, count steps if acceleration is higher than before
         if (this.status === 1) {
             if (Math.abs(this.currentAVLP - this.previousAVLP) > 2.3) {
                 // console.log("CURRENT: " + this.currentAVLP);
@@ -116,5 +118,9 @@ export class MotionService {
     changeStatus() {
         this.status = 1;
         // console.log("STATUS: " + this.status);
+    }
+
+    getMedian(values) {
+        return math.median(values);
     }
 }
