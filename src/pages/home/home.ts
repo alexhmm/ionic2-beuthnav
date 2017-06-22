@@ -63,6 +63,7 @@ export class HomePage {
     public beacons: any[] = [];
     public rssis: any[] = [];
     public tricons: any[] = [];
+    public triconsACC: any[] = [];
 
     constructor(public navCtrl: NavController,
                 public platform: Platform,
@@ -114,32 +115,42 @@ export class HomePage {
 
             // Beacons            
             this.beaconService.setupBeacons();    
-            //setTimeout(() => { this.beaconService.startRangingBeacon(); }, 3000);        
-            setInterval(() => { this.checkBeacons(); }, 3000);
+            //setTimeout(() => { this.beaconService.startRangingBeacons(); }, 3000);    
+            this.beaconService.startRangingBeacons();
+
+            // Interval positioning from available methods
+            setInterval(() => { 
+                this.checkBeacons();
+                if (this.beacons.length > 2) {
+                    this.getCurrentPositionBeacons();
+                } else {
+                    this.getCurrentPositionGPS();
+                }
+             }, 3000);
         });
     }
 
-    toggleListView() {
+    public toggleListView() {
         this.listViewState = (this.listViewState == 'out') ? 'in' : 'out';
         console.log("STATE: " + this.listViewState);
     }
 
-    listViewIn() {
+    public listViewIn() {
         this.listViewState = 'in';
     }
 
-    listViewOut() {
+    public listViewOut() {
         this.listViewState = 'out';
     }
 
-    initializeRooms() {    
+    public initializeRooms() {    
         this.dbService.selectRoomList().then(data => {
             this.allrooms = data;
         });
 
     }
 
-    loadMapStyles() { 
+    public loadMapStyles() { 
         console.log("Loadmapstyles");
         let mapOptions = {
             //center: latlng,
@@ -150,17 +161,28 @@ export class HomePage {
             streetViewControl: false,
             styles: mapdata.styles,
             mapTypeId: google.maps.MapTypeId.ROADMAP
+            //mapTypeId: google.maps.MapTypeId.SATELLITE
         }
 
         this.map = new google.maps.Map(this.mapelement.nativeElement, mapOptions);
+
+        // Zoom changed listener
+        google.maps.event.addListener(this.map, 'zoom_changed', () => {
+            //console.log("Zoom changed: " + this.getMapZoom());
+            if (this.circle != null) {  
+                let radius = this.mapService.getCircleRadius(this.getMapZoom());
+                //console.log("Circle radius: " + radius);
+                this.circle.setRadius(radius);
+            }            
+        });
     }
 
-    loadMap(floor: any) { 
-        this.loadMapStyles();
+    public loadMap(floor: any) { 
+        this.loadMapStyles();        
         
         // SQLite Code with Observable
         //this.dbService.selectRooms("d00").subscribe(data => {  
-        this.dbService.selectRooms("newTestAttr", "newTestCoor").subscribe(data => {
+        this.dbService.selectRooms("d01Attr", "d01Coords").subscribe(data => {
             for (let x in data) {
                 //console.log("LOADMAP: " + data[x].name + ", " + data[x].type + ", " + data[x].desc + ", " + data[x].coordinates);
                 let room: any = {};
@@ -200,7 +222,9 @@ export class HomePage {
         })  
     }   
 
-
+    public getMapZoom() {
+        return this.map.getZoom();
+    }
 
     public getRoomInfo(event: any) {
         this.initializeRooms();
@@ -221,7 +245,7 @@ export class HomePage {
         }      
     }
 
-    selectRoom(room: any) {
+    public selectRoom(room: any) {
         console.log("Selected room.name: " + room.name);        
 
         // Observable SQLite Code
@@ -241,7 +265,7 @@ export class HomePage {
         });
     }
 
-    addMarker(centroid: any, content: any) {
+    public addMarker(centroid: any, content: any) {
         if (this.marker != null) {
             this.marker.setMap(null);
         }        
@@ -252,7 +276,7 @@ export class HomePage {
         });
 
         this.addInfoWindow(this.marker, content);
-        var center = new google.maps.LatLng(+centroid.lat, +centroid.lng);
+        let center = new google.maps.LatLng(+centroid.lat, +centroid.lng);
         // using global variable:
         this.map.panTo(center);
     }
@@ -262,7 +286,7 @@ export class HomePage {
      * @param marker
      * @param content 
      */
-    addInfoWindow(marker, content) {
+    public addInfoWindow(marker, content) {
         let infoWindow = new google.maps.InfoWindow({
             content: content
         });
@@ -274,26 +298,17 @@ export class HomePage {
         });
     }   
 
-    getCurrentPositionGPS() {
+    public getCurrentPositionGPS() {
+        console.log("CURRENT Position GPS."); 
         if (this.circle != null) {
             this.circle.setMap(null);
-        }  
-        console.log("GET CURRENT GPS POSITION");
-        /*let onSuccess = (position: any) => {
-            console.log("GPS POSITION: " + position.coords.latitude + ", " + position.coords.longitude);
-        }
-
-        let onError = (e: any) => {
-            console.log("" + e);
-        }
-
-        navigator.geolocation.getCurrentPosition(onSuccess, onError);*/
+        } 
         this.geolocation.getCurrentPosition({timeout: 5000, enableHighAccuracy:true}).then((position) => {
             console.log("GPS POSITION: " + position.coords.latitude + ", " + position.coords.longitude);
-            var center = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);            
+            let center = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);            
             let positionLatLng = {lat: position.coords.latitude, lng: position.coords.longitude}
             this.circle = new google.maps.Circle();            
-            this.circle.setOptions(this.mapService.createCircleOptions(positionLatLng));
+            this.circle.setOptions(this.mapService.createCircleOptions(positionLatLng, (this.mapService.getCircleRadius(this.getMapZoom()).toFixed(4))));
             this.circle.setMap(this.map);
             // using global variable:
             this.map.panTo(center);
@@ -303,7 +318,7 @@ export class HomePage {
     } 
 
     // testing
-    compassRouting() {
+    public compassRouting() {
         let startPosition;
         this.mapService.getCurrentPositionGPS().subscribe(data => {
             startPosition = data;
@@ -316,7 +331,7 @@ export class HomePage {
         console.log("FINISH");
     }
 
-    startCompassRouting(startPosition) {
+    public startCompassRouting(startPosition) {
         this.compassPts = [];
         this.currentPosition = startPosition[0] + ", " + startPosition[1];
         this.compassPts.push(this.currentPosition);
@@ -353,7 +368,7 @@ export class HomePage {
         }
     }
 
-    paintRoute(points: any) {
+    public paintRoute(points: any) {
         if (this.polyline != null) {
             this.polyline.setMap(null);
         }  
@@ -361,17 +376,17 @@ export class HomePage {
         this.polyline = new google.maps.Polyline();
         this.polyline.setOptions(this.mapService.createPolylineOptions(latLngPts));
         this.polyline.setMap(this.map);
-        var center = new google.maps.LatLng(latLngPts[latLngPts.length-1].lat, latLngPts[latLngPts.length-1].lng);
+        let center = new google.maps.LatLng(latLngPts[latLngPts.length-1].lat, latLngPts[latLngPts.length-1].lng);
         this.map.panTo(center);
 
-        var lengthInMeters = google.maps.geometry.spherical.computeLength(this.polyline.getPath());
+        let lengthInMeters = google.maps.geometry.spherical.computeLength(this.polyline.getPath());
         console.log("Polyline length: " + lengthInMeters);
     }
 
-    // #################
-    // #### BEACONS ####
-    // #################
-    checkBeacons() {
+    // ################# //
+    // #### BEACONS #### //
+    // ################# //
+    public checkBeacons() {
         let str = "CHECK BEACONS: ";
         try {
             this.beacons = this.beaconService.getBeacons();
@@ -385,49 +400,36 @@ export class HomePage {
         }
     }
 
-    startRangingBeacons() {
+    public startRangingBeacons() {
         this.beaconService.startRangingBeacons();  
     }
 
-    getCurrentPositionBeacons() {
+    public getCurrentPositionBeacons() {
+        console.log("CURRENT Positon Beacons.")
         if (this.circle != null) {
             this.circle.setMap(null);
         }  
-        let beacons: any[] = [];
         this.tricons = [];
-        beacons = this.beaconService.getBeacons();
-        if (beacons.length > 2) {
-            for (let i = 0; i < 3; i++) {
-                let height;
-                //console.log("B - " + i + ": " + beacons[i].identifier + "; " + beacons[i].coordinates + "; " + beacons[i].accCK);
-                let latLng = beacons[i].coordinates.split(", ");
-                
-                this.mapService.getElevation(latLng[0], latLng[1]).subscribe(data => {
-                    height = data;
-                    this.tricons.push({lat: latLng[0], lng: latLng[1], distance: beacons[i].accCK, height: height});
-                    //console.log("T - " + i + ": " + this.tricons[i].lat + ", " + this.tricons[i].lng + ", " + this.tricons[i].distance + ", " + this.tricons[i].height);
-                }); 
-            }
-
-            setTimeout(() => {  
-
-                /*for (let x in this.tricons) {
-                    console.log("Before triStr " + this.tricons[x].lat + ", " + this.tricons[x].lng + ", " + this.tricons[x].height);
-                }*/
-
-                let triStr: any = this.mapService.trilaterate(this.tricons);
-                console.log("Beacon Tri Position: " + triStr);
-                let splitTriPt = triStr.split(", ");
-                let center = new google.maps.LatLng(+splitTriPt[0], +splitTriPt[1]);
-                let positionLatLng = {lat: +splitTriPt[0], lng: +splitTriPt[1]}
-                this.circle = new google.maps.Circle();   
-                this.circle.setOptions(this.mapService.createCircleOptions(positionLatLng));
-                this.circle.setMap(this.map);
-                // using global variable:
-                this.map.panTo(center);
-
-            }, 1000);
-
-        }        
+        this.triconsACC = [];        
+        for (let i = 0; i < 3; i++) {
+            let height;
+            //console.log("B - " + i + ": " + beacons[i].identifier + "; " + beacons[i].coordinates + "; " + beacons[i].accCK);
+            let latLngAlt = this.beacons[i].coordinates.split(", ");                
+            this.tricons.push({lat: latLngAlt[0], lng: latLngAlt[1], distance: this.beacons[i].accCK, height: latLngAlt[2]});
+            this.triconsACC.push({lat: latLngAlt[0], lng: latLngAlt[1], distance: this.beacons[i].acc, height: latLngAlt[2]});
+            //console.log("T - " + i + ": " + this.tricons[i].lat + ", " + this.tricons[i].lng + ", " + this.tricons[i].distance + ", " + this.tricons[i].height);                
+        }    
+        let triStr: any = this.mapService.trilaterate(this.tricons);
+        console.log("Beacon Tri Position: " + triStr);
+        let triStrK: any = this.mapService.trilaterate(this.triconsACC);
+        console.log("Beacon Tri Position K: " + triStrK);
+        let splitTriPt = triStr.split(", ");
+        let center = new google.maps.LatLng(+splitTriPt[0], +splitTriPt[1]);
+        let positionLatLng = {lat: +splitTriPt[0], lng: +splitTriPt[1]}
+        this.circle = new google.maps.Circle();   
+        this.circle.setOptions(this.mapService.createCircleOptions(positionLatLng, (+this.getMapZoom() / 6)));
+        this.circle.setMap(this.map);
+        // using global variable:
+        this.map.panTo(center);
     }
 }

@@ -44,7 +44,7 @@ export class MapService {
         this.wgs84ep = math.sqrt(math.divide(math.subtract(this.wgs84a2, this.wgs84b2), this.wgs84b2));
     } 
 
-    getAllRooms() {
+    public getAllRooms() {
         let allrooms: any[] = [];
 
         for (let i = 0; i < beuthdata.d00.length; i++) {
@@ -56,7 +56,7 @@ export class MapService {
         return allrooms;
     }
 
-    createPolygonOptions(paths: any, type: any) {
+    public createPolygonOptions(paths: any, type: any) {
         let PolygonOptions: any = {
             paths: paths,
             strokeColor: '#000000',
@@ -68,7 +68,7 @@ export class MapService {
         return PolygonOptions;
     }
 
-    createPolylineOptions(points: any) {
+    public createPolylineOptions(points: any) {
         let PolylineOptions: any = {
           path: points,
           geodesic: true,
@@ -79,14 +79,33 @@ export class MapService {
         return PolylineOptions;
     }
 
-    createCircleOptions(position: any) {
+    public createCircleOptions(position: any, radius: any) {
         let circleOptions: any = {
             center: {lat: position.lat, lng: position.lng},
             strokeWeight: 0,
             fillColor: '#0000FF',
-            radius: 3
+            radius: parseFloat(radius)
         }
         return circleOptions;
+    }
+
+    public getCircleRadius(zoom: any) {
+        let zoomDiff = 18 - zoom;
+        switch(true) {
+            case (zoomDiff > 0):
+                return 3 * (Math.pow(2, zoomDiff));
+            case (zoomDiff < 0):
+                return 3 / (Math.pow(2, Math.abs(zoomDiff)));
+            default:
+                return 3;
+        }                  
+        /*if (zoomDiff > 0) {
+            return 3 * (Math.pow(2, zoomDiff));
+        } else if (zoomDiff < 0) {
+            this.circle.setRadius(3 / (Math.pow(2, Math.abs(zoomDiff))));
+        } else if (zoomDiff === 0) {
+            this.circle.setRadius(3);
+        }*/
     }
 
         /**
@@ -235,7 +254,7 @@ export class MapService {
         let ePoint = [(N + altitude) * latCos * lngCos,
                       (N + altitude) * latCos * lngSin,
                       (math.divide(this.wgs84b2, this.wgs84a2) * N + altitude) * latSin];
-        console.log("ECEF POINT: " + ePoint);
+        //console.log("ECEF POINT: " + ePoint);
         return ePoint;
     }
 
@@ -287,7 +306,7 @@ export class MapService {
 
         // transform LLA points to ECEF points
         for (let x in points) {
-            console.log("LLA: " + points[x].lat + ", " + points[x].lng + ", " + points[x].height);
+            //console.log("LLA: " + points[x].lat + ", " + points[x].lng + ", " + points[x].height);
             let ePoint = this.LLAtoECEF(+points[x].lat, +points[x].lng, +points[x].height);            
             ePoints.push(ePoint);
         }
@@ -317,7 +336,7 @@ export class MapService {
         let triPt = math.add(math.add(math.add(ePoints[0], math.multiply(x, ex)), math.multiply(y, ey)), math.multiply(z, ez));
 
         let triLatLng = this.ECEFtoLLA(triPt[0], triPt[1], triPt[2]);
-        console.log(triLatLng);
+        //console.log("Calculated TriPt: " + triLatLng);
         return triLatLng;
     }     
 }
