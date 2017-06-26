@@ -9,14 +9,10 @@
         <ion-icon name="add"></ion-icon>Add Marker
       </button>
     </ion-buttons>-->
-    <ion-searchbar (ionInput)="getRoomInfo($event)" placeholder="Suche"></ion-searchbar>
-    <ion-buttons end>
-        <button ion-button (click)="getCurrentPositionGPS()">GPS</button>
-    </ion-buttons>
+    <ion-searchbar (ionInput)="getRoomListView($event)" placeholder="Suche"></ion-searchbar>    
     <ion-buttons>        
-        <button ion-button (click)="startRangingBeacons()">Start</button>
-        <button ion-button (click)="getCurrentPositionBeacons()">Beacons</button>
-        <button ion-button (click)="compassRouting()">Route-C</button>
+        <button ion-button (click)="toggleMapView()">ToggleMapView</button>
+        <button ion-button (click)="routingMotion()">RoutingM</button>
     </ion-buttons>
   </ion-navbar>
 </ion-header>
@@ -29,5 +25,10 @@
         <b>{{ room.name }}</b> {{ room.desc }}
       </ion-item>
     </ion-list>
+  </div>
+  <div ion-fixed class="infoView" [@infoViewInOut]="infoViewState">
+    <p><b>{{ info.name }}</b></p>
+    <p>{{ info.desc }}</p>
+    <p>
   </div>
 </ion-content>

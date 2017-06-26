@@ -89,6 +89,10 @@ export class MapService {
         return circleOptions;
     }
 
+    /**
+     * 
+     * @param zoom Returns circle radius on current zoom level
+     */
     public getCircleRadius(zoom: any) {
         let zoomDiff = 18 - zoom;
         switch(true) {
@@ -98,17 +102,10 @@ export class MapService {
                 return 3 / (Math.pow(2, Math.abs(zoomDiff)));
             default:
                 return 3;
-        }                  
-        /*if (zoomDiff > 0) {
-            return 3 * (Math.pow(2, zoomDiff));
-        } else if (zoomDiff < 0) {
-            this.circle.setRadius(3 / (Math.pow(2, Math.abs(zoomDiff))));
-        } else if (zoomDiff === 0) {
-            this.circle.setRadius(3);
-        }*/
+        }     
     }
 
-        /**
+    /**
      * Returns the altitude at specific position
      * @param lat 
      * @param lng 
@@ -202,7 +199,7 @@ export class MapService {
                 let lat = position.coords.latitude;
                 let lng = position.coords.longitude;
                 //console.log([lat, lng]);
-                observer.next([lat, lng]);
+                observer.next({lat: lat, lng: lng});
                 observer.complete();
             }, (error) => {
                 console.log("" + error);

@@ -1,6 +1,7 @@
-import { Component, ViewChild, ElementRef, trigger, state, style, animate, transition } from '@angular/core';
+import { Component, ViewChild, ElementRef } from '@angular/core';
 import { NavController, Platform } from 'ionic-angular';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { trigger, state, transition, style, animate } from '@angular/animations';
 import { Geolocation } from '@ionic-native/geolocation';
 import { Http } from '@angular/http';
 
@@ -31,6 +32,16 @@ declare var google;
             transition('in => out', animate('200ms ease-in')),
             transition('out => in', animate('200ms ease-out'))
         ]),
+        trigger('infoViewInOut', [
+            state("in", style({
+                transform: 'translate3d(0, 0%, 0)'
+            })),
+            state('out', style({
+                transform: 'translate3d(0, 100%, 0)'
+            })),
+            transition('in => out', animate('100ms ease-in')),
+            transition('out => in', animate('100ms ease-out'))
+        ]),
     ]
 })
 
@@ -39,8 +50,13 @@ export class HomePage {
     @ViewChild('map') mapelement: ElementRef;
     map: any;
     public listViewState = 'out';
+    public infoViewState = 'out';
+    public mapViewState = 'on'
     public allrooms: any[] = [];
+    public allroomsBackup: any[] = [];
+    public info = {name: "", desc: ""};
     public selectedRoom: any[] = [];
+    public polygons: any[] = [];
     public marker;
     public polyline;
     public circle;
@@ -58,8 +74,12 @@ export class HomePage {
     public centroidPts: any[] = [];
     public polylineIndex = 6;
 
+    // location variables
     public currentPosition;
+    public currentBuilding;
+    public currentLevel;
 
+    // beacon variables
     public beacons: any[] = [];
     public rssis: any[] = [];
     public tricons: any[] = [];
@@ -78,10 +98,8 @@ export class HomePage {
     ionViewDidLoad() {
         this.platform.ready().then(() => {   
             // placeholder: function to get nearest building
-            let floortype = "d00";  
+            let floortype = "d01Attr";  
             this.loadMap(floortype);
-            //this.getElevation(52.545090, 13.351338);
-            //this.getCurrentPositionGPS();
 
             if ((<any>window).DeviceOrientationEvent) {
                 console.log("DeviceOrientationevent available");
@@ -121,35 +139,39 @@ export class HomePage {
             // Interval positioning from available methods
             setInterval(() => { 
                 this.checkBeacons();
-                if (this.beacons.length > 2) {
-                    this.getCurrentPositionBeacons();
-                } else {
-                    this.getCurrentPositionGPS();
-                }
+                /*if (this.mapViewState == 'on') {
+                    this.getCurrentPosition();                
+                }*/
              }, 3000);
         });
     }
 
     public toggleListView() {
         this.listViewState = (this.listViewState == 'out') ? 'in' : 'out';
-        console.log("STATE: " + this.listViewState);
+        console.log("ListViewState: " + this.listViewState);
     }
 
-    public listViewIn() {
-        this.listViewState = 'in';
+    public toggleInfoView() {
+        this.infoViewState = (this.infoViewState == 'out') ? 'in' : 'out';
+        console.log("InfoViewState: " + this.infoViewState);
     }
 
-    public listViewOut() {
-        this.listViewState = 'out';
+    public toggleMapView() {
+        this.mapViewState = (this.mapViewState == 'on') ? 'off' : 'on';
+        console.log("MapViewState: " + this.mapViewState);        
     }
 
     public initializeRooms() {    
-        this.dbService.selectRoomList().then(data => {
+        this.dbService.selectRoomList().subscribe(data => {
             this.allrooms = data;
+            this.allroomsBackup = this.allrooms;
         });
 
     }
 
+    /**
+     * 
+     */
     public loadMapStyles() { 
         console.log("Loadmapstyles");
         let mapOptions = {
@@ -175,10 +197,26 @@ export class HomePage {
                 this.circle.setRadius(radius);
             }            
         });
+
+        // Click event listener
+        /*google.maps.event.addListener(this.map, 'click', (event) => {
+            console.log("CLICK: " + event.latLng);
+            this.getRoomInfo(event);
+        })*/
     }
 
+    /**
+     * Loads polygon data on google map
+     * @param floor 
+     */
     public loadMap(floor: any) { 
-        this.loadMapStyles();        
+        this.loadMapStyles();    
+        if (this.polygons != null) {
+            for (let x in this.polygons) {
+                this.polygons[x].setMap(null);
+            }
+            this.polygons = [];
+        }
         
         // SQLite Code with Observable
         //this.dbService.selectRooms("d00").subscribe(data => {  
@@ -195,11 +233,20 @@ export class HomePage {
 
                 // split all coordinates to LatLng paths
                 paths = this.mapService.splitCoordinatesToLatLng(coordinates);
+                
 
                 let polygon = new google.maps.Polygon();
                 polygon.setOptions(this.mapService.createPolygonOptions(paths, room.type));
                 polygon.setMap(this.map);
 
+                this.polygons.push(polygon);
+
+                google.maps.event.addListener(polygon, 'click', (event) => {
+                    console.log("CLICK: " + event.latLng + ", " + room.shapeid);
+                    this.getRoomInfo(event, room.shapeid);
+                })
+
+                // ########################################
                 // not working !?!?
                 /*google.maps.event.addListener(polygon, 'click', function (event) {
                     let infoWindow = new google.maps.InfoWindow({
@@ -218,7 +265,19 @@ export class HomePage {
                     console.log("CLICK CENTROID: " + polyCentroid)                
                     //infoWindow.open(this.map, centroid);
                 });  */
+                // ########################################
             }    
+
+            console.log("LOAD MAP LENGTH: " + this.polygons.length);
+
+            /*for (let x in this.polygons) {
+                this.polygons[x].polygon.setMap(this.map);
+                // Click event listener
+                google.maps.event.addListener(this.polygons[x].polygon, 'click', (event) => {
+                    console.log("CLICK: " + event.latLng + ", " + this.polygons[x].shapeid);
+                    this.getRoomInfo(event);
+                })
+            }*/
         })  
     }   
 
@@ -226,12 +285,16 @@ export class HomePage {
         return this.map.getZoom();
     }
 
-    public getRoomInfo(event: any) {
-        this.initializeRooms();
+    public getRoomListView(event: any) {
+        if (this.infoViewState == 'in') {
+                this.toggleInfoView();
+        }   
+        //this.initializeRooms();
+        this.allrooms = this.allroomsBackup;
 
         let value = event.target.value;
 
-        if (value && value.trim() != '') {                        
+        if (value && value.trim() != '') {    
             this.allrooms = this.allrooms.filter((room) => {
                 return (room.name.toLowerCase().indexOf(value.toLowerCase()) > -1 || room.desc.toLowerCase().indexOf(value.toLowerCase()) > -1);
             })
@@ -245,38 +308,84 @@ export class HomePage {
         }      
     }
 
+    /**
+     * Shows information for clicked room on map
+     * @param event 
+     */
+    public getRoomInfo(event: any, shapeid: any) {
+        // function TBA
+        console.log("GET ROOM INFO: " + this.polygons.length);
+        this.currentBuilding = "d01Attr"; 
+        this.dbService.selectPressedRoom(this.currentBuilding, shapeid).subscribe(data => {
+            this.info.name = data.name;
+            this.info.desc = data.desc;
+            this.toggleInfoView();
+            let latLngStr = event.latLng + "";
+            let latLngSplit = latLngStr.split(", ");
+            let latLng = {lat: latLngSplit[0], lng: latLngSplit[1]};
+            console.log("LATLNG: " + latLng.lat + ", " + latLng.lng);
+            this.addMarker(latLng, "test");
+        })
+
+        /*for (let x in this.polygons) {
+            console.log("X: " + x);
+            if (google.maps.geometry.poly.containsLocation(event.LatLng, this.polygons[x].polygon) == true) {
+                console.log("Contains: " + this.polygons[x].shapeid);
+                this.dbService.selectPressedRoom(this.currentBuilding, this.polygons[x].shapeid).subscribe(data => {
+                    this.info.name = data.name;
+                    this.info.desc = data.desc;
+                    this.toggleInfoView();
+                    this.addMarker(event.LatLng, "");
+                })
+            }
+        }*/
+
+    }
+
     public selectRoom(room: any) {
         console.log("Selected room.name: " + room.name);        
 
         // Observable SQLite Code
-        this.dbService.selectRoom(room.name, room.table).subscribe(data => {
+        this.dbService.selectRoom(room.name, room.table, room.shapeid).subscribe(data => {   
+            /*console.log("HOME SELECT: " + data.name + ", " + data.coordinates)
             let mapRoomAllCoordinates: any[] = [];
             let mapRoomCoordinates: any[] = data.coordinates.split("; ");
 
-            mapRoomAllCoordinates = this.mapService.splitCoordinatesToLatLng(mapRoomCoordinates);
+            mapRoomAllCoordinates = this.mapService.splitCoordinatesToLatLng(mapRoomCoordinates);*/
 
             let mapRoomCentroid: any = {lat: 0, lng: 0};
-            mapRoomCentroid = this.mapService.getPolygonCentroid(mapRoomAllCoordinates);
+            mapRoomCentroid = this.mapService.getPolygonCentroid(data);
 
             if (this.listViewState == 'in') {
                 this.toggleListView();
             }
-            this.addMarker(mapRoomCentroid, data.desc);
+
+            this.info.name = room.name;
+            this.info.desc = room.desc;
+            if (this.infoViewState == 'out') {
+                this.toggleInfoView();
+            }            
+            //let latLngStr = event.latLng + "";
+            //let latLngSplit = latLngStr.split(", ");
+            //let latLng = {lat: latLngSplit[0], lng: latLngSplit[1]};
+            //console.log("LATLNG: " + latLng.lat + ", " + latLng.lng);
+            //this.addMarker(latLng, "test");
+            //this.addMarker(mapRoomCentroid, room.desc);
         });
     }
 
-    public addMarker(centroid: any, content: any) {
+    public addMarker(position: any, content: any) {
         if (this.marker != null) {
             this.marker.setMap(null);
         }        
         this.marker = new google.maps.Marker({
             map: this.map,
             animation: google.maps.Animation.DROP,
-            position: { lat: +centroid.lat, lng: +centroid.lng }
+            position: { lat: +position.lat, lng: +position.lng }
         });
 
-        this.addInfoWindow(this.marker, content);
-        let center = new google.maps.LatLng(+centroid.lat, +centroid.lng);
+        //this.addInfoWindow(this.marker, content);
+        let center = new google.maps.LatLng(+position.lat, +position.lng);
         // using global variable:
         this.map.panTo(center);
     }
@@ -298,90 +407,32 @@ export class HomePage {
         });
     }   
 
-    public getCurrentPositionGPS() {
-        console.log("CURRENT Position GPS."); 
+    public getCurrentPosition() {
         if (this.circle != null) {
             this.circle.setMap(null);
-        } 
-        this.geolocation.getCurrentPosition({timeout: 5000, enableHighAccuracy:true}).then((position) => {
+        }  
+        if (this.beacons.length > 2) {
+            this.currentPosition = this.getCurrentPositionBeacons();
+        } else {
+            this.currentPosition = this.getCurrentPositionGPS();
+        }
+
+        let center = new google.maps.LatLng(this.currentPosition.lat, this.currentPosition.lng);
+        this.circle = new google.maps.Circle();
+        this.circle.setOptions(this.mapService.createCircleOptions(this.currentPosition, (this.mapService.getCircleRadius(this.getMapZoom()).toFixed(4))));
+        this.circle.setMap(this.map);
+        this.map.panTo(center);
+    }
+
+    public getCurrentPositionGPS() {
+        console.log("CURRENT Position GPS."); 
+        this.geolocation.getCurrentPosition({timeout: 5000, enableHighAccuracy:true}).then((position) => {            
             console.log("GPS POSITION: " + position.coords.latitude + ", " + position.coords.longitude);
-            let center = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);            
-            let positionLatLng = {lat: position.coords.latitude, lng: position.coords.longitude}
-            this.circle = new google.maps.Circle();            
-            this.circle.setOptions(this.mapService.createCircleOptions(positionLatLng, (this.mapService.getCircleRadius(this.getMapZoom()).toFixed(4))));
-            this.circle.setMap(this.map);
-            // using global variable:
-            this.map.panTo(center);
+            return {lat: position.coords.latitude, lng: position.coords.longitude}
         }, (error) => {
             console.log("" + error);
         });
-    } 
-
-    // testing
-    public compassRouting() {
-        let startPosition;
-        this.mapService.getCurrentPositionGPS().subscribe(data => {
-            startPosition = data;
-            console.log("CR:")
-            console.log(startPosition);
-            console.log("GPS POSITION 1: " + startPosition[0] + ", " + startPosition[1]);
-            this.startCompassRouting(startPosition);
-        });
-        console.log("GPS POSITION 2: " + startPosition[0] + ", " + startPosition[1]);
-        console.log("FINISH");
-    }
-
-    public startCompassRouting(startPosition) {
-        this.compassPts = [];
-        this.currentPosition = startPosition[0] + ", " + startPosition[1];
-        this.compassPts.push(this.currentPosition);
-
-        if (this.motionStatus === 0) {
-            this.motionStatus = 1;
-            this.motionService.startWatchingAcceleration().subscribe(data => {    
-                this.x = data.x;
-                this.y = data.y;
-                this.z = data.z;
-                this.accValueLowPass = this.motionService.accelerationLowPass(this.x, this.y, this.z);      
-                let prevSteps = this.steps;     
-                this.steps = this.motionService.stepDetection(this.accValueLowPass);  
-                if (prevSteps < this.steps) {
-                    this.currentPosition = this.mapService.getCurrentPositionCompass(this.currentPosition, 0.63, this.direction);
-                    let currentPt = this.currentPosition.split(", ");
-                    this.centroidPts.push({lat: currentPt[0], lng: currentPt[1]});
-                    console.log("STEPS: " + this.steps);
-                    // add centroid point of last 5 measured points to polyline, reset array
-                    if (this.polylineIndex > 5) {
-                        let centroidPt = this.mapService.getPolygonCentroid(this.centroidPts);
-                        this.compassPts.push(this.currentPosition);
-                        this.polylineIndex = 0;
-                        this.centroidPts = [];
-                    }
-                    console.log("CompassPts Length: " + this.compassPts.length);
-                    this.paintRoute(this.compassPts);
-                    this.polylineIndex++;
-                }
-            });
-        } else {
-            this.motionService.stopWatchingAcceleration();
-            this.motionStatus = 0;
-        }
-    }
-
-    public paintRoute(points: any) {
-        if (this.polyline != null) {
-            this.polyline.setMap(null);
-        }  
-        let latLngPts = this.mapService.splitCoordinatesToLatLng(points);
-        this.polyline = new google.maps.Polyline();
-        this.polyline.setOptions(this.mapService.createPolylineOptions(latLngPts));
-        this.polyline.setMap(this.map);
-        let center = new google.maps.LatLng(latLngPts[latLngPts.length-1].lat, latLngPts[latLngPts.length-1].lng);
-        this.map.panTo(center);
-
-        let lengthInMeters = google.maps.geometry.spherical.computeLength(this.polyline.getPath());
-        console.log("Polyline length: " + lengthInMeters);
-    }
+    }     
 
     // ################# //
     // #### BEACONS #### //
@@ -421,15 +472,78 @@ export class HomePage {
         }    
         let triStr: any = this.mapService.trilaterate(this.tricons);
         console.log("Beacon Tri Position: " + triStr);
-        let triStrK: any = this.mapService.trilaterate(this.triconsACC);
-        console.log("Beacon Tri Position K: " + triStrK);
+        let triStrACC: any = this.mapService.trilaterate(this.triconsACC);
+        console.log("Beacon Tri Position ACC: " + triStrACC);
         let splitTriPt = triStr.split(", ");
-        let center = new google.maps.LatLng(+splitTriPt[0], +splitTriPt[1]);
-        let positionLatLng = {lat: +splitTriPt[0], lng: +splitTriPt[1]}
-        this.circle = new google.maps.Circle();   
-        this.circle.setOptions(this.mapService.createCircleOptions(positionLatLng, (+this.getMapZoom() / 6)));
-        this.circle.setMap(this.map);
-        // using global variable:
+        return {lat: +splitTriPt[0], lng: +splitTriPt[1]};        
+    }
+
+    // ################ //
+    // #### MOTION #### //
+    // ################ //
+    public routingMotion() {
+        this.toggleMapView();
+        console.log("Start motion routing.");
+        let startPosition;
+        this.mapService.getCurrentPositionGPS().subscribe(data => {
+            startPosition = data;
+            console.log("Start Position: " + startPosition.lat + ", " + startPosition.lng);
+            this.startRoutingMotion(startPosition);
+        });    
+    }
+
+    public startRoutingMotion(startPosition) {
+        this.compassPts = [];
+        this.currentPosition = startPosition.lat + ", " + startPosition.lng;
+        this.compassPts.push(this.currentPosition);
+
+        if (this.motionStatus === 0) {
+            this.motionStatus = 1;
+            this.motionService.startWatchingAcceleration().subscribe(data => {    
+                this.x = data.x;
+                this.y = data.y;
+                this.z = data.z;
+                this.accValueLowPass = this.motionService.accelerationLowPass(this.x, this.y, this.z);      
+                let prevSteps = this.steps;     
+                this.steps = this.motionService.stepDetection(this.accValueLowPass);  
+                if (prevSteps < this.steps) {
+                    this.currentPosition = this.mapService.getCurrentPositionCompass(this.currentPosition, 0.63, this.direction);
+                    let currentPt = this.currentPosition.split(", ");
+                    this.centroidPts.push({lat: currentPt[0], lng: currentPt[1]});
+                    console.log("STEPS: " + this.steps);
+                    // add centroid point of last 5 measured points to polyline, reset array
+                    if (this.polylineIndex > 5) {
+                        let centroidPt = this.mapService.getPolygonCentroid(this.centroidPts);
+                        this.compassPts.push(this.currentPosition);
+                        this.polylineIndex = 0;
+                        this.centroidPts = [];
+                    }
+                    console.log("CompassPts Length: " + this.compassPts.length);
+                    this.paintRoute(this.compassPts);
+                    this.polylineIndex++;
+                }
+            });
+        } else {
+            this.motionService.stopWatchingAcceleration();
+            this.motionStatus = 0;
+        }
+    }
+
+    public paintRoute(points: any) {
+        if (this.polyline != null) {
+            this.polyline.setMap(null);
+        }  
+        if (this.mapViewState == 'on') {
+            this.toggleMapView();
+        }
+        let latLngPts = this.mapService.splitCoordinatesToLatLng(points);
+        this.polyline = new google.maps.Polyline();
+        this.polyline.setOptions(this.mapService.createPolylineOptions(latLngPts));
+        this.polyline.setMap(this.map);
+        let center = new google.maps.LatLng(latLngPts[latLngPts.length-1].lat, latLngPts[latLngPts.length-1].lng);
         this.map.panTo(center);
+
+        let lengthInMeters = google.maps.geometry.spherical.computeLength(this.polyline.getPath());
+        console.log("Polyline length: " + lengthInMeters);
     }
 }
