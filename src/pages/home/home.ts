@@ -54,7 +54,7 @@ export class HomePage {
     public mapViewState = 'on'
     public allrooms: any[] = [];
     public allroomsBackup: any[] = [];
-    public info = {name: "", desc: ""};
+    public attributes = {name: "", type: "", desc: ""};
     public selectedRoom: any[] = [];
     public polygons: any[] = [];
     public marker;
@@ -197,12 +197,6 @@ export class HomePage {
                 this.circle.setRadius(radius);
             }            
         });
-
-        // Click event listener
-        /*google.maps.event.addListener(this.map, 'click', (event) => {
-            console.log("CLICK: " + event.latLng);
-            this.getRoomInfo(event);
-        })*/
     }
 
     /**
@@ -210,6 +204,7 @@ export class HomePage {
      * @param floor 
      */
     public loadMap(floor: any) { 
+        console.log("Before mapstyles");
         this.loadMapStyles();    
         if (this.polygons != null) {
             for (let x in this.polygons) {
@@ -218,9 +213,11 @@ export class HomePage {
             this.polygons = [];
         }
         
+        console.log("Before getallRooms");
+
         // SQLite Code with Observable
         //this.dbService.selectRooms("d00").subscribe(data => {  
-        this.dbService.selectRooms("d01Attr", "d01Coords").subscribe(data => {
+        this.dbService.getAllRoomsAttrCoords("d01Attr", "d01Coords").subscribe(data => {
             for (let x in data) {
                 //console.log("LOADMAP: " + data[x].name + ", " + data[x].type + ", " + data[x].desc + ", " + data[x].coordinates);
                 let room: any = {};
@@ -243,7 +240,9 @@ export class HomePage {
 
                 google.maps.event.addListener(polygon, 'click', (event) => {
                     console.log("CLICK: " + event.latLng + ", " + room.shapeid);
-                    this.getRoomInfo(event, room.shapeid);
+                    //let attributes = this.getAttributesByShapeId(room.shapeid);
+                    let attributes = {name: room.name, desc: room.desc};
+                    this.openInfoView(event, attributes);
                 })
 
                 // ########################################
@@ -309,83 +308,78 @@ export class HomePage {
     }
 
     /**
-     * Shows information for clicked room on map
-     * @param event 
+     * Returns room attributes by shape id
+     * @param shapeid 
      */
-    public getRoomInfo(event: any, shapeid: any) {
-        // function TBA
+    public getAttributesByShapeId(shapeid: any) {
+        this.dbService.getAttributesByShapeId(this.currentBuilding, shapeid).subscribe(data => {
+            return data;
+        })
+    }
+
+    /**
+     * Opens info view for specific room
+     * @param event 
+     * @param attributes 
+     */
+    public openInfoView(event: any, attributes: any) {
+        // function currentBuilding TBA
         console.log("GET ROOM INFO: " + this.polygons.length);
         this.currentBuilding = "d01Attr"; 
-        this.dbService.selectPressedRoom(this.currentBuilding, shapeid).subscribe(data => {
-            this.info.name = data.name;
-            this.info.desc = data.desc;
+
+        this.attributes.name = attributes.name;
+        this.attributes.desc = attributes.desc;
+        if (this.infoViewState == 'out') {
             this.toggleInfoView();
-            let latLngStr = event.latLng + "";
-            let latLngSplit = latLngStr.split(", ");
-            let latLng = {lat: latLngSplit[0], lng: latLngSplit[1]};
-            console.log("LATLNG: " + latLng.lat + ", " + latLng.lng);
-            this.addMarker(latLng, "test");
-        })
+        }
 
-        /*for (let x in this.polygons) {
-            console.log("X: " + x);
-            if (google.maps.geometry.poly.containsLocation(event.LatLng, this.polygons[x].polygon) == true) {
-                console.log("Contains: " + this.polygons[x].shapeid);
-                this.dbService.selectPressedRoom(this.currentBuilding, this.polygons[x].shapeid).subscribe(data => {
-                    this.info.name = data.name;
-                    this.info.desc = data.desc;
-                    this.toggleInfoView();
-                    this.addMarker(event.LatLng, "");
-                })
-            }
-        }*/
-
+        let latLngStr = event.latLng + "";
+        let latLngStrSub = latLngStr.substring(1, latLngStr.length);
+        this.addMarker(latLngStrSub);
     }
 
     public selectRoom(room: any) {
-        console.log("Selected room.name: " + room.name);        
-
+        console.log("Selected room.name: " + room.name);    
+        console.log("Before: " + this.infoViewState);
         // Observable SQLite Code
         this.dbService.selectRoom(room.name, room.table, room.shapeid).subscribe(data => {   
-            /*console.log("HOME SELECT: " + data.name + ", " + data.coordinates)
-            let mapRoomAllCoordinates: any[] = [];
-            let mapRoomCoordinates: any[] = data.coordinates.split("; ");
-
-            mapRoomAllCoordinates = this.mapService.splitCoordinatesToLatLng(mapRoomCoordinates);*/
-
             let mapRoomCentroid: any = {lat: 0, lng: 0};
             mapRoomCentroid = this.mapService.getPolygonCentroid(data);
 
             if (this.listViewState == 'in') {
                 this.toggleListView();
             }
-
-            this.info.name = room.name;
-            this.info.desc = room.desc;
+            this.attributes.name = room.name;
+            this.attributes.desc = room.desc;
             if (this.infoViewState == 'out') {
                 this.toggleInfoView();
-            }            
-            //let latLngStr = event.latLng + "";
-            //let latLngSplit = latLngStr.split(", ");
-            //let latLng = {lat: latLngSplit[0], lng: latLngSplit[1]};
-            //console.log("LATLNG: " + latLng.lat + ", " + latLng.lng);
-            //this.addMarker(latLng, "test");
-            //this.addMarker(mapRoomCentroid, room.desc);
+                console.log("Info: " + this.infoViewState);
+            }     
         });
     }
 
-    public addMarker(position: any, content: any) {
+    /**
+     * Adds a marker to a specific position on the map
+     * @param position
+     */
+    public addMarker(position: any) {
         if (this.marker != null) {
             this.marker.setMap(null);
-        }        
+        }    
+
+        let latLngSplit = position.split(", ");
+        console.log("Split latLng: " + latLngSplit[0] + ", " + latLngSplit[1]);
+        let latLng = {lat: parseFloat(latLngSplit[0]), lng: parseFloat(latLngSplit[1])};
+        console.log("Marker latLng: " + latLng.lat + ", " + latLng.lng);
+
         this.marker = new google.maps.Marker({
             map: this.map,
             animation: google.maps.Animation.DROP,
-            position: { lat: +position.lat, lng: +position.lng }
+            position: { lat: latLng.lat, lng: latLng.lng }
         });
 
         //this.addInfoWindow(this.marker, content);
-        let center = new google.maps.LatLng(+position.lat, +position.lng);
+        let center = new google.maps.LatLng(latLng.lat, latLng.lng);
         // using global variable:
         this.map.panTo(center);
     }

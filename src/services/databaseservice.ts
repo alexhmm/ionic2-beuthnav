@@ -5,7 +5,7 @@ import { Observable } from 'rxjs/Observable';
 @Injectable()
 export class DatabaseService {  
 
-    private options = { name: "data.db", location: 'default', createFromLocation: 1 };
+    private options = { name: "beuth.db", location: 'default', createFromLocation: 1 };
     public tables: any[] = [];
     private query = "SELECT * FROM allrooms";
     public allrooms: any[] = [];
@@ -19,7 +19,7 @@ export class DatabaseService {
     public database;
 
     constructor(private sqlite: SQLite) {
-        let tables = [{attr: "d01Attr", coords: "d01Coords"}];
+        this.tables = [{attr: "d01Attr", coords: "d01Coords"}];
 
         this.database = new SQLite();
             this.database.create(this.options).then(() => {
@@ -29,6 +29,7 @@ export class DatabaseService {
         });
     } 
 
+    // old
     initializeDatabase() {
         let query = "SELECT * FROM allrooms";
         this.sqlite.create(this.options).then((db: SQLiteObject) => {    
@@ -78,7 +79,9 @@ export class DatabaseService {
                 console.log("Number of allrooms in database = " + this.allrooms.length);
             })
         });
-        return Promise.resolve(this.allrooms);*/        
+        return Promise.resolve(this.allrooms);*/  
+
+
         return Observable.create(observer => {
             for (let x in this.tables) {
                 let query = "SELECT * FROM " + this.tables[x].attr;
@@ -87,13 +90,13 @@ export class DatabaseService {
                         let rows = data.rows;
                         for (let i = 0; i < rows.length; i++) {
                             this.allrooms.push({shapeid: rows.item(i).shapeid, name: rows.item(i).name, desc: rows.item(i).desc, table: this.tables[x].attr}).toString;
-                            console.log(rows.item(i).name + ", " + this.tables[x].attr);
+                            //console.log("this.allrooms: " + rows.item(i).name + ", " + this.tables[x].attr);
                         }
                     })
                 });
-            }
-            console.log("Number of allrooms in database = " + this.allrooms.length);
+            }            
             observer.next(this.allrooms);
+            console.log("Number of allrooms in database = " + this.allrooms.length);
             observer.complete();
         })
     }
@@ -102,7 +105,7 @@ export class DatabaseService {
      * 
      * @param tableCoords 
      */
-    selectPressedRoom(tableAttr: String, shapeid: String) {
+    getAttributesByShapeId(tableAttr: String, shapeid: String) {
         let rooms = [];
         let queryAttr = "SELECT * FROM " + tableAttr +  " WHERE shapeid LIKE '%" + shapeid + "%'";;
         return Observable.create(observer => {
@@ -121,7 +124,7 @@ export class DatabaseService {
      * @param tableAttributes 
      * @param tableCoordinates 
      */
-    selectRooms(tableAttr: String, tableCoords: String) {
+    getAllRoomsAttrCoords(tableAttr: String, tableCoords: String) {
         this.rooms = [];
         console.log("SELECT ROOMS ATTRIBUTES");
         let queryAttr = "SELECT * FROM " + tableAttr;
@@ -146,7 +149,7 @@ export class DatabaseService {
                                 //coordinatesStr += rows.item(j).y + ", " + rows.item(j).x;
                             }
                         }
-                        // splice same end coordinate like start coordinate
+                        // splice end coordinate (duplicate from start coordinate)
                         coordinateArray.splice(coordinateArray.length - 1, 1);
                         for (let x in coordinateArray) {
                             coordinatesStr += coordinateArray[x];
