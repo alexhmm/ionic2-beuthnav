@@ -75,9 +75,13 @@ export class HomePage {
     public polylineIndex = 6;
 
     // location variables
+    public previousBuilding;
+    public previousLevel;
     public currentPosition;
-    public currentBuilding;
-    public currentLevel;
+    public currentBuilding = "";
+    public currentAttr;
+    public currentCoords;
+    public currentLevel = 0;
 
     // beacon variables
     public beacons: any[] = [];
@@ -92,15 +96,29 @@ export class HomePage {
                 public dbService: DatabaseService,
                 public mapService: MapService,
                 public motionService: MotionService) {    
-        this.initializeRooms();        
+        this.initializeRoomListView();        
     }
 
     ionViewDidLoad() {
-        this.platform.ready().then(() => {   
-            // placeholder: function to get nearest building
-            let floortype = "d01Attr";  
-            this.loadMap(floortype);
+        this.platform.ready().then(() => {     
+            // Beacons            
+            this.beaconService.setupBeacons();    
+            //setTimeout(() => { this.beaconService.startRangingBeacons(); }, 3000);    
+            this.beaconService.startRangingBeacons();
 
+            // Interval positioning from available methods
+            setInterval(() => { 
+                this.checkBeacons();
+                if (this.mapViewState == 'on') {
+                    this.getCurrentPosition();
+                    this.getCurrentBuilding();                     
+                    /*if (this.currentBuilding != this.previousBuilding) {
+                        this.loadMap(this.currentBuilding, this.currentLevel);
+                    }*/
+                }
+             }, 3000);
+
+            // Initialize DeviceOrientation
             if ((<any>window).DeviceOrientationEvent) {
                 console.log("DeviceOrientationevent available");
                 window.addEventListener('deviceorientation', (eventData) => {
@@ -129,23 +147,13 @@ export class HomePage {
                 }, false);
             } else {
                 console.log("No DeviceOrientationEvent available");
-            };
-
-            // Beacons            
-            this.beaconService.setupBeacons();    
-            //setTimeout(() => { this.beaconService.startRangingBeacons(); }, 3000);    
-            this.beaconService.startRangingBeacons();
-
-            // Interval positioning from available methods
-            setInterval(() => { 
-                this.checkBeacons();
-                /*if (this.mapViewState == 'on') {
-                    this.getCurrentPosition();                
-                }*/
-             }, 3000);
+            };            
         });
     }
 
+
+
+    // UI
     public toggleListView() {
         this.listViewState = (this.listViewState == 'out') ? 'in' : 'out';
         console.log("ListViewState: " + this.listViewState);
@@ -161,13 +169,14 @@ export class HomePage {
         console.log("MapViewState: " + this.mapViewState);        
     }
 
-    public initializeRooms() {    
-        this.dbService.selectRoomList().subscribe(data => {
+    public initializeRoomListView() {    
+        this.dbService.getRoomList().subscribe(data => {
             this.allrooms = data;
             this.allroomsBackup = this.allrooms;
         });
-
     }
+
+
 
     /**
      * 
@@ -203,8 +212,8 @@ export class HomePage {
      * Loads polygon data on google map
      * @param floor 
      */
-    public loadMap(floor: any) { 
-        console.log("Before mapstyles");
+    public loadMap(building: any, level: any) { 
+        console.log("Interval: loadMap()");
         this.loadMapStyles();    
         if (this.polygons != null) {
             for (let x in this.polygons) {
@@ -212,73 +221,85 @@ export class HomePage {
             }
             this.polygons = [];
         }
-        
-        console.log("Before getallRooms");
 
+        if (this.currentAttr != null && this.currentLevel != null) {
         // SQLite Code with Observable
         //this.dbService.selectRooms("d00").subscribe(data => {  
-        this.dbService.getAllRoomsAttrCoords("d01Attr", "d01Coords").subscribe(data => {
-            for (let x in data) {
-                //console.log("LOADMAP: " + data[x].name + ", " + data[x].type + ", " + data[x].desc + ", " + data[x].coordinates);
-                let room: any = {};
-                let paths: any[] = [];
+            this.dbService.getAllRoomsAttrCoords(this.currentAttr, this.currentCoords).subscribe(data => {
+                for (let x in data) {
+                    //console.log("LOADMAP: " + data[x].name + ", " + data[x].type + ", " + data[x].desc + ", " + data[x].coordinates);
+                    let room: any = {};
+                    let paths: any[] = [];
 
-                room = data[x];
+                    room = data[x];
 
-                let allCoordinates = room.coordinates;
-                let coordinates: String[] = allCoordinates.split("; ");
+                    let allCoordinates = room.coordinates;
+                    let coordinates: String[] = allCoordinates.split("; ");
 
-                // split all coordinates to LatLng paths
-                paths = this.mapService.splitCoordinatesToLatLng(coordinates);
-                
+                    // split all coordinates to LatLng paths
+                    paths = this.mapService.splitCoordinatesToLatLng(coordinates);                    
 
-                let polygon = new google.maps.Polygon();
-                polygon.setOptions(this.mapService.createPolygonOptions(paths, room.type));
-                polygon.setMap(this.map);
+                    let polygon = new google.maps.Polygon();
+                    polygon.setOptions(this.mapService.createPolygonOptions(paths, room.type));
+                    polygon.setMap(this.map);
 
-                this.polygons.push(polygon);
+                    this.polygons.push(polygon);
 
-                google.maps.event.addListener(polygon, 'click', (event) => {
-                    console.log("CLICK: " + event.latLng + ", " + room.shapeid);
-                    //let attributes = this.getAttributesByShapeId(room.shapeid);
-                    let attributes = {name: room.name, desc: room.desc};
-                    this.openInfoView(event, attributes);
-                })
-
-                // ########################################
-                // not working !?!?
-                /*google.maps.event.addListener(polygon, 'click', function (event) {
-                    let infoWindow = new google.maps.InfoWindow({
-                        content: room.desc
-                        
-                    });
-
-                    let polyAllCoordinates: any[] = [];
-                    let polyCoordinates: any[] = room.coordinates.split("; ");
-
-                    polyAllCoordinates = this.mapService.splitCoordinatesToLatLng(polyCoordinates);
-
-                    let polyCentroid: any = {lat: 0, lng: 0};
-                    polyCentroid = this.mapService.getPolygonCentroid(polyAllCoordinates);
-
-                    console.log("CLICK CENTROID: " + polyCentroid)                
-                    //infoWindow.open(this.map, centroid);
-                });  */
-                // ########################################
-            }    
-
-            console.log("LOAD MAP LENGTH: " + this.polygons.length);
-
-            /*for (let x in this.polygons) {
-                this.polygons[x].polygon.setMap(this.map);
-                // Click event listener
-                google.maps.event.addListener(this.polygons[x].polygon, 'click', (event) => {
-                    console.log("CLICK: " + event.latLng + ", " + this.polygons[x].shapeid);
-                    this.getRoomInfo(event);
-                })
-            }*/
-        })  
+                    if (room.type == "lab" || room.type == "lecture" || room.type == "office" || room.type == "service" || room.type == "wc") {
+                        //console.log("TYPE: " + room.type);
+                        google.maps.event.addListener(polygon, 'click', (event) => {
+                            //console.log("CLICK: " + event.latLng + ", shapeid: " + room.shapeid);
+                            //let attributes = this.getAttributesByShapeId(room.shapeid);
+                            let attributes = {name: room.name, desc: room.desc};
+                            this.openInfoView(event, attributes);
+                        })
+                    }
+                }   
+                console.log("LOAD MAP LENGTH: " + this.polygons.length);
+            })  
+        }
     }   
+
+    /**
+     * 
+     */
+    public getCurrentPosition() {
+        console.log("Interval: getCurrentPosition()");
+        if (this.circle != null) {
+            this.circle.setMap(null);
+        }  
+        if (this.beacons.length > 2) {
+            this.currentPosition = this.getCurrentPositionBeacons();
+        } else {
+            this.currentPosition = this.getCurrentPositionGPS();
+        }
+
+        if (this.map != null) {
+            let center = new google.maps.LatLng(this.currentPosition.lat, this.currentPosition.lng);
+            this.circle = new google.maps.Circle();
+            this.circle.setOptions(this.mapService.createCircleOptions(this.currentPosition, (this.mapService.getCircleRadius(this.getMapZoom()).toFixed(4))));
+            this.circle.setMap(this.map);
+        }
+        //this.map.panTo(center);
+    }
+
+    /**
+     * 
+     */
+    public getCurrentBuilding() {
+        //console.log("Interval: getCurrentBuilding()");
+        this.previousBuilding = this.currentBuilding;
+        // containsLocation() || isLocationOnEdge()
+        this.currentBuilding = "Bauwesen";
+        console.log("BUILDING prev: " + this.previousBuilding + ", current: " + this.currentBuilding);
+        if (this.currentBuilding != this.previousBuilding) {
+            this.dbService.getAttrCoordsTables(this.currentBuilding, this.currentLevel).subscribe(data => {
+                this.currentAttr = data.attr;
+                this.currentCoords = data.coords;                
+                this.loadMap(this.currentBuilding, this.currentLevel);                
+            });
+        }
+    }
 
     public getMapZoom() {
         return this.map.getZoom();
@@ -325,7 +346,6 @@ export class HomePage {
     public openInfoView(event: any, attributes: any) {
         // function currentBuilding TBA
         console.log("GET ROOM INFO: " + this.polygons.length);
-        this.currentBuilding = "d01Attr"; 
 
         this.attributes.name = attributes.name;
         this.attributes.desc = attributes.desc;
@@ -335,9 +355,13 @@ export class HomePage {
 
         let latLngStr = event.latLng + "";
         let latLngStrSub = latLngStr.substring(1, latLngStr.length);
-        this.addMarker(latLngStrSub);
+        this.addMarker(latLngStrSub);        
     }
 
+    /**
+     * 
+     * @param room 
+     */
     public selectRoom(room: any) {
         console.log("Selected room.name: " + room.name);    
         console.log("Before: " + this.infoViewState);
@@ -378,6 +402,11 @@ export class HomePage {
             position: { lat: latLng.lat, lng: latLng.lng }
         });
 
+        google.maps.event.addListener(this.marker, 'click', () => {
+            this.marker(this.map.setMap(null));
+            this.toggleInfoView();
+        });
+
         //this.addInfoWindow(this.marker, content);
         let center = new google.maps.LatLng(latLng.lat, latLng.lng);
         // using global variable:
@@ -400,23 +429,6 @@ export class HomePage {
             infoWindow.open(this.map, marker);
         });
     }   
-
-    public getCurrentPosition() {
-        if (this.circle != null) {
-            this.circle.setMap(null);
-        }  
-        if (this.beacons.length > 2) {
-            this.currentPosition = this.getCurrentPositionBeacons();
-        } else {
-            this.currentPosition = this.getCurrentPositionGPS();
-        }
-
-        let center = new google.maps.LatLng(this.currentPosition.lat, this.currentPosition.lng);
-        this.circle = new google.maps.Circle();
-        this.circle.setOptions(this.mapService.createCircleOptions(this.currentPosition, (this.mapService.getCircleRadius(this.getMapZoom()).toFixed(4))));
-        this.circle.setMap(this.map);
-        this.map.panTo(center);
-    }
 
     public getCurrentPositionGPS() {
         console.log("CURRENT Position GPS."); 
@@ -450,7 +462,7 @@ export class HomePage {
     }
 
     public getCurrentPositionBeacons() {
-        console.log("CURRENT Positon Beacons.")
+        //console.log("CURRENT Positon Beacons.")
         if (this.circle != null) {
             this.circle.setMap(null);
         }  
@@ -465,9 +477,9 @@ export class HomePage {
             //console.log("T - " + i + ": " + this.tricons[i].lat + ", " + this.tricons[i].lng + ", " + this.tricons[i].distance + ", " + this.tricons[i].height);                
         }    
         let triStr: any = this.mapService.trilaterate(this.tricons);
-        console.log("Beacon Tri Position: " + triStr);
+        //console.log("Beacon Tri Position: " + triStr);
         let triStrACC: any = this.mapService.trilaterate(this.triconsACC);
-        console.log("Beacon Tri Position ACC: " + triStrACC);
+        //console.log("Beacon Tri Position ACC: " + triStrACC);
         let splitTriPt = triStr.split(", ");
         return {lat: +splitTriPt[0], lng: +splitTriPt[1]};        
     }

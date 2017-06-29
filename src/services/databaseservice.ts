@@ -19,7 +19,8 @@ export class DatabaseService {
     public database;
 
     constructor(private sqlite: SQLite) {
-        this.tables = [{attr: "d01Attr", coords: "d01Coords"}];
+        this.tables = [{building: "Bauwesen", level: 0, attr: "d00Attr", coords: "d00Coords"},
+                       {building: "Bauwesen", level: 1, attr: "d01Attr", coords: "d01Coords"}];
 
         this.database = new SQLite();
             this.database.create(this.options).then(() => {
@@ -29,59 +30,30 @@ export class DatabaseService {
         });
     } 
 
-    // old
-    initializeDatabase() {
-        let query = "SELECT * FROM allrooms";
-        this.sqlite.create(this.options).then((db: SQLiteObject) => {    
-            db.executeSql(query, {}).then((data) => { 
-                let rows = data.rows;
-                for (let i = 0; i < rows.length; i++) {
-                    this.allrooms.push({name: rows.item(i).name, desc: rows.item(i).desc, table: rows.item(i).table}).toString;
-                }
-                console.log("Number of allrooms in database = " + this.allrooms.length);
-            })
-        });
-    }
-
-    /*insertRoom(table) {
-        console.log("GETROOMS");
-        let query = "SELECT * FROM " + table;
-        let queryRoom = "INSERT INTO " + table + " (id, name) VALUES (7, 'Paul')";
+    /**
+     * 
+     * @param building 
+     * @param level 
+     */
+    getAttrCoordsTables(building: any, level: any) {
+        this.allrooms = [];
         return Observable.create(observer => {
-            this.sqlite.create(this.options).then((db: SQLiteObject) => {    
-                db.executeSql(query, {}).then((data) => { 
-                    for (let i = 0; i < data.rows.length; i++) {
-                        let rows = data.rows;
-                        this.rooms.push({name: rows.item(i).name, type: rows.item(i).type, desc: rows.item(i).desc, coordinates: rows.item(i).coordinates}).toString;
-                        //console.log("OBSERVER NEXT: " + i);                        
-                    }
-                    observer.next(this.rooms);
-                    console.log("Number of rooms in " + table + " = " + data.rows.length);
-                    //observer.complete();                    
-                })
-                db.executeSql(queryRoom, {}).then((data) => { 
+            let query = "SELECT * FROM layers WHERE building LIKE '%" + building + "%' AND level LIKE '%" + level + "%'";
+            this.sqlite.create(this.options).then((db: SQLiteObject) => {  
+                db.executeSql(query, {}).then((data) => {  
+                    observer.next({attr: data.rows.item(0).attr, coords: data.rows.item(0).coords});
+                    console.log("CURRENT TABLES: " + data.rows.item(0).attr + ", " + data.rows.item(0).coords);
                     observer.complete();     
-                })   
+                })                           
             }); 
         })
-    }*/
+    }
 
-    selectRoomList() {
+    /**
+     * Returns room attributes for ListView
+    */
+    getRoomList() {
         this.allrooms = [];
-        /*let query = "SELECT * FROM allrooms";
-        this.sqlite.create(this.options).then((db: SQLiteObject) => {    
-            db.executeSql(query, {}).then((data) => { 
-                let rows = data.rows;
-                for (let i = 0; i < rows.length; i++) {
-                    this.allrooms.push({name: rows.item(i).name, desc: rows.item(i).desc, table: rows.item(i).table}).toString;
-                    console.log(rows.item(i).name);
-                }
-                console.log("Number of allrooms in database = " + this.allrooms.length);
-            })
-        });
-        return Promise.resolve(this.allrooms);*/  
-
-
         return Observable.create(observer => {
             for (let x in this.tables) {
                 let query = "SELECT * FROM " + this.tables[x].attr;
@@ -89,25 +61,28 @@ export class DatabaseService {
                     db.executeSql(query, {}).then((data) => { 
                         let rows = data.rows;
                         for (let i = 0; i < rows.length; i++) {
-                            this.allrooms.push({shapeid: rows.item(i).shapeid, name: rows.item(i).name, desc: rows.item(i).desc, table: this.tables[x].attr}).toString;
-                            //console.log("this.allrooms: " + rows.item(i).name + ", " + this.tables[x].attr);
+                            if (rows.item(i).type == "lab" || "lecture" || "office" || "service" || "wc") {
+                                this.allrooms.push({shapeid: rows.item(i).shapeid, name: rows.item(i).name, desc: rows.item(i).desc, table: this.tables[x].attr}).toString;
+                                //console.log("this.allrooms: " + rows.item(i).name + ", " + this.tables[x].attr);
+                            }
                         }
                     })
                 });
             }            
             observer.next(this.allrooms);
-            console.log("Number of allrooms in database = " + this.allrooms.length);
+            console.log("Number of loaded rooms in viewList: " + this.allrooms.length);
             observer.complete();
         })
     }
 
     /**
-     * 
-     * @param tableCoords 
+     * Returns room attributes by shapeid
+     * @param tableAttr 
+     * @param shapeid 
      */
     getAttributesByShapeId(tableAttr: String, shapeid: String) {
         let rooms = [];
-        let queryAttr = "SELECT * FROM " + tableAttr +  " WHERE shapeid LIKE '%" + shapeid + "%'";;
+        let queryAttr = "SELECT * FROM " + tableAttr + " WHERE shapeid LIKE '%" + shapeid + "%'";
         return Observable.create(observer => {
             this.sqlite.create(this.options).then((db: SQLiteObject) => {  
                 db.executeSql(queryAttr, {}).then((data) => {  
@@ -120,7 +95,7 @@ export class DatabaseService {
     }
 
     /**
-     * 
+     * Returns all rooms with attributes of a floor
      * @param tableAttributes 
      * @param tableCoordinates 
      */
@@ -163,29 +138,6 @@ export class DatabaseService {
                 })                
             })
         })
-    }
-
-    /*selectRooms(table: String) {
-        console.log("GETROOMS");
-        let query = "SELECT * FROM " + table;
-        return Observable.create(observer => {
-            this.sqlite.create(this.options).then((db: SQLiteObject) => {    
-                db.executeSql(query, {}).then((data) => { 
-                    for (let i = 0; i < data.rows.length; i++) {
-                        let rows = data.rows;
-                        this.rooms.push({name: rows.item(i).name, type: rows.item(i).type, desc: rows.item(i).desc, coordinates: rows.item(i).coordinates}).toString;
-                        //console.log("OBSERVER NEXT: " + i);                        
-                    }
-                    observer.next(this.rooms);
-                    console.log("Number of rooms in " + table + " = " + data.rows.length);
-                    observer.complete();                    
-                })
-            }); 
-        })
-    }*/
-
-    selectAllRooms() {
-        return this.allrooms;
     }
 
     selectRoom(name: any, table: any, shapeid: any) {
