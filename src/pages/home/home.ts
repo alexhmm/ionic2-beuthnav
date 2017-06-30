@@ -252,7 +252,7 @@ export class HomePage {
                     building = data[x];
 
                     let allCoordinates = building.coordinates;
-                    let coordinates: String[] = allCoordinates.split("; ");
+                    let coordinates: String[] = allCoordinates.split(";");
 
                     paths = this.mapService.splitCoordinatesToLatLng(coordinates);
 
@@ -431,7 +431,7 @@ export class HomePage {
 
         let latLngStr = event.latLng + "";
         let latLngStrSub = latLngStr.substring(1, latLngStr.length);
-        this.addMarker(latLngStrSub);        
+        this.addMarker(latLngStrSub, "blabla");        
     }
 
     /**
@@ -462,7 +462,7 @@ export class HomePage {
      * Adds a marker to a specific position on the map
      * @param position
      */
-    public addMarker(position: any) {
+    public addMarker(position: any, content: any) {
         if (this.marker != null) {
             this.marker.setMap(null);
         }    
@@ -479,8 +479,7 @@ export class HomePage {
         });
 
         google.maps.event.addListener(this.marker, 'click', () => {
-            this.marker.setMap(null);
-            this.toggleInfoView();
+            console.log("MARKER: " + content);
         });
 
         //this.addInfoWindow(this.marker, content);
