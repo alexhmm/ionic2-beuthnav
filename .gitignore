@@ -24,7 +24,10 @@ temp/
 hooks/
 platforms/
 plugins/
-www/
+www/manifest.json
+www/service-worker.js
+www/assets/
+www/build/
 $RECYCLE.BIN/
 
 .DS_Store
