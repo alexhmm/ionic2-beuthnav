@@ -4,7 +4,6 @@ import { Observable } from 'rxjs/Observable';
 
 import * as math from 'mathjs'; // don't named as Math, this will conflict with Math in JS
 
-import * as beuthdata from '../assets/data/beuthdata.json';
 
 enum Roomcolor {
     blank = <any>"#FFFFFF",
@@ -17,6 +16,11 @@ enum Roomcolor {
     staircase = <any>"#FFFFFF",
     wc = <any>"#BEE2E2",
     wcPrivate = <any>"#BBBBBB"
+}
+
+enum BuildingLevels {
+    Bauwesen = <any>[0, 1],
+    Beuth = <any>[0, 1]
 }
 
 @Injectable()
@@ -44,16 +48,18 @@ export class MapService {
         this.wgs84ep = math.sqrt(math.divide(math.subtract(this.wgs84a2, this.wgs84b2), this.wgs84b2));
     } 
 
-    public getAllRooms() {
-        let allrooms: any[] = [];
+    public getBuildingLevels(building: any) {
+        return BuildingLevels[building];
+    }
 
-        for (let i = 0; i < beuthdata.d00.length; i++) {
-            let name = beuthdata.d00[i].name;
-            let desc = beuthdata.d00[i].desc;
-            console.log("BEUTHDATA NAME: " + name + ", DESC: " + desc);
-            allrooms.push({name: name, desc: desc});
+    // POSITION
+    public changeCurrentLevel(currentLevel: any, buildingLevels: any, direction: any) {
+        let newLevel = currentLevel + direction;
+        if (newLevel > buildingLevels[0] - 1 && newLevel < buildingLevels[1] + 1 ) {
+            return newLevel;
+        } else {
+            return currentLevel;
         }
-        return allrooms;
     }
 
     public createPolygonOptions(paths: any, type: any) {
@@ -335,5 +341,5 @@ export class MapService {
         let triLatLng = this.ECEFtoLLA(triPt[0], triPt[1], triPt[2]);
         //console.log("Calculated TriPt: " + triLatLng);
         return triLatLng;
-    }     
+    }         
 }

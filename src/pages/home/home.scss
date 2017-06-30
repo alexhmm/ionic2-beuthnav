@@ -24,4 +24,32 @@ page-home {
         left: 0;
         opacity: 0.9;
     }
+
+    .levelView {
+        width: 5%;
+        //height: 20%;
+        background: rgba(255,255,255,0.7);
+        z-index: 20;
+        top: 5;
+        left: 5;
+        //opacity: 0.9;
+    }
+
+    .levelView #levelUp {
+        //width: 7;
+        //height: 7;
+        //z-index: 20;
+        //top: 0;
+    }
+
+    .levelView #levelDown {
+        //width: 7;
+        //height: 7;
+        //z-index: 20;
+        //bottom: 0;
+    }
+
+    ion-col #navigate {
+        text-align: center;
+    }
 }

@@ -12,7 +12,6 @@ import { MapService } from '../../services/mapservice';
 import { MotionService } from '../../services/motionservice';
 
 import * as mapdata from '../../assets/data/mapdata.json';
-//import * as beuthdata from '../../assets/data/beuthdata.json';
 
 declare var google;
 
@@ -29,8 +28,8 @@ declare var google;
             state('out', style({
                 transform: 'translate3d(0, 100%, 0)'
             })),
-            transition('in => out', animate('200ms ease-in')),
-            transition('out => in', animate('200ms ease-out'))
+            transition('in => out', animate('100ms ease-in')),
+            transition('out => in', animate('100ms ease-out'))
         ]),
         trigger('infoViewInOut', [
             state("in", style({
@@ -38,6 +37,16 @@ declare var google;
             })),
             state('out', style({
                 transform: 'translate3d(0, 100%, 0)'
+            })),
+            transition('in => out', animate('100ms ease-in')),
+            transition('out => in', animate('100ms ease-out'))
+        ]),
+        trigger('levelViewInOut', [
+            state("in", style({
+                transform: 'translate3d(0, 100%, 0)'
+            })),
+            state('out', style({
+                transform: 'translate3d(0, 80%, 0)'
             })),
             transition('in => out', animate('100ms ease-in')),
             transition('out => in', animate('100ms ease-out'))
@@ -51,6 +60,7 @@ export class HomePage {
     map: any;
     public listViewState = 'out';
     public infoViewState = 'out';
+    public levelViewState = 'in'
     public mapViewState = 'on'
     public allrooms: any[] = [];
     public allroomsBackup: any[] = [];
@@ -190,6 +200,7 @@ export class HomePage {
             mapTypeControl: false,
             fullscreenControl: false,
             streetViewControl: false,
+            zoomControl: false,
             styles: mapdata.styles,
             mapTypeId: google.maps.MapTypeId.ROADMAP
             //mapTypeId: google.maps.MapTypeId.SATELLITE
@@ -213,7 +224,7 @@ export class HomePage {
      * @param floor 
      */
     public loadMap(building: any, level: any) { 
-        console.log("Interval: loadMap()");
+        //console.log("Interval: loadMap()");
         this.loadMapStyles();    
         if (this.polygons != null) {
             for (let x in this.polygons) {
@@ -264,7 +275,7 @@ export class HomePage {
      * 
      */
     public getCurrentPosition() {
-        console.log("Interval: getCurrentPosition()");
+        //console.log("Interval: getCurrentPosition()");
         if (this.circle != null) {
             this.circle.setMap(null);
         }  
@@ -291,14 +302,28 @@ export class HomePage {
         this.previousBuilding = this.currentBuilding;
         // containsLocation() || isLocationOnEdge()
         this.currentBuilding = "Bauwesen";
-        console.log("BUILDING prev: " + this.previousBuilding + ", current: " + this.currentBuilding);
-        if (this.currentBuilding != this.previousBuilding) {
+        //console.log("BUILDING p: " + this.previousBuilding + ", c: " + this.currentBuilding + ", LEVEL p: " + this.previousLevel + ", c: " + this.currentLevel);
+        if (this.currentBuilding != this.previousBuilding || this.currentLevel != this.previousLevel) {
             this.dbService.getAttrCoordsTables(this.currentBuilding, this.currentLevel).subscribe(data => {
                 this.currentAttr = data.attr;
                 this.currentCoords = data.coords;                
                 this.loadMap(this.currentBuilding, this.currentLevel);                
             });
         }
+        this.previousLevel = this.currentLevel;
+    }
+
+    /**
+     * Changes the current level on map
+     * @param direction 
+     */
+    public changeCurrentLevel(building: any, direction: any) {
+        //console.log("CHANGE CURRENT LEVEL: " + this.currentLevel + ", " + direction);
+        let buildingLevels = this.mapService.getBuildingLevels(this.currentBuilding);
+        //console.log("BUILDING LEVELS:", buildingLevels);
+        this.currentLevel = this.mapService.changeCurrentLevel(this.currentLevel, buildingLevels, direction);
+        //console.log("CURRENT LEVEL: " + this.currentLevel);
+        this.getCurrentBuilding();
     }
 
     public getMapZoom() {
@@ -403,7 +428,7 @@ export class HomePage {
         });
 
         google.maps.event.addListener(this.marker, 'click', () => {
-            this.marker(this.map.setMap(null));
+            this.marker.setMap(null);
             this.toggleInfoView();
         });
 
