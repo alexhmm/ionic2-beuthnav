@@ -62,7 +62,19 @@ export class MapService {
         }
     }
 
-    public createPolygonOptions(paths: any, type: any) {
+    public createPolygonBuildingOptions(paths: any) {
+        let PolygonOptions: any = {
+            paths: paths,
+            strokeColor: '#000000',
+            strokeOpacity: 0.5,
+            strokeWeight: 1,
+            fillColor: '#FF0000',
+            fillOpacity: 0.5
+        }  
+        return PolygonOptions;
+    }
+
+    public createPolygonRoomOptions(paths: any, type: any) {
         let PolygonOptions: any = {
             paths: paths,
             strokeColor: '#000000',

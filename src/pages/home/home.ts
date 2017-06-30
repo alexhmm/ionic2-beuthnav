@@ -58,10 +58,14 @@ export class HomePage {
 
     @ViewChild('map') mapelement: ElementRef;
     map: any;
+
+    // States
+    public startState = 0;
     public listViewState = 'out';
     public infoViewState = 'out';
     public levelViewState = 'in'
     public mapViewState = 'on'
+
     public allrooms: any[] = [];
     public allroomsBackup: any[] = [];
     public attributes = {name: "", type: "", desc: ""};
@@ -228,7 +232,7 @@ export class HomePage {
      * @param floor 
      */
     public loadMap(building: any, level: any) { 
-        //console.log("Interval: loadMap()");
+        console.log("Interval: loadMap()");
         this.loadMapStyles();    
         if (this.polygons != null) {
             for (let x in this.polygons) {
@@ -237,10 +241,37 @@ export class HomePage {
             this.polygons = [];
         }
 
-        if (this.currentAttr != null && this.currentLevel != null) {
-        // SQLite Code with Observable
-        //this.dbService.selectRooms("d00").subscribe(data => {  
+        if (this.currentAttr != null && this.currentLevel != null) {            
+            this.dbService.getAllBuildingsAttrCoords(this.currentBuilding).subscribe(data => {
+                console.log("MAP BUILDINGS");
+                let building: any = {};
+                
+                for (let x in data) {
+                    let paths: any[] = [];
+
+                    building = data[x];
+
+                    let allCoordinates = building.coordinates;
+                    let coordinates: String[] = allCoordinates.split("; ");
+
+                    paths = this.mapService.splitCoordinatesToLatLng(coordinates);
+
+                    let polygon = new google.maps.Polygon();
+                    polygon.setOptions(this.mapService.createPolygonBuildingOptions(paths));
+                    polygon.setMap(this.map);
+
+                    google.maps.event.addListener(polygon, 'click', (event) => {
+                        //console.log("CLICK: " + event.latLng + ", shapeid: " + room.shapeid);
+                        //let attributes = this.getAttributesByShapeId(room.shapeid);
+                        console.log("Building name: " + building.name);
+                    })
+                }
+            })
+
+            // SQLite Code with Observable
+            //this.dbService.selectRooms("d00").subscribe(data => {            
             this.dbService.getAllRoomsAttrCoords(this.currentAttr, this.currentCoords).subscribe(data => {
+                console.log("MAP ROOMS");
                 for (let x in data) {
                     //console.log("LOADMAP: " + data[x].name + ", " + data[x].type + ", " + data[x].desc + ", " + data[x].coordinates);
                     let room: any = {};
@@ -255,7 +286,7 @@ export class HomePage {
                     paths = this.mapService.splitCoordinatesToLatLng(coordinates);                    
 
                     let polygon = new google.maps.Polygon();
-                    polygon.setOptions(this.mapService.createPolygonOptions(paths, room.type));
+                    polygon.setOptions(this.mapService.createPolygonRoomOptions(paths, room.type));
                     polygon.setMap(this.map);
 
                     this.polygons.push(polygon);
@@ -280,7 +311,7 @@ export class HomePage {
      */
     public getCurrentPosition() {
         this.checkLog += "Position-"        
-        if (this.beacons.length > 4) {
+        if (this.beacons.length > 2) {
             this.currentPosition = this.getCurrentPositionBeacons(); 
             this.paintCurrentPosition();
             this.getCurrentBuilding();    
@@ -309,7 +340,7 @@ export class HomePage {
             this.circle = new google.maps.Circle();
             this.circle.setOptions(this.mapService.createCircleOptions(this.currentPosition, (this.mapService.getCircleRadius(this.getMapZoom()).toFixed(4))));
             this.circle.setMap(this.map);
-            this.map.panTo(center);
+            //this.map.panTo(center);
         }
     }
 
@@ -326,7 +357,8 @@ export class HomePage {
             this.dbService.getAttrCoordsTables(this.currentBuilding, this.currentLevel).subscribe(data => {
                 this.currentAttr = data.attr;
                 this.currentCoords = data.coords;                
-                this.loadMap(this.currentBuilding, this.currentLevel);                
+                this.loadMap(this.currentBuilding, this.currentLevel);    
+                this.startState = 1;            
             });
         }
         this.previousLevel = this.currentLevel;

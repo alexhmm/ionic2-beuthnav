@@ -8,6 +8,7 @@ export class DatabaseService {
     private options = { name: "beuth.db", location: 'default', createFromLocation: 1 };
     public tables: any[] = [];
     private query = "SELECT * FROM allrooms";
+    public buildings: any[] = [];
     public allrooms: any[] = [];
     public rooms: any[] = [];
 
@@ -91,6 +92,28 @@ export class DatabaseService {
                     observer.complete();     
                 })                           
             });
+        })
+    }
+
+    /**
+     * Returns all building
+     * @param table 
+     * @param exclude 
+     */
+    getAllBuildingsAttrCoords(skip: String) {
+        this.buildings = [];
+        let query = "SELECT * FROM buildings WHERE name NOT LIKE '%" + skip + "%'";
+        return Observable.create(observer => {
+            this.sqlite.create(this.options).then((db: SQLiteObject) => {
+                db.executeSql(query, []).then((data) => {
+                    for (let i = 0; i < data.rows.length; i++) {
+                        let rows = data.rows;
+                        this.buildings.push({name: rows.item(i).name, coordinates: rows.item(i).coordinates})
+                    }
+                    observer.next(this.buildings);
+                    observer.complete();
+                })                
+            })
         })
     }
 
