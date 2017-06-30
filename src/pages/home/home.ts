@@ -71,6 +71,9 @@ export class HomePage {
     public polyline;
     public circle;
 
+    // interval check
+    public checkLog;
+
     // step detection test
     public motionStatus = 0;
     public x = 0;
@@ -118,14 +121,15 @@ export class HomePage {
 
             // Interval positioning from available methods
             setInterval(() => { 
+                this.checkLog = "CHECK LOG: ";
                 this.checkBeacons();
                 if (this.mapViewState == 'on') {
                     this.getCurrentPosition();
-                    this.getCurrentBuilding();                     
+                    //this.getCurrentBuilding();                     
                     /*if (this.currentBuilding != this.previousBuilding) {
                         this.loadMap(this.currentBuilding, this.currentLevel);
                     }*/
-                }
+                }                
              }, 3000);
 
             // Initialize DeviceOrientation
@@ -275,23 +279,38 @@ export class HomePage {
      * 
      */
     public getCurrentPosition() {
-        //console.log("Interval: getCurrentPosition()");
-        if (this.circle != null) {
-            this.circle.setMap(null);
-        }  
-        if (this.beacons.length > 2) {
-            this.currentPosition = this.getCurrentPositionBeacons();
+        this.checkLog += "Position-"        
+        if (this.beacons.length > 4) {
+            this.currentPosition = this.getCurrentPositionBeacons(); 
+            this.paintCurrentPosition();
+            this.getCurrentBuilding();    
+            console.log(this.checkLog);    
         } else {
-            this.currentPosition = this.getCurrentPositionGPS();
+            //this.currentPosition = this.getCurrentPositionGPS();
+            this.mapService.getCurrentPositionGPS().subscribe(data => {
+                this.currentPosition = data;
+                this.checkLog += "GPS: " + this.currentPosition.lat + ", " + this.currentPosition.lng;
+                this.paintCurrentPosition();
+                this.getCurrentBuilding();
+                console.log(this.checkLog);
+            });            
         }
+    }
 
+    /**
+     * 
+     */
+    public paintCurrentPosition() {
         if (this.map != null) {
             let center = new google.maps.LatLng(this.currentPosition.lat, this.currentPosition.lng);
+            if (this.circle != null) {
+                this.circle.setMap(null);
+            }  
             this.circle = new google.maps.Circle();
             this.circle.setOptions(this.mapService.createCircleOptions(this.currentPosition, (this.mapService.getCircleRadius(this.getMapZoom()).toFixed(4))));
             this.circle.setMap(this.map);
+            this.map.panTo(center);
         }
-        //this.map.panTo(center);
     }
 
     /**
@@ -456,12 +475,13 @@ export class HomePage {
     }   
 
     public getCurrentPositionGPS() {
-        console.log("CURRENT Position GPS."); 
-        this.geolocation.getCurrentPosition({timeout: 5000, enableHighAccuracy:true}).then((position) => {            
-            console.log("GPS POSITION: " + position.coords.latitude + ", " + position.coords.longitude);
+        this.checkLog += "GPS: "
+        this.geolocation.getCurrentPosition({timeout: 5000, enableHighAccuracy:true}).then((position) => {    
+            this.checkLog += position.coords.latitude + ", " + position.coords.longitude;
             return {lat: position.coords.latitude, lng: position.coords.longitude}
         }, (error) => {
-            console.log("" + error);
+            console.log(error);
+            this.checkLog += "ERROR: " + error;
         });
     }     
 
@@ -469,13 +489,14 @@ export class HomePage {
     // #### BEACONS #### //
     // ################# //
     public checkBeacons() {
-        let str = "CHECK BEACONS: ";
+        
         try {
             this.beacons = this.beaconService.getBeacons();
-            for (let x in this.beacons) {
+            /*for (let x in this.beacons) {
                 str += this.beacons[x].identifier + ", ";
-            }
-            console.log(str);
+            }*/
+            this.checkLog += "Beacons available: " + this.beacons.length + ", ";
+            //console.log(str);
             //this.beaconService.getBeaconsC();
         } catch(e) {
             console.log(e);
@@ -488,9 +509,6 @@ export class HomePage {
 
     public getCurrentPositionBeacons() {
         //console.log("CURRENT Positon Beacons.")
-        if (this.circle != null) {
-            this.circle.setMap(null);
-        }  
         this.tricons = [];
         this.triconsACC = [];        
         for (let i = 0; i < 3; i++) {
@@ -505,6 +523,7 @@ export class HomePage {
         //console.log("Beacon Tri Position: " + triStr);
         let triStrACC: any = this.mapService.trilaterate(this.triconsACC);
         //console.log("Beacon Tri Position ACC: " + triStrACC);
+        this.checkLog += "Beacons: " + triStr;
         let splitTriPt = triStr.split(", ");
         return {lat: +splitTriPt[0], lng: +splitTriPt[1]};        
     }
