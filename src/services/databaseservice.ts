@@ -82,13 +82,29 @@ export class DatabaseService {
      * @param shapeid 
      */
     getAttributesByShapeId(tableAttr: String, shapeid: String) {
-        let rooms = [];
         let queryAttr = "SELECT * FROM " + tableAttr + " WHERE shapeid LIKE '%" + shapeid + "%'";
         return Observable.create(observer => {
             this.sqlite.create(this.options).then((db: SQLiteObject) => {  
                 db.executeSql(queryAttr, {}).then((data) => {  
                     observer.next(data.rows.item(0));
                     console.log("OBSERVER: " + data.rows.item(0).name);
+                    observer.complete();     
+                })                           
+            });
+        })
+    }
+
+    getCoordinatesByShapeId(tableCoords: String, shapeid: String) {
+        let coordinates: any[] = [];
+        let queryAttr = "SELECT * FROM " + tableCoords + " WHERE shapeid LIKE '%" + shapeid + "%'";
+        return Observable.create(observer => {
+            this.sqlite.create(this.options).then((db: SQLiteObject) => {  
+                db.executeSql(queryAttr, {}).then((data) => {  
+                    for (let i = 0; i < data.rows.length -1; i++) {
+                        coordinates.push({lat: data.rows.item(i).y, lng: data.rows.item(i).x})                        
+                        console.log("OBSERVER: " + data.rows.item(i).y);
+                    }
+                    observer.next(coordinates);
                     observer.complete();     
                 })                           
             });

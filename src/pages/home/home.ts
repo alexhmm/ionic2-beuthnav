@@ -71,9 +71,12 @@ export class HomePage {
     public attributes = {name: "", type: "", desc: ""};
     public selectedRoom: any[] = [];
     public polygons: any[] = [];
+    public triangles: any[] = [];
     public marker;
-    public polyline;
-    public circle;
+    public polygon;
+    public circle;    
+
+    public trianglePolygons: any[] = [];
 
     // interval check
     public checkLog;
@@ -194,8 +197,6 @@ export class HomePage {
         });
     }
 
-
-
     /**
      * 
      */
@@ -225,6 +226,10 @@ export class HomePage {
                 this.circle.setRadius(radius);
             }            
         });
+
+        google.maps.event.addListener(this.map, 'click', (event) => {
+            console.log("CLICK MAP: " + event.latLng);
+        })
     }
 
     /**
@@ -543,20 +548,20 @@ export class HomePage {
         this.tricons = [];
         this.triconsACC = [];        
         for (let i = 0; i < 3; i++) {
-            let height;
+            let elevation;
             //console.log("B - " + i + ": " + beacons[i].identifier + "; " + beacons[i].coordinates + "; " + beacons[i].accCK);
             let latLngAlt = this.beacons[i].coordinates.split(", ");                
-            this.tricons.push({lat: latLngAlt[0], lng: latLngAlt[1], distance: this.beacons[i].accCK, height: latLngAlt[2]});
-            this.triconsACC.push({lat: latLngAlt[0], lng: latLngAlt[1], distance: this.beacons[i].acc, height: latLngAlt[2]});
+            this.tricons.push({lat: latLngAlt[0], lng: latLngAlt[1], distance: this.beacons[i].accCK, elevation: latLngAlt[2]});
+            this.triconsACC.push({lat: latLngAlt[0], lng: latLngAlt[1], distance: this.beacons[i].acc, elevation: latLngAlt[2]});
             //console.log("T - " + i + ": " + this.tricons[i].lat + ", " + this.tricons[i].lng + ", " + this.tricons[i].distance + ", " + this.tricons[i].height);                
         }    
-        let triStr: any = this.mapService.trilaterate(this.tricons);
+        let triPoint: any = this.mapService.trilaterate(this.tricons);
         //console.log("Beacon Tri Position: " + triStr);
-        let triStrACC: any = this.mapService.trilaterate(this.triconsACC);
+        //let triStrACC: any = this.mapService.trilaterate(this.triconsACC);
         //console.log("Beacon Tri Position ACC: " + triStrACC);
-        this.checkLog += "Beacons: " + triStr;
-        let splitTriPt = triStr.split(", ");
-        return {lat: +splitTriPt[0], lng: +splitTriPt[1]};        
+        this.checkLog += "Beacons: " + triPoint.lat + ", " + triPoint.lng;
+        //let splitTriPt = triPoint.split(", ");
+        return {lat: triPoint.lat, lng: triPoint.lng};        
     }
 
     // ################ //
@@ -611,20 +616,139 @@ export class HomePage {
     }
 
     public paintRoute(points: any) {
-        if (this.polyline != null) {
-            this.polyline.setMap(null);
+        if (this.polygon != null) {
+            this.polygon.setMap(null);
         }  
         if (this.mapViewState == 'on') {
             this.toggleMapView();
         }
         let latLngPts = this.mapService.splitCoordinatesToLatLng(points);
-        this.polyline = new google.maps.Polyline();
-        this.polyline.setOptions(this.mapService.createPolylineOptions(latLngPts));
-        this.polyline.setMap(this.map);
+        this.polygon = new google.maps.Polyline();
+        this.polygon.setOptions(this.mapService.createPolylineOptions(latLngPts));
+        this.polygon.setMap(this.map);
         let center = new google.maps.LatLng(latLngPts[latLngPts.length-1].lat, latLngPts[latLngPts.length-1].lng);
         this.map.panTo(center);
 
-        let lengthInMeters = google.maps.geometry.spherical.computeLength(this.polyline.getPath());
+        let lengthInMeters = google.maps.geometry.spherical.computeLength(this.polygon.getPath());
         console.log("Polyline length: " + lengthInMeters);
+    }
+
+    // ############### //
+    // ### ROUTING ### //
+    // ############### //
+    public testRouting() {
+        if (this.triangles != null) {
+            for (let x in this.triangles) {
+                 this.triangles[x].setMap(null);            
+            }
+            this.triangles = [];
+        }
+
+        // testing
+        let randomIndex = Math.floor(Math.random() * this.polygons.length);
+        console.log("random index: " + randomIndex + ", length: " + this.polygons[randomIndex].getPath().getLength());
+
+        let llaPoints: any[] = [];
+        let testPaths: any[] = [];
+        for (let i = 0; i < this.polygons[randomIndex].getPath().getLength(); i++) {
+            let xy = this.polygons[randomIndex].getPath().getAt(i).toUrlValue(7).split(",");
+            console.log("ELEVATION: ")
+            llaPoints.push({lat: xy[0], lng: xy[1], elevation: "38"});
+            console.log("xy: " + xy[0] + ", " + xy[1]);
+        }        
+
+        let ePoints: any[] = [];
+        let tPoints: any[] = [];
+
+        for (let x in llaPoints) {
+            let ePoint = this.mapService.LLAtoECEF(llaPoints[x].lat, llaPoints[x].lng, llaPoints[x].elevation);
+            ePoints.push(ePoint);
+            tPoints.push(ePoint[0]);
+            tPoints.push(ePoint[1]);
+            console.log(ePoint);
+        }
+
+        let indices = this.mapService.testEarcut(tPoints);
+        console.log(indices);
+        
+        let tPointsLLA: any[] = [];
+
+        for (let x in indices) {
+            tPointsLLA.push(this.mapService.ECEFtoLLA(ePoints[indices[x]][0], ePoints[indices[x]][1], ePoints[indices[x]][2]));
+            console.log()
+            console.log(tPointsLLA[x]);
+        }
+
+        for (let i = 0; i < tPointsLLA.length; i += 3) {
+            let trianglePathsLLA: any[] = [];
+            trianglePathsLLA.push(tPointsLLA[i]);
+            trianglePathsLLA.push(tPointsLLA[i + 1]);
+            trianglePathsLLA.push(tPointsLLA[i + 2]);
+            console.log("## TRIANGLE ##");
+            console.log(trianglePathsLLA[0]);
+            console.log(trianglePathsLLA[1]);
+            console.log(trianglePathsLLA[2]);
+            let triangle = new google.maps.Polygon();
+            triangle.setOptions(this.mapService.createTriangleOptions(trianglePathsLLA));
+            triangle.setMap(this.map);
+            this.triangles.push(triangle);
+            console.log("THIS.TRIANGLES - LENGTH: " + this.triangles.length);
+        }
+    }
+
+    public testRouting2(startPosition: any, endPosition: any, polygonPaths: any) {
+        if (this.triangles != null) {
+            for (let x in this.triangles) {
+                 this.triangles[x].setMap(null);            
+            }
+            this.triangles = [];
+        }
+
+        // testing
+        let randomIndex = Math.floor(Math.random() * this.polygons.length);
+        console.log("random index: " + randomIndex + ", length: " + this.polygons[randomIndex].getPath().getLength());
+
+        let randomPaths: any[] = [];
+        let testPaths: any[] = [];
+        for (let i = 0; i < this.polygons[randomIndex].getPath().getLength(); i++) {
+            let xy = this.polygons[randomIndex].getPath().getAt(i).toUrlValue(7).split(",");
+            randomPaths.push({lat: xy[0], lng: xy[1]});
+            testPaths.push({lat: +xy[0], lng: +xy[1]});
+            console.log("xy: " + xy[0] + ", " + xy[1]);
+        } 
+
+        /*let test = new google.maps.Polygon();
+        test.setOptions(this.mapService.createPolygonTestOptions(testPaths));
+        test.setMap(this.map);*/
+
+        let routingPolygonPathsLLA: any[] = [];
+        for (let x in randomPaths) {
+        //for (let x in polygonPaths) {
+            //console.log("Elevation test: " + this.mapService.getElevation(polygonPaths[x].lat, polygonPaths[x].lng));
+            routingPolygonPathsLLA.push({lat: randomPaths[x].lat, lng: randomPaths[x].lng, elevation: "38"});
+            //routingPolygonPathsLLA.push({lat: polygonPaths[x].lat, lng: polygonPaths[x].lng, elevation: this.mapService.getElevation(polygonPaths[x].lat, polygonPaths[x].lng)});            
+        }
+
+        //let routingPolygonPathsLLA = this.mapService.addElevationToPolygonPaths(polygonPaths);
+
+        let routingPolygonPathsECEF: any[] = [];
+        for (let x in routingPolygonPathsLLA) {
+            routingPolygonPathsECEF.push(this.mapService.LLAtoECEF(routingPolygonPathsLLA[x].lat, routingPolygonPathsLLA[x].lng, routingPolygonPathsLLA[x].elevation));
+        }
+
+        let trianglePoints = this.mapService.getTriangles(routingPolygonPathsECEF);
+
+        for (let i = 0; i < trianglePoints.length / 3; i++) {
+            //console.log("TRIANGLE: " + i + " - LENGTH: " + trianglePoints.length);
+            let trianglePathsLLA: any[] = [];
+            for (let j = 0; j < 3; j++) {
+                trianglePathsLLA.push(this.mapService.ECEFtoLLA(trianglePoints[i + j][0], trianglePoints[i + j][1], trianglePoints[i + j][2]));                
+            }
+            let triangle = new google.maps.Polygon();
+            triangle.setOptions(this.mapService.createTriangleOptions(trianglePathsLLA));
+            triangle.setMap(this.map);
+            this.triangles.push(triangle);
+            console.log("THIS.TRIANGLES - LENGTH: " + this.triangles.length);
+        }
     }
 }

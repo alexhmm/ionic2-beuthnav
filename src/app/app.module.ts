@@ -10,6 +10,7 @@ import { ListPage } from '../pages/list/list';
 import { HotSpotPage } from '../pages/hotspot/hotspot';
 import { BeaconPage } from '../pages/beacon/beacon';
 import { MotionPage } from '../pages/motion/motion';
+import { TestPage } from '../pages/test/test';
 
 import { StatusBar } from '@ionic-native/status-bar';
 import { SplashScreen } from '@ionic-native/splash-screen';
@@ -35,7 +36,8 @@ import { WifiService } from '../services/wifiservice';
     ListPage,
     HotSpotPage,
     BeaconPage,
-    MotionPage
+    MotionPage,
+    TestPage
   ],
   imports: [
     BrowserModule,
@@ -53,7 +55,8 @@ import { WifiService } from '../services/wifiservice';
     DatabasePage,
     HotSpotPage,
     BeaconPage,
-    MotionPage
+    MotionPage,
+    TestPage
   ],
   providers: [
     StatusBar,

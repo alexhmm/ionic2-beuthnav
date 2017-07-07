@@ -10,6 +10,7 @@ import { DatabasePage } from '../pages/database/database';
 import { HotSpotPage } from '../pages/hotspot/hotspot';
 import { BeaconPage } from '../pages/beacon/beacon';
 import { MotionPage } from '../pages/motion/motion';
+import { TestPage } from '../pages/test/test';
 
 @Component({
   templateUrl: 'app.html'
@@ -31,7 +32,8 @@ export class MyApp {
       { title: 'Database', component: DatabasePage },
       { title: 'Hotspot', component: HotSpotPage },
       { title: 'Beacon', component: BeaconPage },
-      { title: 'Motion', component: MotionPage }
+      { title: 'Motion', component: MotionPage },
+      { title: 'Test', component: TestPage }
     ];
 
   }

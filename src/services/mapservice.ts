@@ -3,7 +3,7 @@ import { Geolocation } from '@ionic-native/geolocation';
 import { Observable } from 'rxjs/Observable';
 
 import * as math from 'mathjs'; // don't named as Math, this will conflict with Math in JS
-
+import * as earcut from 'earcut';
 
 enum Roomcolor {
     blank = <any>"#FFFFFF",
@@ -26,7 +26,10 @@ enum BuildingLevels {
 @Injectable()
 export class MapService {  
 
-    public triPoints: any[] = [];
+    public tLatPoints: any[] = [];
+
+    public ePoints: any[] = [];
+    public tAngPoints: any[] = [];
 
     public wgs84a = 6378137;           // WGS-84 Earth semimajor axis (m)
     public wgs84b = 6356752.3142;      // WGS-84 Earth semiminor axis (m)
@@ -82,6 +85,18 @@ export class MapService {
             strokeWeight: 1,
             fillColor: Roomcolor[type],
             fillOpacity: 0.5
+        }  
+        return PolygonOptions;
+    }
+
+        public createPolygonTestOptions(paths: any) {
+        let PolygonOptions: any = {
+            paths: paths,
+            strokeColor: '#000000',
+            strokeOpacity: 0.5,
+            strokeWeight: 1,
+            fillColor: '#000000',
+            fillOpacity: 1
         }  
         return PolygonOptions;
     }
@@ -255,7 +270,13 @@ export class MapService {
         return targetLat + ", " + targetLon;
     } 
 
-    LLAtoECEF(latitude, longitude, altitude) {
+    /**
+     * Transformes a point from LLA coordinates to ECEF coordinates
+     * @param latitude
+     * @param longitude 
+     * @param altitude 
+     */
+    public LLAtoECEF(latitude, longitude, altitude) {
         let lat = this.getRadians(latitude);
         let lng = this.getRadians(longitude);
 
@@ -274,8 +295,8 @@ export class MapService {
     }
 
     /**
-     * 
-     * @param x Transformation of ECEF coordinates to LLA coordinates
+     * Transformes a point from ECEF coordinates to LLA coordinates
+     * @param x 
      * @param y 
      * @param z 
      */
@@ -309,12 +330,12 @@ export class MapService {
 
         let latlng = latitude + ", " + longitude;
 
-        return latlng;
+        return {lat: latitude, lng: longitude};
     }
 
     /**
-     * Returns trilateraion points of three input points
-     * @param beacons
+     * Returns the trilateraion ECEF coordinate of three input ECEF coordinates
+     * @param points
      */
     trilaterate(points: any[]) {
         let ePoints: any[] = [];
@@ -322,7 +343,7 @@ export class MapService {
         // transform LLA points to ECEF points
         for (let x in points) {
             //console.log("LLA: " + points[x].lat + ", " + points[x].lng + ", " + points[x].height);
-            let ePoint = this.LLAtoECEF(+points[x].lat, +points[x].lng, +points[x].height);            
+            let ePoint = this.LLAtoECEF(+points[x].lat, +points[x].lng, +points[x].elevation);            
             ePoints.push(ePoint);
         }
 
@@ -353,5 +374,126 @@ export class MapService {
         let triLatLng = this.ECEFtoLLA(triPt[0], triPt[1], triPt[2]);
         //console.log("Calculated TriPt: " + triLatLng);
         return triLatLng;
-    }         
+    }   
+
+
+    // ############### //
+    // ### ROUTING ### //
+    // ############### //
+
+    /**
+     * Returns triangulation array with all triangle points
+     * @param polygonPaths
+     */
+    public getTriangles(polygonPaths: any) {        
+        this.tAngPoints = [];
+        for (let x in polygonPaths) {
+            // push seperate x and y axis into array for earcut
+            this.tAngPoints.push(polygonPaths[x][0]);
+            this.tAngPoints.push(polygonPaths[x][1]);
+        }
+        console.log(this.tAngPoints);
+        //console.log(earcut(this.tAngPoints));
+        // x-y axis array of all triangle points
+        let trianglePoints: any[] = [];
+        let triangleIndices = earcut(this.tAngPoints); // 3, 2, 0, 3, 2, 1
+        console.log(triangleIndices);        
+        for (let i = 0; i < triangleIndices.length; i++) {
+            trianglePoints.push(polygonPaths[triangleIndices[i]]);
+        }      
+        return trianglePoints;
+    }  
+
+    public createTriangleOptions(paths: any,) {
+        let PolygonOptions: any = {
+            paths: paths,
+            strokeColor: '#ff0000',
+            strokeOpacity: 1,
+            strokeWeight: 3,
+            fillOpacity: 0
+        }  
+        return PolygonOptions;
+    }
+
+    /**
+     * Returns intersection point of two lines or null if the lines don't meet
+     * @param line1p1 
+     * @param line1p2 
+     * @param line2p1 
+     * @param line2p2 
+     */
+    public getIntersection(line1p1, line1p2, line2p1, line2p2) {
+        return math.intersect(line1p1, line1p2, line2p1, line2p2);
+    }
+
+    /*let iPoint1x = this.LLAtoECEF("52.545044621806184", "13.353109359741211", "38");
+        console.log("iPoint1x: " + iPoint1x);
+        let iPoint1y = this.LLAtoECEF("52.54499568722038", "13.35362434387207", "38");
+        console.log("iPoint1y: " + iPoint1y); */
+
+        // test intersection
+       /* for (let i = 0; i < trianglePoints.length / 3; i++) {
+            console.log("I: " + i);
+                       let iIntersect1 = this.lineIntersect(trianglePoints[i][0], trianglePoints[i][1], 
+                                                  trianglePoints[i + 1][0], trianglePoints[i + 1][1],
+                                                  iPoint1x[0], iPoint1x[1],
+                                                  iPoint1y[0], iPoint1y[1]);
+            console.log("Intersect1: " + iIntersect1);
+            let iIntersect2 = this.lineIntersect(trianglePoints[i][0], trianglePoints[i][1], 
+                                                  trianglePoints[i + 2][0], trianglePoints[i + 2][1],
+                                                  iPoint1x[0], iPoint1x[1],
+                                                  iPoint1y[0], iPoint1y[1]);
+            console.log("Intersect2: " + iIntersect2);
+            let iIntersect3 = this.lineIntersect(trianglePoints[i + 2][0], trianglePoints[i + 2][1], 
+                                                  trianglePoints[i + 1][0], trianglePoints[i + 1][1],
+                                                  iPoint1x[0], iPoint1x[1],
+                                                  iPoint1y[0], iPoint1y[1]);
+            console.log("Intersect3: " + iIntersect3);
+        }*/
+
+    /**
+     * https://stackoverflow.com/questions/9043805/test-if-two-lines-intersect-javascript-function
+     * Returns boolean if two lines intersect
+     * @param x1 
+     * @param y1 
+     * @param x2 
+     * @param y2 
+     * @param x3 
+     * @param y3 
+     * @param x4 
+     * @param y4 
+     */
+    public lineIntersect(x1, y1, x2, y2, x3, y3, x4, y4) {
+        let x=((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)) / ((x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4));
+        let y=((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)) / ((x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4));
+        if (isNaN(x) || isNaN(y)) {
+            return false;
+        } else {
+            if (x1 >= x2) {
+                if (!(x2 <=x && x <= x1)) {return false;}
+            } else {
+                if (!(x1 <=x && x <= x2)) {return false;}
+            }
+            if (y1>=y2) {
+                if (!(y2 <= y && y <= y1)) {return false;}
+            } else {
+                if (!(y1 <= y && y <= y2)) {return false;}
+            }
+            if (x3>=x4) {
+                if (!(x4 <= x && x <= x3)) {return false;}
+            } else {
+                if (!(x3 <= x && x <= x4)) {return false;}
+            }
+            if (y3>=y4) {
+                if (!(y4 <= y && y <= y3)) {return false;}
+            } else {
+                if (!(y3 <= y && y <= y4)) {return false;}
+            }
+        }
+        return true;
+    }
+
+    public testEarcut(data) {
+        return earcut(data);
+    }
 }
