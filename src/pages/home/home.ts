@@ -109,6 +109,10 @@ export class HomePage {
     public tricons: any[] = [];
     public triconsACC: any[] = [];
 
+    // testing
+    public headingPoints: any[] = [];
+    public cleanPoints: any[] = [];
+
     constructor(public navCtrl: NavController,
                 public platform: Platform,
                 public geolocation: Geolocation,
@@ -749,6 +753,56 @@ export class HomePage {
             triangle.setMap(this.map);
             this.triangles.push(triangle);
             console.log("THIS.TRIANGLES - LENGTH: " + this.triangles.length);
+        }
+    }
+
+    testHeading() {
+        this.headingPoints = [];
+        this.headingPoints.push(new google.maps.LatLng(52.545725, 13.352059));
+        this.headingPoints.push(new google.maps.LatLng(52.545716, 13.352260));
+        this.headingPoints.push(new google.maps.LatLng(52.545714, 13.352478));
+        this.headingPoints.push(new google.maps.LatLng(52.545603, 13.352300));
+        this.headingPoints.push(new google.maps.LatLng(52.545733, 13.351869));
+
+        for (let x in this.headingPoints) console.log(this.headingPoints[x]);
+
+        let headings: any[] = [];
+
+        for (let i = 0; i < this.headingPoints.length; i++) {
+            if (i == this.headingPoints.length - 1) {
+                headings.push(google.maps.geometry.spherical.computeHeading(this.headingPoints[i], this.headingPoints[0]));
+            } else {
+                headings.push(google.maps.geometry.spherical.computeHeading(this.headingPoints[i], this.headingPoints[i + 1]));
+            }
+        }
+
+        for (let x in headings) console.log(headings[x]);
+
+        this.cleanPoints = [];
+        for (let i = 0; i < headings.length; i++) {
+            if (i == 0) {
+                let diff = headings[i] - headings[headings.length - 1];
+                this.checkDiff(diff, i);
+            } else {
+                let diff = headings[i] - headings[i - 1];
+                this.checkDiff(diff, i);
+            }
+        }  
+
+        for (let x in this.cleanPoints) console.log(this.cleanPoints[x]);
+        console.log("Clean length: " + this.cleanPoints.length);
+    }
+
+    public checkDiff(diff, index) {
+        if (Math.abs(diff) > 180) {
+            diff = 360 - Math.abs(diff);
+        } else {
+             diff = Math.abs(diff);
+        }
+        console.log("TrueDiff: " + diff);
+        if (diff > 10) {
+            console.log(this.headingPoints[index].lat());
+            this.cleanPoints.push({lat: this.headingPoints[index].lat(), lng: this.headingPoints[index].lng()});                    
         }
     }
 }
