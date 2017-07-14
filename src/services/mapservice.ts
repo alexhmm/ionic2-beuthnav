@@ -112,6 +112,17 @@ export class MapService {
         return PolylineOptions;
     }
 
+        public createPolylineRouteOptions(points: any) {
+        let PolylineOptions: any = {
+          path: points,
+          geodesic: true,
+          strokeColor: '#FF0000',
+          strokeOpacity: 1.0,
+          strokeWeight: 3
+        }
+        return PolylineOptions;
+    }
+
     public createCircleOptions(position: any, radius: any) {
         let circleOptions: any = {
             center: {lat: position.lat, lng: position.lng},
@@ -158,19 +169,30 @@ export class MapService {
     }
 
     /**
+     * Calculates the croid of a straight polyline
+     * @param point1 
+     * @param point2 
+     */
+    getPolylineCentroid(point1, point2) {
+        let centroid: any = {lat: 0, lng: 0};
+        centroid.lat = (point1.lat + point2.lat) / 2;
+        centroid.lng = (point1.lng + point2.lng) / 2;
+        return centroid;
+    }
+
+    /**
      * Calculates the centroid of a polygon
      * @param points 
      */
     getPolygonCentroid(points: any[]) {
-        console.log("TEST");
         let centroid: any = {lat: 0, lng: 0};
         for (let x in points) {
-            console.log("polygon: " + points[x].lat + ", " + points[x].lng);
             centroid.lat += points[x].lat;
             centroid.lng += points[x].lng;
         }
         centroid.lat = centroid.lat / points.length;
         centroid.lng = centroid.lng / points.length;
+        console.log("Polygon Centroid: " + centroid.lat + ", " + centroid.lng);
         return centroid;
     }
 
@@ -242,6 +264,7 @@ export class MapService {
 
     /**
      * Calculates new position from measured compass azimuth and step length
+     * http://cosinekitty.com/compass.html
      * @param currentPosition 
      * @param direction 
      */
@@ -407,9 +430,9 @@ export class MapService {
     public createTriangleOptions(paths: any,) {
         let PolygonOptions: any = {
             paths: paths,
-            strokeColor: '#ff0000',
+            strokeColor: '#000000',
             strokeOpacity: 1,
-            strokeWeight: 3,
+            strokeWeight: 2,
             fillOpacity: 0
         }  
         return PolygonOptions;
@@ -495,5 +518,50 @@ export class MapService {
 
     public testEarcut(data) {
         return earcut(data);
+    }    
+
+    /**
+     * Calculates bearing between two geodetic points
+     * @param point1
+     * @param point2 
+     */
+    public calcBearing(point1, point2) {
+        let p1Lat = this.getRadians(point1.lat),
+        p1Lng = this.getRadians(point1.lng),
+        p2Lat = this.getRadians(point2.lat),
+        p2Lng = this.getRadians(point2.lng)
+
+        let dLong = p2Lng - p1Lng;
+        let dPhi = math.log(math.tan(p2Lat / 2.0 + math.pi / 4.0) / math.tan(p1Lat / 2.0 + math.pi / 4.0));
+
+        if (math.abs(dLong) > math.pi) {
+            if (dLong > 0.0) {
+                dLong = -(2.0 * math.pi - dLong)
+            } else {
+                dLong = (2.0 * math.pi + dLong)
+            }
+        }
+
+        let bearing = (this.getDegrees(math.atan2(dLong, dPhi)) + 360.0) % 360.0;
+        //console.log("BEARING: " + bearing);
+        return bearing;
+    }
+
+    /**
+     * 
+     * @param diff 
+     * @param index 
+     */
+    public checkBearingDifference(diff) {
+        if (Math.abs(diff) > 180) {
+            diff = 360 - Math.abs(diff);
+        } else {
+             diff = Math.abs(diff);
+        }
+        //console.log("Bearing Difference: " + diff);
+        if (diff > 10) {
+            return true;                   
+        }
+        return false;
     }
 }

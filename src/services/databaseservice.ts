@@ -101,8 +101,8 @@ export class DatabaseService {
             this.sqlite.create(this.options).then((db: SQLiteObject) => {  
                 db.executeSql(queryAttr, {}).then((data) => {  
                     for (let i = 0; i < data.rows.length -1; i++) {
-                        coordinates.push({lat: data.rows.item(i).y, lng: data.rows.item(i).x})                        
-                        console.log("OBSERVER: " + data.rows.item(i).y);
+                        coordinates.push({lat: data.rows.item(i).y, lng: data.rows.item(i).x});                      
+                        //console.log("OBSERVER: " + data.rows.item(i).y);
                     }
                     observer.next(coordinates);
                     observer.complete();     
