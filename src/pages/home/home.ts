@@ -985,95 +985,10 @@ export class HomePage {
         }
     }
 
-
-
-    // ############################## heading test
-    testHeading() {
-        let testPaths: any[] = [];
-        testPaths.push(new google.maps.LatLng(52.545714, 13.352478));
-        testPaths.push(new google.maps.LatLng(52.545603, 13.352300));
-        testPaths.push(new google.maps.LatLng(52.545733, 13.351869));
-
-        let testPolygon = new google.maps.Polygon();
-        testPolygon.setOptions(this.mapService.createPolygonTestOptions(testPaths));
-
-        let testPoint = new google.maps.LatLng(52.545714, 13.352478);
-        console.log("TestPoint: " + testPoint.lat() + ", " + testPoint.lng());
-
-        let testBool = google.maps.geometry.poly.containsLocation(testPoint, testPolygon);
-        console.log("TEST CONTAIN: " + testBool);
-
-        // intersect
-        let l1p1 = {lat: 52.545889, lng: 13.352048};
-        let l1p2 = {lat: 52.545681, lng: 13.352055};
-        //let l2p1 = {lat: 52.545849, lng: 13.351784};
-        //let l2p2 = {lat: 52.545826, lng: 13.352226};
-
-        let l2p1 = {lat: 52.545998, lng: 13.351766};
-        let l2p2 = {lat: 52.546002, lng: 13.351365};
-
-        console.log("Intersect LLA: " + this.mapService.lineIntersect(l1p1.lat, l1p1.lng, l1p2.lat, l1p2.lng, l2p1.lat, l2p1.lng, l2p2.lat, l2p2.lng));
-
-        let l1p1e = this.mapService.LLAtoECEF(l1p1.lat, l1p1.lng, "38");
-        let l1p2e = this.mapService.LLAtoECEF(l1p2.lat, l1p2.lng, "38");
-        let l2p1e = this.mapService.LLAtoECEF(l2p1.lat, l2p1.lng, "38");
-        let l2p2e = this.mapService.LLAtoECEF(l2p2.lat, l2p2.lng, "38");
-
-        console.log("Intersect ECEF: " + this.mapService.lineIntersect(l1p1e[0], l1p1e[1], l1p2e[0], l1p2e[1], l2p1e[0], l2p1e[1], l2p2e[0], l2p2e[1]));
-
-        console.log("Polyline centroid");
-        console.log(this.mapService.getPolylineCentroid(l1p1, l1p2));
-
-        
-
-        this.headingPoints = [];
-        this.headingPoints.push(new google.maps.LatLng(52.545725, 13.352059));
-        this.headingPoints.push(new google.maps.LatLng(52.545716, 13.352260));
-        this.headingPoints.push(new google.maps.LatLng(52.545714, 13.352478));
-        this.headingPoints.push(new google.maps.LatLng(52.545603, 13.352300));
-        this.headingPoints.push(new google.maps.LatLng(52.545733, 13.351869));
-
-        for (let x in this.headingPoints) console.log(this.headingPoints[x]);
-
-        let headings: any[] = [];
-
-        for (let i = 0; i < this.headingPoints.length; i++) {
-            if (i == this.headingPoints.length - 1) {
-                headings.push(google.maps.geometry.spherical.computeHeading(this.headingPoints[i], this.headingPoints[0]));
-            } else {
-                headings.push(google.maps.geometry.spherical.computeHeading(this.headingPoints[i], this.headingPoints[i + 1]));
-            }
-        }
-
-        for (let x in headings) console.log(headings[x]);
-
-        this.pPaths = [];
-        for (let i = 0; i < headings.length; i++) {
-            if (i == 0) {
-                let diff = headings[i] - headings[headings.length - 1];
-                if (this.mapService.checkBearingDifference(diff) == true) this.pPaths.push({lat: this.headingPoints[i].lat(), lng: this.headingPoints[i].lng()});  
-            } else {
-                let diff = headings[i] - headings[i - 1];
-                if (this.mapService.checkBearingDifference(diff) == true) this.pPaths.push({lat: this.headingPoints[i].lat(), lng: this.headingPoints[i].lng()});  
-            }
-        }  
-
-        for (let x in this.pPaths) console.log(this.pPaths[x]);
-        console.log("Clean length: " + this.pPaths.length);
-    }
-
     public getLatLngFromString(path: String) {
         let latLngOrg = path.replace(/[()]/g, '');
         let latLng = latLngOrg.split(',');
          //console.log(latlang);
         return new google.maps.LatLng(parseFloat(latLng[0]) , parseFloat(latLng[1]));
-    }
-
-    public testBearing() {
-        let point1 = {lat: 52.545794, lng: 13.352094};
-        //let point2 = {lat: 52.545713, lng: 13.352326};
-        let point2 = {lat: 52.545955, lng: 13.351988};
-        this.mapService.calcBearing(point1, point2);
-        
     }
 }
