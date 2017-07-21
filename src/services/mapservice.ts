@@ -276,7 +276,7 @@ export class MapService {
         let azimuth = direction;
 
         console.log("OLD - LAT: " + lat + ", " + lng);
-        console.log("AZIMUTH: " + direction);
+        //console.log("AZIMUTH: " + direction);
 
         let radians = math.PI / 180.0;
         let degrees = 180.0 / math.PI;
@@ -292,6 +292,31 @@ export class MapService {
         console.log("NEW - LAT: " + targetLat + ", " + targetLon);
         return targetLat + ", " + targetLon;
     } 
+
+    /**
+     * Returns new LatLng calculated by distance and direction
+     * @param position
+     * @param distance 
+     * @param direction 
+     */
+    public getLatLngByAzimuthDistance(position, distance, direction) {
+        console.log("Old: " + position.lat + ", " + position.lng);
+
+        let radians = math.PI / 180.0;
+        let degrees = 180.0 / math.PI;
+        let latRadians = radians * position.lat;
+        let azRadians = radians * direction;
+        let earthRad = this.getEarthR(latRadians);
+        let cosLat = math.cos(latRadians);
+        let cosAz = math.cos(azRadians);
+        let sinAz = math.sin(azRadians);
+        let ratio = distance / earthRad;
+
+        let positionNew = {lat: position.lat + (degrees * cosAz * ratio), lng: position.lng + (degrees * (sinAz / cosLat) * ratio)};
+        console.log("New: " + positionNew.lat + ", " + positionNew.lng);
+
+        return positionNew;
+    }
 
     /**
      * Transformes a point from LLA coordinates to ECEF coordinates
@@ -438,6 +463,17 @@ export class MapService {
         return PolygonOptions;
     }
 
+    public createControlOptions(paths: any,) {
+        let PolygonOptions: any = {
+            paths: paths,
+            strokeColor: '#00FF00',
+            strokeOpacity: 1,
+            strokeWeight: 5,
+            fillOpacity: 3
+        }  
+        return PolygonOptions;
+    }
+
     /**
      * Returns intersection point of two lines or null if the lines don't meet
      * @param line1p1 
@@ -564,4 +600,6 @@ export class MapService {
         }
         return false;
     }
+
+    public checkB
 }
