@@ -656,165 +656,154 @@ export class HomePage {
         console.log("Polyline length: " + lengthInMeters);
     }
 
-    
+    public testRouting() {
+        // set start and endpoint
+        let rStart = {name: "Start", house: "Bauwesen", tier: 0, lat: 52.54567, lng: 13.35582};
+        let rEnd = {name: "End", house: "Bauwesen", tier: 0, lat: 52.54548, lng: 13.35553};
+
+        this.startRouting(rStart, rEnd);
+
+        // let rEnd = new google.maps.LatLng(52.54557, 13.35569);
+        // let rEnd = new google.maps.LatLng(52.54566, 13.35552);
+
+        // start 13.35582,52.54567
+        // end1 52.54548, 13.35553
+        // end3 52.54557, 13.35569
+    }    
 
     // ############### //
     // ### ROUTING ### //
     // ############### //
-    public testRouting() {
+    public startRouting(startPosition, endPosition) {
+        // Reset routing and intersect paths, clock and counter-clock
         this.rPathsC = [];
         this.rPathsCC = [];
         this.iPathsC = [];
         this.iPathsCC = [];
 
+        // ### TODO clean routing polyline from map
         if (this.triangles != null) {
             for (let x in this.triangles) {
                  this.triangles[x].setMap(null);            
             }
             this.triangles = [];
-        }
+        }        
+        // ### TODO: determine routing polygon (index)
+        let routingPolygonIndex = 46;
 
-        // testing
-        //let randomIndex = Math.floor(Math.random() * this.polygons.length);
-        //console.log("random index: " + randomIndex + ", length: " + this.polygons[randomIndex].getPath().getLength());
-        let randomIndex = 46;
-        // ####
+        // ### TODO: check if start and end position is in same house and tier
 
-        // add all polygon points to array
-        let llaPointsRaw: any[] = [];
-        console.log("Raw LLA Points");
+        // Set start and end position for this loop
+        let rStart = new google.maps.LatLng(parseFloat(startPosition.lat), parseFloat(startPosition.lng));
+        let rEnd = new google.maps.LatLng(parseFloat(endPosition.lat), parseFloat(endPosition.lng));
 
-        let currentPolygonLength = this.polygons[randomIndex].getPath().getLength();
-
+        // Add all polygon points to array
+        let pPathsRaw: any[] = [];
+        console.log("Raw polygon paths length: " + pPathsRaw.length);
+        let currentPolygonLength = this.polygons[routingPolygonIndex].getPath().getLength();
         for (let i = 0; i < currentPolygonLength; i++) {
-            let xy = this.polygons[randomIndex].getPath().getAt(i).toUrlValue(7).split(",");
-            llaPointsRaw.push({lat: xy[0], lng: xy[1]});
-            //llaPointsRaw.push(new google.maps.LatLng(parseFloat(xy[0]), parseFloat(xy[1])));
-            //llaPointsRaw.push(this.getLatLngFromString(this.polygons[randomIndex].getPath().getAt(i).toUrlValue(7)));
-            //console.log("xy: " + parseFloat(xy[0]) + ", " + parseFloat(xy[1]));
-            //llaPointsRaw.push(new google.maps.LatLng(parseFloat(xy[0]), parseFloat(xy[1])));
-            //console.log(llaPointsRaw[i]);
+            let pLatLng = this.polygons[routingPolygonIndex].getPath().getAt(i).toUrlValue(7).split(",");
+            pPathsRaw.push({lat: pLatLng[0], lng: pLatLng[1]});
         }     
-        
-        console.log("Raw length: " + llaPointsRaw.length);
-        //for (let x in llaPointsRaw) console.log(llaPointsRaw[x]);        
 
+        // Determine headings for all raw paths
         this.pHeadings = [];
-
-        for (let i = 0; i < llaPointsRaw.length; i++) {
-            if (i == llaPointsRaw.length - 1) {
-                //headings.push(google.maps.geometry.spherical.computeHeading(llaPointsRaw[i], llaPointsRaw[0]));
-                this.pHeadings.push(this.mapService.calcBearing(llaPointsRaw[i], llaPointsRaw[0]));
+        for (let i = 0; i < pPathsRaw.length; i++) {
+            if (i == pPathsRaw.length - 1) {
+                this.pHeadings.push(this.mapService.calcBearing(pPathsRaw[i], pPathsRaw[0]));
             } else {
-                //headings.push(google.maps.geometry.spherical.computeHeading(llaPointsRaw[i], llaPointsRaw[i + 1]));
-                this.pHeadings.push(this.mapService.calcBearing(llaPointsRaw[i], llaPointsRaw[i + 1]));
+                this.pHeadings.push(this.mapService.calcBearing(pPathsRaw[i], pPathsRaw[i + 1]));
             }
         }
 
-        for (let x in this.pHeadings) console.log(this.pHeadings[x]);
-
+        // for (let x in this.pHeadings) console.log(this.pHeadings[x]);
+        // Exclude läuferpunkte from raw paths where
+        // ### TODO: replace elevation with calculation or average by building
         this.pPaths = [];
         for (let i = 0; i < this.pHeadings.length; i++) {
             if (i == 0) {
                 let diff = this.pHeadings[i] - this.pHeadings[this.pHeadings.length - 1];
-                if (this.mapService.checkBearingDifference(diff)) this.pPaths.push({lat: llaPointsRaw[i].lat, lng: llaPointsRaw[i].lng, elevation: "38"});  // calc Elevation
+                if (this.mapService.checkBearingDifference(diff)) this.pPaths.push({lat: pPathsRaw[i].lat, lng: pPathsRaw[i].lng, elevation: "38"});
             } else {
                 let diff = this.pHeadings[i] - this.pHeadings[i - 1];
-                if (this.mapService.checkBearingDifference(diff)) this.pPaths.push({lat: llaPointsRaw[i].lat, lng: llaPointsRaw[i].lng, elevation: "38"});  
+                if (this.mapService.checkBearingDifference(diff)) this.pPaths.push({lat: pPathsRaw[i].lat, lng: pPathsRaw[i].lng, elevation: "38"});  
             }
         }  
 
-        // ### FOR CONTAINSLOCATION maybe delete
-        console.log("pVertices length: " + this.pPaths.length);
-        let pVerticesPaths: any[] = [];;
+        // Create invisible background true polygon for intersection check
+        console.log("True polygon paths length: " + this.pPaths.length);
+        let pPaths: any[] = [];;
         for (let x in this.pPaths) {
             console.log(this.pPaths[x]);        
-            pVerticesPaths.push({lat: parseFloat(this.pPaths[x].lat), lng: parseFloat(this.pPaths[x].lng)});
+            pPaths.push({lat: parseFloat(this.pPaths[x].lat), lng: parseFloat(this.pPaths[x].lng)});
         }
         this.routingPolygon = new google.maps.Polygon();
-        this.routingPolygon.setOptions(this.mapService.createPolygonBuildingOptions(pVerticesPaths));  
+        this.routingPolygon.setOptions(this.mapService.createPolygonBuildingOptions(pPaths));  
         
-        // create triangle points
+        // Create triangle points
         let ePoints: any[] = [];
-        let tPoints: any[] = [];
+        let tPointsECEF: any[] = [];
         for (let x in this.pPaths) {
             let ePoint = this.mapService.LLAtoECEF(this.pPaths[x].lat, this.pPaths[x].lng, this.pPaths[x].elevation);
             ePoints.push(ePoint);
-            tPoints.push(ePoint[0]);
-            tPoints.push(ePoint[1]);
+            tPointsECEF.push(ePoint[0]);
+            tPointsECEF.push(ePoint[1]);
             //console.log(ePoint);
         }
 
-        // get indices for earcut triangulation
-        let indices = this.mapService.testEarcut(tPoints);
-        //console.log(indices);
+        // Get indices for earcut triangulation
+        let indices = this.mapService.testEarcut(tPointsECEF);
         
-        let tPointsLLA: any[] = [];
+        let tPoints: any[] = [];
 
-        // create triangle points array through indices iteration
+        // Create triangle points array through indices iteration
         for (let x in indices) {
             // push indices? x
-            tPointsLLA.push(this.mapService.ECEFtoLLA(ePoints[indices[x]][0], ePoints[indices[x]][1], ePoints[indices[x]][2]));
+            tPoints.push(this.mapService.ECEFtoLLA(ePoints[indices[x]][0], ePoints[indices[x]][1], ePoints[indices[x]][2]));
             //console.log(tPointsLLA[x]);
         }
 
-        // iterate through all triangle points and create triangle polygons
-        for (let i = 0; i < tPointsLLA.length; i += 3) {
+        // Iterate through all triangle points and create triangle polygons
+        for (let i = 0; i < tPoints.length; i += 3) {
             let trianglePathsLLA: any[] = [];
-            trianglePathsLLA.push(tPointsLLA[i]);
-            trianglePathsLLA.push(tPointsLLA[i + 1]);
-            trianglePathsLLA.push(tPointsLLA[i + 2]);
-            /* console.log(trianglePathsLLA[0]);
-            console.log(trianglePathsLLA[1]);
-            console.log(trianglePathsLLA[2]); */
+            trianglePathsLLA.push(tPoints[i]);
+            trianglePathsLLA.push(tPoints[i + 1]);
+            trianglePathsLLA.push(tPoints[i + 2]);
             let triangle = new google.maps.Polygon();
             triangle.setOptions(this.mapService.createTriangleOptions(trianglePathsLLA));
             triangle.setMap(this.map);
             this.triangles.push(triangle);
         }
 
-         console.log("Triangles length: " + this.triangles.length);
-       
-        // set start and endpoint
-        let rStart = new google.maps.LatLng(52.54567, 13.35582);
-        // let rEnd = new google.maps.LatLng(52.54548, 13.35553);
-        // let rEnd = new google.maps.LatLng(52.54557, 13.35569);
-        let rEnd = new google.maps.LatLng(52.54566, 13.35552);
+        console.log("Triangles length: " + this.triangles.length);  
 
-        // start 13.35582,52.54567
-        // end1 52.54548, 13.35553
-        // end3 52.54557, 13.35569
-
-        let rStartPP, rStartIndex, tStartPP, tStartIndex,
-        rEndPP, rEndIndex, tEndPP, tEndIndex,
+        let rStartIndex, tStartPP, // tStartIndex,
+        rEndIndex, tEndPP, tEndIndex,
         rIndex, tIndex;
 
-        // determine startPointTriangle endPointTriangle containsLocation in triangle
+        // Determine startPointTriangle and endPointTriangle for startPosition and endPosition
+        // ### TODO: change startIndex and endIndex to near neighbor?
         for (let x in this.triangles) {
-            // set route start position
             if (google.maps.geometry.poly.containsLocation(rStart, this.triangles[x]) == true) {
                 console.log("CONTAINSLOCATION START: " + x);
                 tIndex = x;
-                let xy = this.triangles[x].getPath().getAt(0).toUrlValue(7).split(",");
-                tStartPP = {lat: xy[0], lng: xy[1]};
+                let tLatLng = this.triangles[x].getPath().getAt(0).toUrlValue(7).split(",");
+                tStartPP = {lat: parseFloat(tLatLng[0]), lng: parseFloat(tLatLng[1])};
                 console.log(tStartPP);
                 for (let x in this.pPaths) {
                     let vertex = {lat: this.pPaths[x].lat, lng: this.pPaths[x].lng};
                     //console.log(cleanPoint);
-                    if (vertex.lat == tStartPP.lat && vertex.lng == tStartPP.lng)
+                    if (vertex.lat == tStartPP.lat && vertex.lng == tStartPP.lng) {
                         rStartIndex = x;
                         rIndex = x;
                     }
-                console.log("RouteStartIndex: " + rStartIndex); 
-                console.log("RouteCurrentIndex: " + rIndex); 
-                console.log("TriangleCurrentIndex: " + tIndex);
+                }
             }
-            // set route end position
             if (google.maps.geometry.poly.containsLocation(rEnd, this.triangles[x]) == true) {
                 console.log("CONTAINSLOCATION END: " + x);
                 tEndIndex = x;
-                let xy = this.triangles[x].getPath().getAt(0).toUrlValue(7).split(",");
-                tEndPP = {lat: xy[0], lng: xy[1]};
+                let tLatLng = this.triangles[x].getPath().getAt(0).toUrlValue(7).split(",");
+                tEndPP = {lat: parseFloat(tLatLng[0]), lng: parseFloat(tLatLng[1])};
                 console.log(tEndPP);
                 for (let x in this.pPaths) {
                     let vertex = {lat: this.pPaths[x].lat, lng: this.pPaths[x].lng};
@@ -822,28 +811,27 @@ export class HomePage {
                     if (vertex.lat == tEndPP.lat && vertex.lng == tEndPP.lng)
                         rEndIndex = +x;
                 }
-                console.log("RouteEndIndex: " + rEndIndex);
-                console.log("TriangleEndIndex: " + tEndIndex);
             }
         }
 
-        // iterate through all points in routing polygon FUNNEL ALGORITHM
+        // Iterate through all points in routing polygon FUNNEL ALGORITHM
         let pLength = this.pPaths.length;
 
-        // push starting location to routingPaths and intersect vertices array
+        // Push starting location to routingPath and intersectPath arrays
         this.rPathsC.push({lat: rStart.lat(), lng: rStart.lng()});
         this.rPathsCC.push({lat: rStart.lat(), lng: rStart.lng()});
         this.iPathsC.push({lat: rStart.lat(), lng: rStart.lng()});
         this.iPathsCC.push({lat: rStart.lat(), lng: rStart.lng()});        
 
+        // Set startIndex for both directions
         let indexC = rStartIndex;
         let indexCC = rStartIndex;
 
-        // push first triangle point into iPaths
+        // Push first triangle point into iPaths
         this.iPathsC.push({lat: parseFloat(this.pPaths[indexC].lat), lng: parseFloat(this.pPaths[indexC].lng)});
         this.iPathsCC.push({lat: parseFloat(this.pPaths[indexCC].lat), lng: parseFloat(this.pPaths[indexCC].lng)});
-        console.log("#######################################");
 
+        console.log("#######################################");
         // Iterate through all routingPolygon vertices
         for (let i = 1; i < pLength; i++) {   
             let rLengthC = this.rPathsC.length;
@@ -851,16 +839,18 @@ export class HomePage {
 
             console.log("RoutingPaths Clock: " + rLengthC);
             for (let i = 0; i < rLengthC; i++) console.log("rC - " + i + ": " + this.rPathsC[i].lat + ", " + this.rPathsC[i].lng);      
-            /* console.log("RoutingPaths CounterClock: " + rLengthCC);;
-            for (let i = 0; i < rLengthCC; i++) console.log("rCC - " + i + ": " + this.rPathsCC[i]);       */
+            console.log("RoutingPaths CounterClock: " + rLengthCC);;
+            for (let i = 0; i < rLengthCC; i++) console.log("rCC - " + i + ": " + this.rPathsCC[i]);
             
+            // Increase and decrease indices to go through routingPolygon vertices in both directions
             indexC++;
-            console.log(this.pPaths[indexC]);
             indexCC--;           
 
+            // If out of bound: reset index
             if (indexC === pLength - 1) indexC = 0;
             if (indexCC === -1) indexCC = pLength - 1; 
 
+            // Splice prevVertex out of intersectPaths for next intersection check
             if (this.iPathsC.length > 2) this.iPathsC.splice(1, 1);
             if (this.iPathsCC.length > 2) this.iPathsCC.splice(1, 1);
             
@@ -872,17 +862,11 @@ export class HomePage {
             let iLengthC = this.iPathsC.length;
             let iLengthCC = this.iPathsCC.length;
             
-            // Finish routing algorithm if current routingPolygon vertex reached end triangle
+            // Finish routing algorithm if current routingPolygonPath reached endTriangle
             let pEndC = new google.maps.LatLng(parseFloat(this.iPathsC[this.iPathsC.length - 1].lat), parseFloat(this.iPathsC[this.iPathsC.length - 1].lng));
             let pEndCC = new google.maps.LatLng(parseFloat(this.iPathsCC[this.iPathsCC.length - 1].lat), parseFloat(this.iPathsCC[this.iPathsCC.length - 1].lng));
             
             if (google.maps.geometry.poly.containsLocation(pEndC, this.triangles[tEndIndex])) {
-                /* this.iPathsC.push({lat: parseFloat(this.pPaths[indexC + 1].lat), lng: parseFloat(this.pPaths[indexC + 1].lng)});
-                let intersect = this.getNextRoutingPath(this.iPathsC, indexC + 1);
-                if (!intersect) {
-                    console.log("!intersect C not null.");
-                    this.rPathsC.push(intersect[0]);
-                } */
                 console.log("Finish Clock: " + google.maps.geometry.poly.containsLocation(pEndC, this.triangles[tEndIndex]) + ", " + tEndIndex);
                 this.rPathsC.push({lat: rEnd.lat(), lng: rEnd.lng()});
                 let polyline = new google.maps.Polyline();
@@ -890,14 +874,7 @@ export class HomePage {
                 polyline.setMap(this.map);
                 break;
             }
-
             if (google.maps.geometry.poly.containsLocation(pEndCC, this.triangles[tEndIndex])) {
-                /* this.iPathsCC.push({lat: parseFloat(this.pPaths[indexCC - 1].lat), lng: parseFloat(this.pPaths[indexCC - 1].lng)});
-                let intersect = this.getNextRoutingPath(this.iPathsCC, indexCC - 1);
-                if (!intersect) {
-                    console.log("!intersect CC not null.");
-                    this.rPathsCC.push(intersect[0]);
-                } */
                 console.log("Finish CClock: " + google.maps.geometry.poly.containsLocation(pEndCC, this.triangles[tEndIndex]) + ", " + tEndIndex);
                 this.rPathsCC.push({lat: rEnd.lat(), lng: rEnd.lng()});
                 let polyline = new google.maps.Polyline();
@@ -906,13 +883,7 @@ export class HomePage {
                 break;
             }
 
-            //console.log("Intersect");
-            // for each prev Line segment, check intersection from line: currentRoutingP to nextVertex
-
-            // prevPrevVertex - prevVertex
-            // currentRoutingP - nextVertex
-                      
-            // iterate through all past added points after last routingPoint and check intersection
+            // Start intersection check for both directions
             if (this.iPathsC.length > 2) {
                 console.log("iPathsC.length: " + this.iPathsC.length);
                 for (let i = 0; i < this.iPathsC.length; i++) console.log("iC - " + i + ": " + this.iPathsC[i].lat + ", " + this.iPathsC[i].lng);
@@ -925,7 +896,6 @@ export class HomePage {
                     this.iPathsC.push(intersectC[2]);
                 }                
             } 
-
             if (this.iPathsCC.length > 2) {
                 console.log("iPathsCC.length: " + this.iPathsCC.length);
                 let intersectCC = this.getNextRoutingPath(this.iPathsCC, indexCC);
@@ -978,6 +948,8 @@ export class HomePage {
                 let nP2 = this.mapService.getLatLngByAzimuthDistance(oldVertex, 1, Math.abs(direction2));
                 let nP1LLA = new google.maps.LatLng(parseFloat(nP1.lat), parseFloat(nP1.lng));
                 let nP2LLA = new google.maps.LatLng(parseFloat(nP2.lat), parseFloat(nP2.lng));
+
+                // ### TODO: check line intersection between all lines
 
                 if (google.maps.geometry.poly.containsLocation(nP1LLA, this.routingPolygon)) {
 
