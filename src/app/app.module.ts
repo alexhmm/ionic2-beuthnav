@@ -16,6 +16,7 @@ import { StatusBar } from '@ionic-native/status-bar';
 import { SplashScreen } from '@ionic-native/splash-screen';
 import { DeviceMotion, DeviceMotionAccelerationData } from '@ionic-native/device-motion';
 import { DeviceOrientation, DeviceOrientationCompassHeading } from '@ionic-native/device-orientation';
+import { EmailComposer } from '@ionic-native/email-composer';
 import { Geolocation } from '@ionic-native/geolocation';
 import { SQLite, SQLiteObject } from '@ionic-native/sqlite';
 import { IBeacon } from '@ionic-native/ibeacon';
@@ -63,6 +64,7 @@ import { WifiService } from '../services/wifiservice';
     SplashScreen,
     DeviceMotion,
     DeviceOrientation,
+    EmailComposer,
     Geolocation,
     IBeacon,
     Keyboard,
