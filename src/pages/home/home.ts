@@ -2,7 +2,6 @@ import { Component, ViewChild, ElementRef } from '@angular/core';
 import { NavController, Platform } from 'ionic-angular';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { trigger, state, transition, style, animate } from '@angular/animations';
-import { EmailComposer } from '@ionic-native/email-composer';
 import { Geolocation } from '@ionic-native/geolocation';
 import { Http } from '@angular/http';
 
@@ -138,7 +137,6 @@ export class HomePage {
 
     constructor(public navCtrl: NavController,
                 public platform: Platform,
-                public emailComposer: EmailComposer,
                 public geolocation: Geolocation,
                 public beaconService: BeaconService,                
                 public dbService: DatabaseService,
@@ -148,14 +146,7 @@ export class HomePage {
     }
 
     ionViewDidLoad() {
-        this.platform.ready().then(() => {     
-            // email
-            this.emailComposer.isAvailable().then((available: boolean) =>{
-                if(available) {
-                console.log("Email available.");
-                //Now we know we can send
-                }
-            });
+        this.platform.ready().then(() => {   
             // Beacons            
             this.beaconService.setupBeacons();    
             //setTimeout(() => { this.beaconService.startRangingBeacons(); }, 3000);    
@@ -1003,20 +994,5 @@ export class HomePage {
         let latLng = latLngOrg.split(',');
          //console.log(latlang);
         return new google.maps.LatLng(parseFloat(latLng[0]) , parseFloat(latLng[1]));
-    }
-    
-    public sendEmail() {
-        console.log("Test email");
-
-        let email = {
-        to: 'axel-pi@gmx.de',
-        subject: 'Cordova Icons',
-        body: 'How are you? Nice greetings from Leipzig',
-        isHtml: false
-        };
-
-
-        // Send a text message using default options
-        this.emailComposer.open(email);
     }
 }

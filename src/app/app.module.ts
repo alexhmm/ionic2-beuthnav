@@ -16,7 +16,7 @@ import { StatusBar } from '@ionic-native/status-bar';
 import { SplashScreen } from '@ionic-native/splash-screen';
 import { DeviceMotion, DeviceMotionAccelerationData } from '@ionic-native/device-motion';
 import { DeviceOrientation, DeviceOrientationCompassHeading } from '@ionic-native/device-orientation';
-import { EmailComposer } from '@ionic-native/email-composer';
+import { File } from '@ionic-native/file';
 import { Geolocation } from '@ionic-native/geolocation';
 import { SQLite, SQLiteObject } from '@ionic-native/sqlite';
 import { IBeacon } from '@ionic-native/ibeacon';
@@ -24,6 +24,7 @@ import { Keyboard } from '@ionic-native/keyboard';
 
 import { BeaconService } from '../services/beaconservice';
 import { DatabaseService } from '../services/databaseservice';
+import { FileService } from '../services/fileservice';
 import { KalmanService } from '../services/kalmanservice';
 import { MapService } from '../services/mapservice';
 import { MotionService } from '../services/motionservice';
@@ -64,13 +65,14 @@ import { WifiService } from '../services/wifiservice';
     SplashScreen,
     DeviceMotion,
     DeviceOrientation,
-    EmailComposer,
+    File,
     Geolocation,
     IBeacon,
     Keyboard,
     SQLite,        
     BeaconService,
     DatabaseService,
+    FileService,
     KalmanService,
     MapService,
     MotionService,
