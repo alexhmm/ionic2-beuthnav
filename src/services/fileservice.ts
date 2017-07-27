@@ -17,12 +17,12 @@ export class FileService {
     }
 
     public readFile(event, file) {
-        console.log("File read.");
+        console.log("File read: " + file.name);
         this.file.readAsText(this.file.cacheDirectory, file.name).then(data => console.log(data)).catch(err => console.log('File not read:' + err));
     }
 
     public deleteFile(event, file) {
-         console.log("File deleted.");
+         console.log("File deleted: " + file.name);
         this.file.removeFile(this.file.cacheDirectory, file.name).then(data => console.log('File deleted.')).catch(err => console.log('File not deleted: ' + err));
     }
 }

@@ -41,26 +41,18 @@ export class BeaconService {
         .subscribe(
             data => {
                 let region = data.region;
-                let beacon = data.beacons;  
-                
+                let beacon = data.beacons;                  
                 // Checks for current Beacons Array
                 if (typeof beacon[0] !== 'undefined') {
                     try {
                         let index = this.beacons.map(function(e) { return e.identifier; }).indexOf(region.identifier);
-                        if (index != -1) {    
-                        this.beacons.splice(index, 1);
-                        }
-                    } catch(e) {
-                        console.log("Index Error:: " + e);
-                    }
+                        if (index != -1) this.beacons.splice(index, 1);
+                    } catch(e) { console.log("Error: " + e); }
 
                     // get coordinates of identified beacon
                     let indexData;
-                    try {
-                        indexData = this.beacondataStr.map(function(e) { return e.identifier; }).indexOf(region.identifier);
-                    } catch(e) {
-                        console.log("Index Error: " + e);
-                    }
+                    try { indexData = this.beacondataStr.map(function(e) { return e.identifier; }).indexOf(region.identifier); }
+                    catch(e) { console.log("Error: " + e); }
 
                     let kalmanFilter = new KalmanService();
                     //let kalmanRSSI = kalmanFilter.filter(beacon[0].rssi, 2, 5, 1, 0, 1);

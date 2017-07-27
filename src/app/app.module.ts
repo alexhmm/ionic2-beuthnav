@@ -25,6 +25,7 @@ import { Keyboard } from '@ionic-native/keyboard';
 import { BeaconService } from '../services/beaconservice';
 import { DatabaseService } from '../services/databaseservice';
 import { FileService } from '../services/fileservice';
+import { IntersectService } from '../services/intersectservice';
 import { KalmanService } from '../services/kalmanservice';
 import { MapService } from '../services/mapservice';
 import { MotionService } from '../services/motionservice';
@@ -73,6 +74,7 @@ import { WifiService } from '../services/wifiservice';
     BeaconService,
     DatabaseService,
     FileService,
+    IntersectService,
     KalmanService,
     MapService,
     MotionService,

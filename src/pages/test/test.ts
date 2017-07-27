@@ -24,10 +24,6 @@ export class TestPage {
         });
     }
 
-    public testEarcut() {
-        console.log(earcut([10,0, 0,50, 60,60, 70,10]));
-    }
-
     public testFile() {        
         /* this.file.createFile(this.file.cacheDirectory, 'testFile2', true).then(data => console.log('Created Cache file.')).catch(err => console.log('Cache File not created:' + err));
         let text = 'test22';

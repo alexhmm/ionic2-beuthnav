@@ -7,14 +7,14 @@ import { Http } from '@angular/http';
 
 import { BeaconService } from '../../services/beaconservice';
 import { DatabaseService } from '../../services/databaseservice';
+import { IntersectService } from '../../services/intersectservice';
 import { KalmanService } from '../../services/kalmanservice';
 import { MapService } from '../../services/mapservice';
 import { MotionService } from '../../services/motionservice';
 
 import * as mapdata from '../../assets/data/mapdata.json';
 
-declare var google;
-
+declare let google;
 
 @Component({
   selector: 'page-home',
@@ -140,6 +140,7 @@ export class HomePage {
                 public geolocation: Geolocation,
                 public beaconService: BeaconService,                
                 public dbService: DatabaseService,
+                public intersectService: IntersectService,
                 public mapService: MapService,
                 public motionService: MotionService) {    
         this.initializeRoomListView();        
@@ -662,10 +663,14 @@ export class HomePage {
 
     public testRouting() {
         // set start and endpoint
-        let rStart = {name: "Start", house: "Bauwesen", tier: 0, lat: 52.54567, lng: 13.35582};
-        let rEnd = {name: "End", house: "Bauwesen", tier: 0, lat: 52.54548, lng: 13.35553};
+        /* let rStart = {name: "Start", house: "Bauwesen", tier: 0, lat: 52.54567, lng: 13.35582};
+        let rEnd = {name: "End", house: "Bauwesen", tier: 0, lat: 52.54548, lng: 13.35553}; */
 
-        this.startRouting(rStart, rEnd);
+        this.dbService.getRoutePointByName("d00Points", "E00").subscribe(data => {
+            let rStart = {lat: 52.54573, lng: 13.35537};
+            let rEnd = {lat: data.lat, lng: data.lng};
+            this.startRouting(rStart, rEnd);
+        });
 
         // let rEnd = new google.maps.LatLng(52.54557, 13.35569);
         // let rEnd = new google.maps.LatLng(52.54566, 13.35552);
@@ -693,7 +698,7 @@ export class HomePage {
             this.triangles = [];
         }        
         // ### TODO: determine routing polygon (index)
-        let routingPolygonIndex = 46;
+        let routingPolygonIndex = 85;
 
         // ### TODO: check if start and end position is in same house and tier
 
@@ -989,10 +994,13 @@ export class HomePage {
         }
     }
 
-    public getLatLngFromString(path: String) {
-        let latLngOrg = path.replace(/[()]/g, '');
-        let latLng = latLngOrg.split(',');
-         //console.log(latlang);
-        return new google.maps.LatLng(parseFloat(latLng[0]) , parseFloat(latLng[1]));
+    public testGS() {
+        let p1 = {y: 13.35427, x: 52.54516};
+        let p2 = {y: 13.35435, x: 52.54520};
+        let q1 = {y: 13.35430, x: 52.54520};
+        let q2 = {y: 13.35433, x: 52.54515};
+
+        let intersectN = this.intersectService.doLineSegmentsIntersect(p1, p2, q1, q2);
+        console.log("Intersection N: " + intersectN);
     }
 }

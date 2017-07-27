@@ -204,13 +204,28 @@ export class DatabaseService {
                 })
             })
         })
-    }   
+    }  
+    
+    public getRoutePointByName(tablePoints: any, name: any) {
+        let queryName = "SELECT * FROM " + tablePoints + " WHERE name LIKE '%" + name + "%'";       
+        let selectedRoom: String[] = [];
+        return Observable.create(observer => {     
+            this.sqlite.create(this.options).then((db: SQLiteObject) => {
+                db.executeSql(queryName, []).then((data) => {  
+                    console.log("Pointname: " + data.rows.item(0).name);
+                    let point = {lat: data.rows.item(0).y, lng: data.rows.item(0).x};                     
+                    observer.next(point);                
+                    observer.complete();
+                })
+            })
+        })
+    }
 
-    getSelectedRoom() {
+    public getSelectedRoom() {
         return this.selectedRoom;
     } 
 
-    getSelectedRoomName() {
+    public getSelectedRoomName() {
         return this.selectedRoomName;
     }
 
@@ -219,7 +234,7 @@ export class DatabaseService {
         console.log("SET ROOMNAME: " + this.selectedRoomName)
     }
 
-    getSelectedRoomCoordinates() {
+    public getSelectedRoomCoordinates() {
         //return this.selectedRoomCoordinates;
         return "";
     }
