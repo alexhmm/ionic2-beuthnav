@@ -124,6 +124,7 @@ export class HomePage {
     // routing paths (Polyline)
     public rPathsC: any[] = [];
     public rPathsCC: any[] = [];
+    public rPathsCCN: any[] = [];
 
     // intersect vertices
     public iPathsC: any[] = [];
@@ -886,25 +887,34 @@ export class HomePage {
                 console.log("Finish CClock: " + google.maps.geometry.poly.containsLocation(pEndCC, this.triangles[tEndIndex]) + ", " + tEndIndex);
                 this.rPathsCC.push({lat: rEnd.lat(), lng: rEnd.lng()});
 
-                let rPathsCC: any[] = [];
-                rPathsCC.push(this.rPathsCC[0]);
-                if (this.rPathsCC.length > 2) {
-                    console.log("rPathsCC.length: " + this.rPathsCC.length);   
-                    for (let i = 0; i < this.rPathsCC.length - 2; i++) {
-                        let iRPaths: any[] = [];
-                        iRPaths.push(this.rPathsCC[rPathsCC.length - 1]);
-                        iRPaths.push(this.rPathsCC[i + 1]);
-                        iRPaths.push(this.rPathsCC[i + 2]);
-                        let intersect = this.getNextRoutingPathN(iRPaths);
-                        if (intersect != null) {
-                            console.log("Intersection at rPathsCC.");
-                            rPathsCC.push(this.rPathsCC[i + 1]);
-                        }
-                    }                    
-                }
-                rPathsCC.push(this.rPathsCC[this.rPathsCC.length - 1]);
-                let polyline = this.mapService.createPolyline(rPathsCC);       
-                //let polyline = this.mapService.createPolyline(this.rPathsCC);                
+                for (let x in this.rPathsCC) console.log(this.rPathsCC[x]);
+                
+                let lengthBefore = this.rPathsCC.length;
+                let lengthAfter = 0;          
+                if (this.rPathsCC.length > 2) {                    
+                    while (lengthAfter != lengthBefore) {
+                        lengthBefore = this.rPathsCC.length;
+                        let tPathsCC: any[] = [];
+                        tPathsCC.push(this.rPathsCC[0]); // add start to temporary
+                        console.log("Entering while.");
+                        for (let i = 0; i < this.rPathsCC.length - 2; i++) {
+                            let indices: any[] = [];
+                            let iRPaths: any[] = [];
+                            iRPaths.push(this.rPathsCC[i]);
+                            iRPaths.push(this.rPathsCC[i + 1]);
+                            iRPaths.push(this.rPathsCC[i + 2]);
+                            let intersect = this.getNextRoutingPathN(iRPaths);
+                            if (intersect != null) {
+                                // intersect finish
+                                tPathsCC.push(this.rPathsCC[i + 1]);
+                            }                            
+                        }  
+                        tPathsCC.push(this.rPathsCC[lengthBefore - 1]);
+                        lengthAfter = tPathsCC.length;
+                        this.rPathsCC = tPathsCC;
+                    }            
+                }     
+                let polyline = this.mapService.createPolyline(this.rPathsCC);                
                 polyline.setMap(this.map);
                 break;
             }
