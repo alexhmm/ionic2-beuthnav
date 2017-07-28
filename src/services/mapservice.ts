@@ -142,6 +142,23 @@ export class MapService {
         return polyline;
     }
 
+        /**
+     * Creates routing polyline for Google map
+     * @param points
+     */
+    public createPolylineDebug(points: any) {
+        let polylineOptions: any = {
+          path: points,
+          geodesic: true,
+          strokeColor: '#00FF00',
+          strokeOpacity: 1,
+          strokeWeight: 3
+        }
+        let polyline = new google.maps.Polyline();
+        polyline.setOptions(polylineOptions);
+        return polyline;
+    }
+
     /**
      * Creates routing polyline for Google map
      * @param points
@@ -492,8 +509,8 @@ export class MapService {
         let PolygonOptions: any = {
             paths: paths,
             strokeColor: '#000000',
-            strokeOpacity: 0.5,
-            strokeWeight: 1,
+            strokeOpacity: 0.33,
+            strokeWeight: 0.5,
             fillOpacity: 0
         }  
         return PolygonOptions;
@@ -537,7 +554,7 @@ export class MapService {
         }
 
         let bearing = (this.getDegrees(math.atan2(dLong, dPhi)) + 360.0) % 360.0;
-        console.log("BEARING: " + bearing);
+        //console.log("BEARING: " + bearing);
         return bearing;
     }
 
