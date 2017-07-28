@@ -129,11 +129,28 @@ export class MapService {
      * Creates routing polyline for Google map
      * @param points
      */
-    public createPolylineRoute(points: any) {
+    public createPolyline(points: any) {
         let polylineOptions: any = {
           path: points,
           geodesic: true,
           strokeColor: '#FF0000',
+          strokeOpacity: 1.0,
+          strokeWeight: 3
+        }
+        let polyline = new google.maps.Polyline();
+        polyline.setOptions(polylineOptions);
+        return polyline;
+    }
+
+    /**
+     * Creates routing polyline for Google map
+     * @param points
+     */
+    public createPolylineRoute(points: any) {
+        let polylineOptions: any = {
+          path: points,
+          geodesic: true,
+          strokeColor: '#0000FF',
           strokeOpacity: 1.0,
           strokeWeight: 3
         }
@@ -319,7 +336,7 @@ export class MapService {
      * @param direction 
      */
     public getLatLngByAzimuthDistance(position, distance, direction) {
-        console.log("Old: " + position.lat + ", " + position.lng);
+        //console.log("Old: " + position.lat + ", " + position.lng);
 
         let radians = math.PI / 180.0;
         let degrees = 180.0 / math.PI;
@@ -332,7 +349,7 @@ export class MapService {
         let ratio = distance / earthRad;
 
         let positionNew = {lat: position.lat + (degrees * cosAz * ratio), lng: position.lng + (degrees * (sinAz / cosLat) * ratio)};
-        console.log("New: " + positionNew.lat + ", " + positionNew.lng);
+        //console.log("New: " + positionNew.lat + ", " + positionNew.lng);
 
         return positionNew;
     }
@@ -520,7 +537,7 @@ export class MapService {
         }
 
         let bearing = (this.getDegrees(math.atan2(dLong, dPhi)) + 360.0) % 360.0;
-        //console.log("BEARING: " + bearing);
+        console.log("BEARING: " + bearing);
         return bearing;
     }
 
@@ -551,5 +568,29 @@ export class MapService {
         let latLng = latLngOrg.split(',');
          //console.log(latlang);
         return new google.maps.LatLng(parseFloat(latLng[0]) , parseFloat(latLng[1]));
+    }
+
+
+    public getLineIntersection(p1x, p1y, p2x, p2y, p3x, p3y, p4x, p4y) {
+        if (this.equalPoints(p1x, p1y, p3x, p3y) || this.equalPoints(p1x, p1y, p4x, p4y) || this.equalPoints(p2x, p2y, p3x, p3y) || this.equalPoints(p2x, p2y, p4x, p4y)) {
+            return false;
+        } 
+
+        let s1x, s1y, s2x, s2y;
+        s1x = p2x - p1x;
+        s1y = p2y - p1y;
+        s2x = p4x - p3x;
+        s2y = p4y - p3y;
+
+        let s, t;
+        s = (-s1y * (p1x - p3x) + s1x * (p1y - p3y)) / (-s2x * s1y + s1x * s2y);
+        t = ( s2x * (p1y - p3y) - s2y * (p1x - p3x)) / (-s2x * s1y + s1x * s2y);
+
+        if (s >= 0 && s <= 1 && t >= 0 && t <= 1) return true;
+        return false; // No collision
+    }
+
+    public equalPoints(p1x, p1y, p2x, p2y) {
+        return (p1x == p2x) && (p1y == p2y);
     }
 }

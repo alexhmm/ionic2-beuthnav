@@ -24,6 +24,10 @@ import { Injectable } from '@angular/core';
 export class IntersectService {
 
     public doLineSegmentsIntersect(p1, p2, q1, q2) {
+        // Do they touch? (Are any of the points equal?)
+         if (this.equalPoints(p1, q1) || this.equalPoints(p1, q2) || this.equalPoints(p2, q1) || this.equalPoints(p2, q2)) {
+            return false;
+        } 
         var r = this.subtractPoints(p2, p1);
         var s = this.subtractPoints(q2, q1);
 
@@ -34,9 +38,9 @@ export class IntersectService {
             // They are coLlinear
             
             // Do they touch? (Are any of the points equal?)
-            if (this.equalPoints(p1, q1) || this.equalPoints(p1, q2) || this.equalPoints(p2, q1) || this.equalPoints(p2, q2)) {
-                return true
-            }
+             /* if (this.equalPoints(p1, q1) || this.equalPoints(p1, q2) || this.equalPoints(p2, q1) || this.equalPoints(p2, q2)) {
+                return false;
+            }  */
             // Do they overlap? (Are all the point differences in either direction the same sign)
             return !this.allEqual([
                     (q1.x - p1.x < 0),

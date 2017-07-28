@@ -847,9 +847,9 @@ export class HomePage {
             let rLengthCC = this.rPathsCC.length;    
 
             console.log("RoutingPaths Clock: " + rLengthC);
-            for (let i = 0; i < rLengthC; i++) console.log("rC - " + i + ": " + this.rPathsC[i].lat + ", " + this.rPathsC[i].lng);      
+            //for (let i = 0; i < rLengthC; i++) console.log("rC - " + i + ": " + this.rPathsC[i].lat + ", " + this.rPathsC[i].lng);      
             console.log("RoutingPaths CounterClock: " + rLengthCC);;
-            for (let i = 0; i < rLengthCC; i++) console.log("rCC - " + i + ": " + this.rPathsCC[i]);
+            //for (let i = 0; i < rLengthCC; i++) console.log("rCC - " + i + ": " + this.rPathsCC[i]);
             
             // Increase and decrease indices to go through routingPolygon vertices in both directions
             indexC++;
@@ -875,39 +875,55 @@ export class HomePage {
             let pEndC = new google.maps.LatLng(parseFloat(this.iPathsC[this.iPathsC.length - 1].lat), parseFloat(this.iPathsC[this.iPathsC.length - 1].lng));
             let pEndCC = new google.maps.LatLng(parseFloat(this.iPathsCC[this.iPathsCC.length - 1].lat), parseFloat(this.iPathsCC[this.iPathsCC.length - 1].lng));
             
-            if (google.maps.geometry.poly.containsLocation(pEndC, this.triangles[tEndIndex])) {
+             if (google.maps.geometry.poly.containsLocation(pEndC, this.triangles[tEndIndex])) {
                 console.log("Finish Clock: " + google.maps.geometry.poly.containsLocation(pEndC, this.triangles[tEndIndex]) + ", " + tEndIndex);
                 this.rPathsC.push({lat: rEnd.lat(), lng: rEnd.lng()});
-                let polyline = new google.maps.Polyline();
-                polyline.setOptions(this.mapService.createPolylineRouteOptions(this.rPathsC));
+                let polyline = this.mapService.createPolyline(this.rPathsC);                
                 polyline.setMap(this.map);
                 break;
-            }
-            if (google.maps.geometry.poly.containsLocation(pEndCC, this.triangles[tEndIndex])) {
+            } 
+            /* if (google.maps.geometry.poly.containsLocation(pEndCC, this.triangles[tEndIndex])) {
                 console.log("Finish CClock: " + google.maps.geometry.poly.containsLocation(pEndCC, this.triangles[tEndIndex]) + ", " + tEndIndex);
                 this.rPathsCC.push({lat: rEnd.lat(), lng: rEnd.lng()});
-                let polyline = new google.maps.Polyline();
-                polyline.setOptions(this.mapService.createPolylineRouteOptions(this.rPathsCC));
+                let polyline = this.mapService.createPolyline(this.rPathsCC);                
                 polyline.setMap(this.map);
                 break;
-            }
+            } */
 
             // Start intersection check for both directions
             if (this.iPathsC.length > 2) {
                 console.log("iPathsC.length: " + this.iPathsC.length);
-                for (let i = 0; i < this.iPathsC.length; i++) console.log("iC - " + i + ": " + this.iPathsC[i].lat + ", " + this.iPathsC[i].lng);
-                let intersectC = this.getNextRoutingPath(this.iPathsC, indexC);
+                //for (let i = 0; i < this.iPathsC.length; i++) console.log("iC - " + i + ": " + this.iPathsC[i].lat + ", " + this.iPathsC[i].lng);
+                /* let intersectC = this.getNextRoutingPathN(this.iPathsC);
+                if (intersectC != null) {
+                    this.rPathsC.push(intersectC[0]);
+                    this.iPathsC = [];
+                    this.iPathsC.push(intersectC[1]);
+                    this.iPathsC.push(intersectC[2]);
+                } */
+                /* let intersectC = this.getNextRoutingPath(this.iPathsC, indexC);
                 if (intersectC != null) {
                     console.log("Intersect C != null.");
                     this.rPathsC.push(intersectC[0]);
                     this.iPathsC = [];
                     this.iPathsC.push(intersectC[1]);
                     this.iPathsC.push(intersectC[2]);
-                }                
+                }          */       
             } 
             if (this.iPathsCC.length > 2) {
                 console.log("iPathsCC.length: " + this.iPathsCC.length);
-                let intersectCC = this.getNextRoutingPath(this.iPathsCC, indexCC);
+                this.iPathsCC.push({lat: parseFloat(this.pPaths[indexCC - 1].lat), lng: parseFloat(this.pPaths[indexCC - 1].lng)});
+                let intersectCC = this.getNextRoutingPathN(this.iPathsCC);
+                if (intersectCC != null) {
+                    this.rPathsC.push(intersectCC[0]);
+                    this.iPathsC = [];
+                    //this.iPathsC.push(intersectCC[1]);
+                    this.iPathsC.push(intersectCC[0]);
+                    this.iPathsC.push(intersectCC[2]);
+                } else {
+                    this.iPathsCC.splice(this.iPathsCC.length - 1, 1);
+                }
+                /* let intersectCC = this.getNextRoutingPath(this.iPathsCC, indexCC);
                 // for (let i = 0; i < this.iPathsCC.length; i++) console.log("iCC - " + i + ": " + this.iPathsCC[i]);
                 if (intersectCC != null) {
                     console.log("Intersect CC != null.");
@@ -915,10 +931,104 @@ export class HomePage {
                     this.iPathsCC = [];
                     this.iPathsCC.push(intersectCC[1]);
                     this.iPathsCC.push(intersectCC[2]);
-                }
+                } */
             } 
         }
     }   
+
+    public getNextRoutingPathN(iPaths: any) {  
+        let length = iPaths.length;         
+        
+        // intersect check: new potential route path
+        let p1 = {lat: iPaths[0].lat, lng: iPaths[0].lng};
+        let p2 = {lat: iPaths[length - 1].lat, lng: iPaths[length - 1].lng};
+        
+        /* let p2 = {x: 0, y: 0};
+        let direction1;
+        let direction2;
+        let heading1 = this.mapService.calcBearing(iPaths[length - 2], iPaths[length - 3]);
+        let heading2 = this.mapService.calcBearing(iPaths[length - 2], iPaths[length - 1]);
+
+        direction1 = Math.abs((heading1 + heading2) / 2);
+        if (direction1 > 180) {
+            direction2 = Math.abs(direction1 - 180);
+        } else {
+            direction2 = direction1 + 180;
+        }
+
+        let nP1 = this.mapService.getLatLngByAzimuthDistance(iPaths[length - 1], 1, Math.abs(direction1));
+        let nP2 = this.mapService.getLatLngByAzimuthDistance(iPaths[length - 1], 1, Math.abs(direction2));
+        let nP1LLA = new google.maps.LatLng(parseFloat(nP1.lat), parseFloat(nP1.lng));
+        let nP2LLA = new google.maps.LatLng(parseFloat(nP2.lat), parseFloat(nP2.lng));               
+
+        if (google.maps.geometry.poly.containsLocation(nP1LLA, this.routingPolygon)) {
+            p2 = {x: nP1.lat, y: nP1.lng};
+        }
+        if (google.maps.geometry.poly.containsLocation(nP1LLA, this.routingPolygon)) {
+            p2 = {x: nP2.lat, y: nP2.lng};
+        } */
+
+        //
+        //
+        //
+        
+        for (let i = 0; i < this.pPaths.length - 1; i++) {    
+            // intersect check: all paths
+            let q1 = {lat: this.pPaths[i].lat, lng: this.pPaths[i].lng};
+            let q2 = {lat: this.pPaths[i + 1].lat, lng: this.pPaths[i + 1].lng};
+
+            if (this.mapService.getLineIntersection(p1.lat, p1.lng, p2.lat, p2.lng, q1.lat, q1.lng, q2.lat, q2.lng)) {
+                console.log("Intersection at pPath: " + i + ", p2: " + p2.lat + ", " + p2.lng);
+                let oldVertex = iPaths[length - 2];
+                let nextVertex = iPaths[length - 1];
+
+                let direction1;
+                let direction2;
+                let heading1 = this.mapService.calcBearing(iPaths[1], iPaths[0]);
+                let heading2 = this.mapService.calcBearing(iPaths[1], iPaths[2]);
+
+                direction1 = Math.abs((heading1 + heading2) / 2);
+                if (direction1 > 180) {
+                    direction2 = Math.abs(direction1 - 180);
+                } else {
+                    direction2 = direction1 + 180;
+                }
+
+                let nP1 = this.mapService.getLatLngByAzimuthDistance(oldVertex, 1, Math.abs(direction1));
+                let nP2 = this.mapService.getLatLngByAzimuthDistance(oldVertex, 1, Math.abs(direction2));
+                let nP1LLA = new google.maps.LatLng(parseFloat(nP1.lat), parseFloat(nP1.lng));
+                let nP2LLA = new google.maps.LatLng(parseFloat(nP2.lat), parseFloat(nP2.lng));
+
+                if (google.maps.geometry.poly.containsLocation(nP1LLA, this.routingPolygon)) {
+                    console.log("containslocation 1");
+                    let newVertex = nP1; 
+
+                    let testPath: any[] = [];
+                    testPath.push(oldVertex);
+                    testPath.push(nP1);
+
+                    let polyline = this.mapService.createPolylineRoute(testPath);
+                    polyline.setMap(this.map);
+                    
+                    return [newVertex, oldVertex, nextVertex];             
+                }
+
+                if (google.maps.geometry.poly.containsLocation(nP1LLA, this.routingPolygon)) {
+                    console.log("containslocation 2");
+                    let newVertex = nP2; 
+                    let testPath: any[] = [];
+                    testPath.push(oldVertex);
+                    testPath.push(nP2);
+
+                    let polyline = this.mapService.createPolylineRoute(testPath);
+                    polyline.setMap(this.map);
+                    
+                    return [newVertex, oldVertex, nextVertex];    
+                }
+            }            
+        }     
+        return null;   
+    }
 
     /**
      * Returns next routing path if temporary triangle lays outside the routing polygon
@@ -995,12 +1105,44 @@ export class HomePage {
     }
 
     public testGS() {
-        let p1 = {y: 13.35427, x: 52.54516};
-        let p2 = {y: 13.35435, x: 52.54520};
-        let q1 = {y: 13.35430, x: 52.54520};
-        let q2 = {y: 13.35433, x: 52.54515};
+        // same endings = false
+        let a1 = {lat: 52.501670, lng: 13.536665}; 
+        let a2 = {lat: 52.498431, lng: 13.536836}; 
+        let b1 = {lat: 52.498431, lng: 13.536836}; 
+        let b2 = {lat: 52.501043, lng: 13.531601};
+        let aBlla = this.mapService.getLineIntersection(a1.lat, a1.lng, a2.lat, a2.lng, b1.lat, b1.lng, b2.lat, b2.lng);
+        console.log("False Same LLA: " + aBlla);
+        let a1ecef = this.mapService.LLAtoECEF(a1.lat, a1.lng, 38);
+        let a2ecef = this.mapService.LLAtoECEF(a2.lat, a2.lng, 38);
+        let b1ecef = this.mapService.LLAtoECEF(b1.lat, b1.lng, 38);
+        let b2ecef = this.mapService.LLAtoECEF(b2.lat, b2.lng, 38);
+        let aBecef = this.mapService.getLineIntersection(a1ecef[0], a1ecef[1], a2ecef[0], a2ecef[1], b1ecef[0], b1ecef[1], b2ecef[0], b2ecef[1]);
+        console.log("False Same ECEF: " + aBecef);
 
-        let intersectN = this.intersectService.doLineSegmentsIntersect(p1, p2, q1, q2);
-        console.log("Intersection N: " + intersectN);
+        let c1 = {lat: 52.501670, lng: 13.536665}; 
+        let c2 = {lat: 52.498431, lng: 13.536836}; 
+        let d1 = {lat: 52.501409, lng: 13.538639}; 
+        let d2 = {lat: 52.501043, lng: 13.531601};
+        let cDlla = this.mapService.getLineIntersection(c1.lat, c1.lng, c2.lat, c2.lng, d1.lat, d1.lng, d2.lat, d2.lng);
+        console.log("True LLA: " + cDlla);
+        let c1ecef = this.mapService.LLAtoECEF(a1.lat, a1.lng, 38);
+        let c2ecef = this.mapService.LLAtoECEF(a2.lat, a2.lng, 38);
+        let d1ecef = this.mapService.LLAtoECEF(b1.lat, b1.lng, 38);
+        let d2ecef = this.mapService.LLAtoECEF(b2.lat, b2.lng, 38);
+        let cDecef = this.mapService.getLineIntersection(c1ecef[0], c1ecef[1], c2ecef[0], c2ecef[1], d1ecef[0], d1ecef[1], d2ecef[0], d2ecef[1]);
+        console.log("True ECEF: " + cDecef);
+
+        let e1 = {lat: 52.501670, lng: 13.536665}; 
+        let e2 = {lat: 52.498431, lng: 13.536836}; 
+        let f1 = {lat: 52.503865, lng: 13.545419}; 
+        let f2 = {lat: 52.500991, lng: 13.546364};
+        let eFlla = this.mapService.getLineIntersection(e1.lat, e1.lng, e2.lat, e2.lng, f1.lat, f1.lng, f2.lat, f2.lng);
+        console.log("False LLA: " + eFlla);
+        let e1ecef = this.mapService.LLAtoECEF(a1.lat, a1.lng, 38);
+        let e2ecef = this.mapService.LLAtoECEF(a2.lat, a2.lng, 38);
+        let f1ecef = this.mapService.LLAtoECEF(b1.lat, b1.lng, 38);
+        let f2ecef = this.mapService.LLAtoECEF(b2.lat, b2.lng, 38);
+        let eFecef = this.mapService.getLineIntersection(e1ecef[0], e1ecef[1], e2ecef[0], e2ecef[1], f1ecef[0], f1ecef[1], f2ecef[0], f2ecef[1]);
+        console.log("False ECEF: " + eFecef);        
     }
 }
