@@ -885,7 +885,26 @@ export class HomePage {
             if (google.maps.geometry.poly.containsLocation(pEndCC, this.triangles[tEndIndex])) {
                 console.log("Finish CClock: " + google.maps.geometry.poly.containsLocation(pEndCC, this.triangles[tEndIndex]) + ", " + tEndIndex);
                 this.rPathsCC.push({lat: rEnd.lat(), lng: rEnd.lng()});
-                let polyline = this.mapService.createPolyline(this.rPathsCC);                
+
+                let rPathsCC: any[] = [];
+                rPathsCC.push(this.rPathsCC[0]);
+                if (this.rPathsCC.length > 2) {
+                    console.log("rPathsCC.length: " + this.rPathsCC.length);   
+                    for (let i = 0; i < this.rPathsCC.length - 2; i++) {
+                        let iRPaths: any[] = [];
+                        iRPaths.push(this.rPathsCC[rPathsCC.length - 1]);
+                        iRPaths.push(this.rPathsCC[i + 1]);
+                        iRPaths.push(this.rPathsCC[i + 2]);
+                        let intersect = this.getNextRoutingPathN(iRPaths);
+                        if (intersect != null) {
+                            console.log("Intersection at rPathsCC.");
+                            rPathsCC.push(this.rPathsCC[i + 1]);
+                        }
+                    }                    
+                }
+                rPathsCC.push(this.rPathsCC[this.rPathsCC.length - 1]);
+                let polyline = this.mapService.createPolyline(rPathsCC);       
+                //let polyline = this.mapService.createPolyline(this.rPathsCC);                
                 polyline.setMap(this.map);
                 break;
             }
