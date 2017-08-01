@@ -178,7 +178,18 @@ export class MapService {
 
     public createCircleOptions(position: any, radius: any) {
         let circleOptions: any = {
-            center: {lat: position.lat, lng: position.lng},
+            center: {lat: parseFloat(position.lat), lng: parseFloat(position.lng)},
+            strokeWeight: 0,
+            fillColor: '#0000FF',
+            radius: parseFloat(radius)
+        }
+        return circleOptions;
+    }
+
+        public createCircleOptions2(position: any, radius: any) {
+        console.log("CircleOptions: " + position.lat + ", " + position.lng);
+        let circleOptions: any = {
+            center: {lat: parseFloat(position.lat), lng: parseFloat(position.lng)},
             strokeWeight: 0,
             fillColor: '#0000FF',
             radius: parseFloat(radius)
