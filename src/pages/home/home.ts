@@ -663,8 +663,8 @@ export class HomePage {
         /* let rStart = {name: "Start", house: "Bauwesen", tier: 0, lat: 52.54567, lng: 13.35582};
         let rEnd = {name: "End", house: "Bauwesen", tier: 0, lat: 52.54548, lng: 13.35553}; */
 
-        this.dbService.getRoutePointByName("d00Points", "E31").subscribe(data => {
-            let rStart = {lat: 52.54568, lng: 13.35582};
+        this.dbService.getRoutePointByName("d00Points", "D 04").subscribe(data => {
+            let rStart = {lng: 13.35535, lat: 52.54573};
             let rEnd = {lat: data.lat, lng: data.lng};            
             this.startRouting(rStart, rEnd);
         });
@@ -697,7 +697,7 @@ export class HomePage {
             this.triangles = [];
         }        
         // ### TODO: determine routing polygon (index)
-        let routingPolygonIndex = 84;
+        let routingPolygonIndex = 85;
 
         // ### TODO: check if start and end position is in same house and tier
 
@@ -943,11 +943,12 @@ export class HomePage {
                 // ##########
                 let nIndexC = indexC + 1;
                 if (nIndexC === pLength - 1) nIndexC = 0; 
+                console.log("nIndexC: " + nIndexC);
                 let fNext = {lat: parseFloat(this.pPaths[nIndexC].lat), lng: parseFloat(this.pPaths[nIndexC].lng)};
                 
                 // ##########
                 this.iPathsC = [];
-                this.iPathsC.push({lat: parseFloat(this.rPathsC[this.rPathsCC.length - 1].lat), lng: parseFloat(this.rPathsC[this.rPathsC.length - 1].lng)});
+                this.iPathsC.push({lat: parseFloat(this.rPathsC[this.rPathsC.length - 1].lat), lng: parseFloat(this.rPathsC[this.rPathsC.length - 1].lng)});
                 this.iPathsC.push({lat: rEnd.lat(), lng: rEnd.lng()});
                 let intersectC2 = this.getNextRoutingPathN(this.iPathsC, fPrev, fCurr, fNext, continueVertex);
                 if (intersectC2 != null) {
@@ -1063,7 +1064,7 @@ export class HomePage {
                     this.iPathsC.push(intersectC);
                 }  
             } 
-            if (this.iPathsCC.length > 90) {
+            if (this.iPathsCC.length > 1) {
                 //console.log("iPathsCC.length: " + this.iPathsCC.length);
                 // ##########
                 let cIndexCC = indexCC - 1;
