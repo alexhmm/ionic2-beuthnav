@@ -29,6 +29,7 @@ import { IntersectService } from '../services/intersectservice';
 import { KalmanService } from '../services/kalmanservice';
 import { MapService } from '../services/mapservice';
 import { MotionService } from '../services/motionservice';
+import { RoutingService } from '../services/routingservice';
 import { WifiService } from '../services/wifiservice';
 
 @NgModule({
@@ -78,6 +79,7 @@ import { WifiService } from '../services/wifiservice';
     KalmanService,
     MapService,
     MotionService,
+    RoutingService,
     WifiService,
     {provide: ErrorHandler, useClass: IonicErrorHandler}
   ]
