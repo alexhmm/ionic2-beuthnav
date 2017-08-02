@@ -644,11 +644,17 @@ export class HomePage {
         /* let rStart = {name: "Start", house: "Bauwesen", tier: 0, lat: 52.54567, lng: 13.35582};
         let rEnd = {name: "End", house: "Bauwesen", tier: 0, lat: 52.54548, lng: 13.35553}; */
 
-        this.dbService.getRoutePointByName("d00Points", "E15").subscribe(data => {
+        this.dbService.getRoutePointByName("d00Points", "E00").subscribe(data => {
             let rStart = {lng: 13.35535, lat: 52.54573};
-            let rEnd = {lat: data.lat, lng: data.lng};         
+            let rEnd = {lat: data.lat, lng: data.lng};   
+            
+            // ### TODO: check if start and end position is in same house and tier
+            
+            // ### TODO: determine routing polygon (index)
+            let routingPolygonIndex = 85;
+            let routingPolygon = this.polygons[routingPolygonIndex];
 
-            let rPaths = this.routingService.startRouting(rStart, rEnd, this.polygons);
+            let rPaths = this.routingService.createRouteInPolygon(rStart, rEnd, routingPolygon);
             let polyline = this.mapService.createPolyline(rPaths);                
             polyline.setMap(this.map);
         });
