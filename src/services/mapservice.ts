@@ -146,11 +146,11 @@ export class MapService {
      * Creates routing polyline for Google map
      * @param points
      */
-    public createPolylineDebug(points: any) {
+    public createPolylineDebug(points: any, color: any) {
         let polylineOptions: any = {
           path: points,
           geodesic: true,
-          strokeColor: '#00FF00',
+          strokeColor: color,
           strokeOpacity: 1,
           strokeWeight: 3
         }
