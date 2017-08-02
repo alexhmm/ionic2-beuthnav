@@ -663,8 +663,8 @@ export class HomePage {
         /* let rStart = {name: "Start", house: "Bauwesen", tier: 0, lat: 52.54567, lng: 13.35582};
         let rEnd = {name: "End", house: "Bauwesen", tier: 0, lat: 52.54548, lng: 13.35553}; */
 
-        this.dbService.getRoutePointByName("d00Points", "E52").subscribe(data => {
-            let rStart = {lat: 52.54537, lng: 13.35531};
+        this.dbService.getRoutePointByName("d00Points", "E31").subscribe(data => {
+            let rStart = {lat: 52.54568, lng: 13.35582};
             let rEnd = {lat: data.lat, lng: data.lng};            
             this.startRouting(rStart, rEnd);
         });
@@ -884,9 +884,9 @@ export class HomePage {
             let rLengthC = this.rPathsC.length;
             let rLengthCC = this.rPathsCC.length;    
 
-            console.log("RoutingPaths Clock: " + rLengthC);
+            // console.log("RoutingPaths Clock: " + rLengthC);
             //for (let i = 0; i < rLengthC; i++) console.log("rC - " + i + ": " + this.rPathsC[i].lat + ", " + this.rPathsC[i].lng);      
-            console.log("RoutingPaths CounterClock: " + rLengthCC);
+            // console.log("RoutingPaths CounterClock: " + rLengthCC);
             //for (let i = 0; i < rLengthCC; i++) console.log("rCC - " + i + ": " + this.rPathsCC[i]);
 
             // prev Vertex
@@ -930,8 +930,34 @@ export class HomePage {
             }  */
             if (google.maps.geometry.poly.containsLocation(pEndCC, this.triangles[tEndIndex])) {
                 console.log("Finish CClock: " + google.maps.geometry.poly.containsLocation(pEndCC, this.triangles[tEndIndex]) + ", " + tEndIndex);
-                this.rPathsCC.push({lat: rEnd.lat(), lng: rEnd.lng()});
 
+                let continueVertex = null;
+                // 1st check
+                let next1 = {lat: parseFloat(this.pPaths[indexCC].lat), lng: parseFloat(this.pPaths[indexCC].lng)};
+                let intersectCC1 = this.getNextRoutingPathN(this.iPathsCC, prevVertex, currVertex, next1, continueVertex);
+                if (intersectCC1 != null) {
+                    console.log("Intersection at IndexCC: " + indexCC);
+                    this.rPathsCC.push(intersectCC1);
+                }       
+
+                // 2nd check
+                let fPrev = currVertex;
+                let fCurr = {lat: parseFloat(this.pPaths[indexCC].lat), lng: parseFloat(this.pPaths[indexCC].lng)};
+                // ##########
+                let nIndexCC = indexCC - 1;
+                if (nIndexCC === -1) nIndexCC = pLength - 1; 
+                let fNext = {lat: parseFloat(this.pPaths[nIndexCC].lat), lng: parseFloat(this.pPaths[nIndexCC].lng)};
+                
+                // ##########
+                this.iPathsCC = [];
+                this.iPathsCC.push({lat: parseFloat(this.rPathsCC[this.rPathsCC.length - 1].lat), lng: parseFloat(this.rPathsCC[this.rPathsCC.length - 1].lng)});
+                this.iPathsCC.push({lat: rEnd.lat(), lng: rEnd.lng()});
+                let intersectCC2 = this.getNextRoutingPathN(this.iPathsCC, fPrev, fCurr, fNext, continueVertex);
+                if (intersectCC2 != null) {
+                    console.log("Intersection at IndexCC: " + indexCC);
+                    this.rPathsCC.push(intersectCC2);
+                }                
+                this.rPathsCC.push({lat: rEnd.lat(), lng: rEnd.lng()});
                 for (let x in this.rPathsCC) console.log(this.rPathsCC[x]);
                 
                 /* let lengthBefore = this.rPathsCC.length;
@@ -992,7 +1018,7 @@ export class HomePage {
                 let continueVertex = {lat: parseFloat(this.pPaths[cIndexCC].lat), lng: parseFloat(this.pPaths[cIndexCC].lng)};
                 // ##########
 
-                let intersectCC = this.getNextRoutingPathN(this.iPathsCC, prevVertex, currVertex, continueVertex);
+                let intersectCC = this.getNextRoutingPathN(this.iPathsCC, prevVertex, currVertex, this.iPathsCC[1], continueVertex);
                 if (intersectCC != null) {
                     console.log("Intersection at IndexCC: " + indexCC);
                     this.rPathsCC.push(intersectCC);
@@ -1015,7 +1041,7 @@ export class HomePage {
         }
     }   
 
-    public getNextRoutingPathN(iPaths: any, prevVertex: any, currVertex: any, continueVertex: any) {  
+    public getNextRoutingPathN(iPaths: any, prevVertex: any, currVertex: any, nextVertex: any, continueVertex: any) {  
         let length = iPaths.length;         
         
         // intersect check: new potential route path, iPaths length always = 3 / 2
@@ -1057,7 +1083,7 @@ export class HomePage {
                 let direction2;
                 // iPaths length always is 3 (2)
                 let heading1 = this.mapService.calcBearing(currVertex, prevVertex);
-                let heading2 = this.mapService.calcBearing(currVertex, iPaths[1]);
+                let heading2 = this.mapService.calcBearing(currVertex, nextVertex);
 
                 direction1 = Math.abs((heading1 + heading2) / 2);
                 if (direction1 > 180) {
@@ -1065,19 +1091,19 @@ export class HomePage {
                 } else {
                     direction2 = direction1 + 180;
                 }
-                console.log(this.iCounter + " - direction1: " + direction1);
-                console.log(this.iCounter + " - direction2: " + direction2);
-
+                /* console.log(this.iCounter + " - direction1: " + direction1);
+                console.log(this.iCounter + " - direction2: " + direction2); */
+        
                 let nP1 = this.mapService.getLatLngByAzimuthDistance(currVertex, 1, Math.abs(direction1));
                 let nP2 = this.mapService.getLatLngByAzimuthDistance(currVertex, 1, Math.abs(direction2));
                 let nP1LLA = new google.maps.LatLng(parseFloat(nP1.lat), parseFloat(nP1.lng));
                 let nP2LLA = new google.maps.LatLng(parseFloat(nP2.lat), parseFloat(nP2.lng));
 
-                let str1 = this.iCounter + " d1";
+                /* let str1 = this.iCounter + " d1";
                 let str2 = this.iCounter + " d2";
                 this.addMarker(nP1, str1);
                 this.addMarker(nP2, str2);
-                this.iCounter++;
+                this.iCounter++; */
 
                 if (google.maps.geometry.poly.containsLocation(nP1LLA, this.routingPolygon)) {
                     //console.log("Containslocation 1: " + direction1);
