@@ -195,7 +195,7 @@ export class RoutingService {
                 this.rPathsC.push({lat: rEnd.lat(), lng: rEnd.lng()});
                 for (let x in this.rPathsC) console.log(this.rPathsC[x]);                
                 
-                //if (this.rPathsCC.length > 2) return this.cleanFinalRoute(this.rPathsC);
+                if (this.rPathsCC.length > 2) return this.cleanFinalRoute(this.rPathsC);
                 return this.rPathsC;
             }
             if (google.maps.geometry.poly.containsLocation(pEndCC, this.triangles[tEndIndex])) {
@@ -229,7 +229,7 @@ export class RoutingService {
                 this.rPathsCC.push({lat: rEnd.lat(), lng: rEnd.lng()});
                 for (let x in this.rPathsCC) console.log(this.rPathsCC[x]);
                   
-                //if (this.rPathsCC.length > 2) return this.cleanFinalRoute(this.rPathsCC);
+                if (this.rPathsCC.length > 2) return this.cleanFinalRoute(this.rPathsCC);
                 return this.rPathsCC;
             }
 
@@ -391,6 +391,8 @@ export class RoutingService {
      * @param routePaths 
      */
     public cleanFinalRoute(routePaths: any) {
+        for (let x in routePaths) console.log(routePaths[x].lat + ", " + routePaths[x].lng);
+        console.log("##################");
         let rPaths: any[] = [];
         rPaths = routePaths;
         let lengthBefore = rPaths.length;
@@ -400,13 +402,10 @@ export class RoutingService {
             while (lengthAfter != lengthBefore) {
                 lengthBefore = rPaths.length; 
                 let tPaths: any[] = []; 
-                tPaths.push(rPaths[0]); // add start to temporary paths      
-                console.log("lengthBefore: " + lengthBefore);
+                tPaths.push(rPaths[0]); // add start to temporary paths 
                 for (let i = 1; i < lengthBefore - 1; i++) {
                     let r1 = {lat: parseFloat(rPaths[i - 1].lat), lng: parseFloat(rPaths[i - 1].lng)};
                     let r2 = {lat: parseFloat(rPaths[i + 1].lat), lng: parseFloat(rPaths[i + 1].lng)};
-                    console.log("check: " + i);
-
                     for (let j = 0; j < this.pPaths.length - 1; j++) {    
                         // intersect check: all edges of pPaths
                         let p1 = {lat: parseFloat(this.pPaths[j].lat), lng: parseFloat(this.pPaths[j].lng)};
@@ -423,11 +422,10 @@ export class RoutingService {
                 
                 rPaths = tPaths;
                 lengthAfter = rPaths.length; 
-                console.log("lengthAfter: " + lengthAfter);
-                for (let x in rPaths) console.log(rPaths[x].lat + ", " + rPaths[x].lng);
 
-                if (lengthAfter === lengthBefore) {                 
-                    return rPaths;
+                if (lengthAfter === lengthBefore) {       
+                    for (let x in rPaths) console.log(rPaths[x].lat + ", " + rPaths[x].lng);          
+                    return rPaths;                    
                 }                       
             }
         }
