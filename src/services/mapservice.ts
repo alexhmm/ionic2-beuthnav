@@ -542,50 +542,9 @@ export class MapService {
         return earcut(data);
     }    
 
-    /**
-     * Calculates bearing between two geodetic points
-     * @param point1
-     * @param point2 
-     */
-    public calcBearing(point1, point2) {
-        let p1Lat = this.getRadians(point1.lat),
-        p1Lng = this.getRadians(point1.lng),
-        p2Lat = this.getRadians(point2.lat),
-        p2Lng = this.getRadians(point2.lng)
 
-        let dLong = p2Lng - p1Lng;
-        let dPhi = math.log(math.tan(p2Lat / 2.0 + math.pi / 4.0) / math.tan(p1Lat / 2.0 + math.pi / 4.0));
 
-        if (math.abs(dLong) > math.pi) {
-            if (dLong > 0.0) {
-                dLong = -(2.0 * math.pi - dLong)
-            } else {
-                dLong = (2.0 * math.pi + dLong)
-            }
-        }
-
-        let bearing = (this.getDegrees(math.atan2(dLong, dPhi)) + 360.0) % 360.0;
-        //console.log("BEARING: " + bearing);
-        return bearing;
-    }
-
-    /**
-     * 
-     * @param diff 
-     * @param index 
-     */
-    public checkBearingDifference(diff) {
-        if (Math.abs(diff) > 180) {
-            diff = 360 - Math.abs(diff);
-        } else {
-             diff = Math.abs(diff);
-        }
-        //console.log("Bearing Difference: " + diff);
-        if (diff > 10) {
-            return true;                   
-        }
-        return false;
-    }
+    
 
     /**
      * Converts from Path String to LatLng Object
@@ -596,29 +555,6 @@ export class MapService {
         let latLng = latLngOrg.split(',');
          //console.log(latlang);
         return new google.maps.LatLng(parseFloat(latLng[0]) , parseFloat(latLng[1]));
-    }
+    }  
 
-
-    public getLineIntersection(p1x, p1y, p2x, p2y, p3x, p3y, p4x, p4y) {
-        if (this.equalPoints(p1x, p1y, p3x, p3y) || this.equalPoints(p1x, p1y, p4x, p4y) || this.equalPoints(p2x, p2y, p3x, p3y) || this.equalPoints(p2x, p2y, p4x, p4y)) {
-            return false;
-        } 
-
-        let s1x, s1y, s2x, s2y;
-        s1x = p2x - p1x;
-        s1y = p2y - p1y;
-        s2x = p4x - p3x;
-        s2y = p4y - p3y;
-
-        let s, t;
-        s = (-s1y * (p1x - p3x) + s1x * (p1y - p3y)) / (-s2x * s1y + s1x * s2y);
-        t = ( s2x * (p1y - p3y) - s2y * (p1x - p3x)) / (-s2x * s1y + s1x * s2y);
-
-        if (s >= 0 && s <= 1 && t >= 0 && t <= 1) return true;
-        return false; // No collision
-    }
-
-    public equalPoints(p1x, p1y, p2x, p2y) {
-        return (p1x == p2x) && (p1y == p2y);
-    }
 }

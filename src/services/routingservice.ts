@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { MapService } from './mapservice';
 
 import * as earcut from 'earcut';
+import * as math from 'mathjs';
 
 declare let google;
 
@@ -342,11 +343,11 @@ export class RoutingService {
             let p1 = {lat: parseFloat(pPaths[i].lat), lng: parseFloat(pPaths[i].lng)};
             let p2 = {lat: parseFloat(pPaths[i + 1].lat), lng: parseFloat(pPaths[i + 1].lng)};
 
-            if (this.mapService.getLineIntersection(p1.lat, p1.lng, p2.lat, p2.lng, i1.lat, i1.lng, i2.lat, i2.lng)) {               
+            if (this.getLineIntersection(p1.lat, p1.lng, p2.lat, p2.lng, i1.lat, i1.lng, i2.lat, i2.lng)) {               
                 let direction1;
                 let direction2;
-                let heading1 = this.mapService.calcBearing(currVertex, prevVertex);
-                let heading2 = this.mapService.calcBearing(currVertex, nextVertex);
+                let heading1 = this.calcBearing(currVertex, prevVertex);
+                let heading2 = this.calcBearing(currVertex, nextVertex);
 
                 direction1 = Math.abs((heading1 + heading2) / 2);
                 if (direction1 > 180) {
@@ -394,9 +395,9 @@ export class RoutingService {
         let pathsRawHeadings: any[] = [];
         for (let i = 0; i < pathsRaw.length; i++) {
             if (i == pathsRaw.length - 1) {
-                pathsRawHeadings.push(this.mapService.calcBearing(pathsRaw[i], pathsRaw[0]));
+                pathsRawHeadings.push(this.calcBearing(pathsRaw[i], pathsRaw[0]));
             } else {
-                pathsRawHeadings.push(this.mapService.calcBearing(pathsRaw[i], pathsRaw[i + 1]));
+                pathsRawHeadings.push(this.calcBearing(pathsRaw[i], pathsRaw[i + 1]));
             }
         }
 
@@ -406,17 +407,62 @@ export class RoutingService {
         for (let i = 0; i < pathsRawHeadings.length; i++) {
             if (i == 0) {
                 let diff = pathsRawHeadings[i] - pathsRawHeadings[pathsRawHeadings.length - 1];
-                if (this.mapService.checkBearingDifference(diff)) {
+                if (this.checkBearingDifference(diff)) {
                     pathsClean.push({lat: parseFloat(pathsRaw[i].lat), lng: parseFloat(pathsRaw[i].lng), elevation: "38"});
                 }
             } else {
                 let diff = pathsRawHeadings[i] - pathsRawHeadings[i - 1];
-                if (this.mapService.checkBearingDifference(diff)) {
+                if (this.checkBearingDifference(diff)) {
                     pathsClean.push({lat: parseFloat(pathsRaw[i].lat), lng: parseFloat(pathsRaw[i].lng), elevation: "38"}); 
                 }
             }
         } 
         return pathsClean; 
+    }
+
+    /**
+     * Calculates bearing between two geodetic points
+     * @param point1
+     * @param point2 
+     */
+    public calcBearing(point1, point2) {
+        let p1Lat = this.mapService.getRadians(point1.lat),
+        p1Lng = this.mapService.getRadians(point1.lng),
+        p2Lat = this.mapService.getRadians(point2.lat),
+        p2Lng = this.mapService.getRadians(point2.lng)
+
+        let dLong = p2Lng - p1Lng;
+        let dPhi = math.log(math.tan(p2Lat / 2.0 + math.pi / 4.0) / math.tan(p1Lat / 2.0 + math.pi / 4.0));
+
+        if (math.abs(dLong) > math.pi) {
+            if (dLong > 0.0) {
+                dLong = -(2.0 * math.pi - dLong)
+            } else {
+                dLong = (2.0 * math.pi + dLong)
+            }
+        }
+
+        let bearing = (this.mapService.getDegrees(math.atan2(dLong, dPhi)) + 360.0) % 360.0;
+        //console.log("BEARING: " + bearing);
+        return bearing;
+    }
+
+    /**
+     * 
+     * @param diff 
+     * @param index 
+     */
+    public checkBearingDifference(diff) {
+        if (Math.abs(diff) > 180) {
+            diff = 360 - Math.abs(diff);
+        } else {
+             diff = Math.abs(diff);
+        }
+        //console.log("Bearing Difference: " + diff);
+        if (diff > 10) {
+            return true;                   
+        }
+        return false;
     }
 
     /**
@@ -439,10 +485,14 @@ export class RoutingService {
         return triangles;
     }
 
+    /**
+     * Returns starting vertex and end triangle indices
+     * @param rStart 
+     * @param rEnd 
+     */
     public getRoutingIndices(rStart: any, rEnd: any) {
         let rStartIndex, tStartPP,
         rEndIndex, tEndPP, tEndIndex;
-
         // Determine startPointTriangle and endPointTriangle for startPosition and endPosition
         // ### TODO: change startIndex and endIndex to near neighbor?
         for (let x in this.triangles) {
@@ -482,4 +532,37 @@ export class RoutingService {
         return [rStartIndex, tEndIndex];
     }
 
+    /**
+     * 
+     * @param p1x 
+     * @param p1y 
+     * @param p2x 
+     * @param p2y 
+     * @param p3x 
+     * @param p3y 
+     * @param p4x 
+     * @param p4y 
+     */
+    public getLineIntersection(p1x, p1y, p2x, p2y, p3x, p3y, p4x, p4y) {
+        if (this.equalPoints(p1x, p1y, p3x, p3y) || this.equalPoints(p1x, p1y, p4x, p4y) || this.equalPoints(p2x, p2y, p3x, p3y) || this.equalPoints(p2x, p2y, p4x, p4y)) {
+            return false;
+        } 
+
+        let s1x, s1y, s2x, s2y;
+        s1x = p2x - p1x;
+        s1y = p2y - p1y;
+        s2x = p4x - p3x;
+        s2y = p4y - p3y;
+
+        let s, t;
+        s = (-s1y * (p1x - p3x) + s1x * (p1y - p3y)) / (-s2x * s1y + s1x * s2y);
+        t = ( s2x * (p1y - p3y) - s2y * (p1x - p3x)) / (-s2x * s1y + s1x * s2y);
+
+        if (s >= 0 && s <= 1 && t >= 0 && t <= 1) return true;
+        return false; // No collision
+    }
+
+    public equalPoints(p1x, p1y, p2x, p2y) {
+        return (p1x == p2x) && (p1y == p2y);
+    }
 }

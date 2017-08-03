@@ -668,44 +668,6 @@ export class HomePage {
     }        
 
     public testGS() {
-        // same endings = false
-        let a1 = {lat: 52.501670, lng: 13.536665}; 
-        let a2 = {lat: 52.498431, lng: 13.536836}; 
-        let b1 = {lat: 52.498431, lng: 13.536836}; 
-        let b2 = {lat: 52.501043, lng: 13.531601};
-        let aBlla = this.mapService.getLineIntersection(a1.lat, a1.lng, a2.lat, a2.lng, b1.lat, b1.lng, b2.lat, b2.lng);
-        console.log("False Same LLA: " + aBlla);
-        let a1ecef = this.mapService.LLAtoECEF(a1.lat, a1.lng, 38);
-        let a2ecef = this.mapService.LLAtoECEF(a2.lat, a2.lng, 38);
-        let b1ecef = this.mapService.LLAtoECEF(b1.lat, b1.lng, 38);
-        let b2ecef = this.mapService.LLAtoECEF(b2.lat, b2.lng, 38);
-        let aBecef = this.mapService.getLineIntersection(a1ecef[0], a1ecef[1], a2ecef[0], a2ecef[1], b1ecef[0], b1ecef[1], b2ecef[0], b2ecef[1]);
-        console.log("False Same ECEF: " + aBecef);
-
-        let c1 = {lat: 52.501670, lng: 13.536665}; 
-        let c2 = {lat: 52.498431, lng: 13.536836}; 
-        let d1 = {lat: 52.501409, lng: 13.538639}; 
-        let d2 = {lat: 52.501043, lng: 13.531601};
-        let cDlla = this.mapService.getLineIntersection(c1.lat, c1.lng, c2.lat, c2.lng, d1.lat, d1.lng, d2.lat, d2.lng);
-        console.log("True LLA: " + cDlla);
-        let c1ecef = this.mapService.LLAtoECEF(a1.lat, a1.lng, 38);
-        let c2ecef = this.mapService.LLAtoECEF(a2.lat, a2.lng, 38);
-        let d1ecef = this.mapService.LLAtoECEF(b1.lat, b1.lng, 38);
-        let d2ecef = this.mapService.LLAtoECEF(b2.lat, b2.lng, 38);
-        let cDecef = this.mapService.getLineIntersection(c1ecef[0], c1ecef[1], c2ecef[0], c2ecef[1], d1ecef[0], d1ecef[1], d2ecef[0], d2ecef[1]);
-        console.log("True ECEF: " + cDecef);
-
-        let e1 = {lat: 52.501670, lng: 13.536665}; 
-        let e2 = {lat: 52.498431, lng: 13.536836}; 
-        let f1 = {lat: 52.503865, lng: 13.545419}; 
-        let f2 = {lat: 52.500991, lng: 13.546364};
-        let eFlla = this.mapService.getLineIntersection(e1.lat, e1.lng, e2.lat, e2.lng, f1.lat, f1.lng, f2.lat, f2.lng);
-        console.log("False LLA: " + eFlla);
-        let e1ecef = this.mapService.LLAtoECEF(a1.lat, a1.lng, 38);
-        let e2ecef = this.mapService.LLAtoECEF(a2.lat, a2.lng, 38);
-        let f1ecef = this.mapService.LLAtoECEF(b1.lat, b1.lng, 38);
-        let f2ecef = this.mapService.LLAtoECEF(b2.lat, b2.lng, 38);
-        let eFecef = this.mapService.getLineIntersection(e1ecef[0], e1ecef[1], e2ecef[0], e2ecef[1], f1ecef[0], f1ecef[1], f2ecef[0], f2ecef[1]);
-        console.log("False ECEF: " + eFecef);        
+         
     }
 }
