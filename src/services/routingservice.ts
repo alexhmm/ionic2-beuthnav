@@ -193,37 +193,10 @@ export class RoutingService {
                     this.rPathsCC.push(intersectC2);
                 }                
                 this.rPathsC.push({lat: rEnd.lat(), lng: rEnd.lng()});
-                for (let x in this.rPathsC) console.log(this.rPathsC[x]);
+                for (let x in this.rPathsC) console.log(this.rPathsC[x]);                
                 
-                /* let lengthBefore = this.rPathsCC.length;
-                let lengthAfter = 0;          
-                if (this.rPathsCC.length > 2) {                    
-                    while (lengthAfter != lengthBefore) {
-                        lengthBefore = this.rPathsCC.length;
-                        let tPathsCC: any[] = [];
-                        tPathsCC.push(this.rPathsCC[0]); // add start to temporary
-                        console.log("Entering while.");
-                        for (let i = 0; i < this.rPathsCC.length - 2; i++) {
-                            let indices: any[] = [];
-                            let iRPaths: any[] = [];
-                            iRPaths.push(this.rPathsCC[i]);
-                            iRPaths.push(this.rPathsCC[i + 1]);
-                            iRPaths.push(this.rPathsCC[i + 2]);
-                            let intersect = this.getNextRoutingPathN(iRPaths);
-                            if (intersect != null) {
-                                // intersect finish
-                                tPathsCC.push(this.rPathsCC[i + 1]);
-                            }                            
-                        }  
-                        tPathsCC.push(this.rPathsCC[lengthBefore - 1]);
-                        lengthAfter = tPathsCC.length;
-                        this.rPathsCC = tPathsCC;
-                    }           
-                } */
+                //if (this.rPathsCC.length > 2) return this.cleanFinalRoute(this.rPathsC);
                 return this.rPathsC;
-                /* let polyline = this.mapService.createPolyline(this.rPathsC);                
-                polyline.setMap(this.map);
-                break; */
             }
             if (google.maps.geometry.poly.containsLocation(pEndCC, this.triangles[tEndIndex])) {
                 console.log("Finish CC: " + google.maps.geometry.poly.containsLocation(pEndCC, this.triangles[tEndIndex]) + ", " + tEndIndex);
@@ -255,36 +228,9 @@ export class RoutingService {
                 }                
                 this.rPathsCC.push({lat: rEnd.lat(), lng: rEnd.lng()});
                 for (let x in this.rPathsCC) console.log(this.rPathsCC[x]);
-                
-                /* let lengthBefore = this.rPathsCC.length;
-                let lengthAfter = 0;          
-                if (this.rPathsCC.length > 2) {                    
-                    while (lengthAfter != lengthBefore) {
-                        lengthBefore = this.rPathsCC.length;
-                        let tPathsCC: any[] = [];
-                        tPathsCC.push(this.rPathsCC[0]); // add start to temporary
-                        console.log("Entering while.");
-                        for (let i = 0; i < this.rPathsCC.length - 2; i++) {
-                            let indices: any[] = [];
-                            let iRPaths: any[] = [];
-                            iRPaths.push(this.rPathsCC[i]);
-                            iRPaths.push(this.rPathsCC[i + 1]);
-                            iRPaths.push(this.rPathsCC[i + 2]);
-                            let intersect = this.getNextRoutingPathN(iRPaths);
-                            if (intersect != null) {
-                                // intersect finish
-                                tPathsCC.push(this.rPathsCC[i + 1]);
-                            }                            
-                        }  
-                        tPathsCC.push(this.rPathsCC[lengthBefore - 1]);
-                        lengthAfter = tPathsCC.length;
-                        this.rPathsCC = tPathsCC;
-                    }           
-                } */
+                  
+                //if (this.rPathsCC.length > 2) return this.cleanFinalRoute(this.rPathsCC);
                 return this.rPathsCC;
-                /* let polyline = this.mapService.createPolyline(this.rPathsCC);                
-                polyline.setMap(this.map);
-                break; */
             }
 
             // Start intersection check for both directions
@@ -384,6 +330,108 @@ export class RoutingService {
             }            
         }     
         return null;   
+    }
+
+    public cleanFinalRoute2(routePaths: any) {
+        console.log("cleanFinalRoute");
+        let rPaths: any[] = [];
+        rPaths.push(routePaths[0]);
+
+        let intersect = true;
+        let index = 1; // starting with 1st point
+
+        let lengthBefore = rPaths.length;
+        let lengthAfter = 0;
+
+        while (intersect) {       
+            console.log("while");
+
+            let intersects: any[] = [];
+
+            for (let i = 1; i < rPaths.length - 1; i++) {
+                let r1 = {lat: parseFloat(rPaths[rPaths.length - 1].lat), lng: parseFloat(rPaths[rPaths.length - 1].lng)};
+                let r2 = {lat: parseFloat(rPaths[i + 1].lat), lng: parseFloat(rPaths[i + 1].lng)};
+
+                for (let j = 0; j < this.pPaths.length - 1; j++) {    
+                    // intersect check: all edges of pPaths
+                    let p1 = {lat: parseFloat(this.pPaths[j].lat), lng: parseFloat(this.pPaths[j].lng)};
+                    let p2 = {lat: parseFloat(this.pPaths[j + 1].lat), lng: parseFloat(this.pPaths[j + 1].lng)};                    
+
+                    if (this.getLineIntersection(p1.lat, p1.lng, p2.lat, p2.lng, r1.lat, r1.lng, r2.lat, r2.lng)) {
+                        intersects.push(true);
+                        break;
+                    }    
+                    if (j == this.pPaths.length - 1) intersects.push(false);
+                } 
+            }
+
+            for (let x in intersects) console.log(intersects[x]);
+
+            let tPaths: any[] = [];
+
+            for (let k = 0; k < intersects.length - 1; k++) {
+                if (intersects[k] == false) {
+                    tPaths.push(routePaths[k + index]);
+                    for (let x in rPaths) console.log("rPaths: " + rPaths[x].lat + ", " + rPaths[x].lng);
+                }
+            }
+            if (tPaths.length > 0) {
+                console.log("index before: " + index);
+                index = index + tPaths.length + 1;
+                console.log("index after: " + index);
+                rPaths.push(tPaths[tPaths.length - 1]);            
+            }
+        }
+        
+        return rPaths;
+    }
+
+    /**
+     * 
+     * @param routePaths 
+     */
+    public cleanFinalRoute(routePaths: any) {
+        let rPaths: any[] = [];
+        rPaths = routePaths;
+        let lengthBefore = rPaths.length;
+        let lengthAfter = 0;     
+
+        if (rPaths.length > 2) {
+            while (lengthAfter != lengthBefore) {
+                lengthBefore = rPaths.length; 
+                let tPaths: any[] = []; 
+                tPaths.push(rPaths[0]); // add start to temporary paths      
+                console.log("lengthBefore: " + lengthBefore);
+                for (let i = 1; i < lengthBefore - 1; i++) {
+                    let r1 = {lat: parseFloat(rPaths[i - 1].lat), lng: parseFloat(rPaths[i - 1].lng)};
+                    let r2 = {lat: parseFloat(rPaths[i + 1].lat), lng: parseFloat(rPaths[i + 1].lng)};
+                    console.log("check: " + i);
+
+                    for (let j = 0; j < this.pPaths.length - 1; j++) {    
+                        // intersect check: all edges of pPaths
+                        let p1 = {lat: parseFloat(this.pPaths[j].lat), lng: parseFloat(this.pPaths[j].lng)};
+                        let p2 = {lat: parseFloat(this.pPaths[j + 1].lat), lng: parseFloat(this.pPaths[j + 1].lng)};
+
+                        if (this.getLineIntersection(p1.lat, p1.lng, p2.lat, p2.lng, r1.lat, r1.lng, r2.lat, r2.lng)) {   
+                            tPaths.push({lat: parseFloat(rPaths[i].lat), lng: parseFloat(rPaths[i].lng)});
+                            break;
+                        }    
+                    } 
+                }    
+
+                tPaths.push(rPaths[rPaths.length - 1]);
+                
+                rPaths = tPaths;
+                lengthAfter = rPaths.length; 
+                console.log("lengthAfter: " + lengthAfter);
+                for (let x in rPaths) console.log(rPaths[x].lat + ", " + rPaths[x].lng);
+
+                if (lengthAfter === lengthBefore) {                 
+                    return rPaths;
+                }                       
+            }
+        }
+        return routePaths;
     }
 
     /**
@@ -533,7 +581,11 @@ export class RoutingService {
     }
 
     /**
-     * 
+     * See if two line segments intersect
+     * @author Peter Kelley
+     * @author pgkelley4@gmail.com
+     * https://github.com/pgkelley4/line-segments-intersect/blob/master/js/line-segments-intersect.js
+     * http://stackoverflow.com/a/565282/786339
      * @param p1x 
      * @param p1y 
      * @param p2x 
@@ -561,7 +613,6 @@ export class RoutingService {
         if (s >= 0 && s <= 1 && t >= 0 && t <= 1) return true;
         return false; // No collision
     }
-
     public equalPoints(p1x, p1y, p2x, p2y) {
         return (p1x == p2x) && (p1y == p2y);
     }
