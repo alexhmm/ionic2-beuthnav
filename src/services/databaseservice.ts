@@ -36,7 +36,7 @@ export class DatabaseService {
      * @param building 
      * @param level 
      */
-    getAttrCoordsTables(building: any, level: any) {
+    public getTablesByBuildingLevel(building: any, level: any) {
         this.allrooms = [];
         return Observable.create(observer => {
             let query = "SELECT * FROM layers WHERE building LIKE '%" + building + "%' AND level LIKE '%" + level + "%'";
@@ -51,9 +51,32 @@ export class DatabaseService {
     }
 
     /**
+     * Returns room attributes by shapeid
+     * @param tableAttr 
+     * @param shapeid 
+     */
+    public getRoutingPolygons(tableAttr: String) {
+        let queryAttr = "SELECT * FROM " + tableAttr + " WHERE routing LIKE '%true%'";
+        return Observable.create(observer => {
+            this.sqlite.create(this.options).then((db: SQLiteObject) => {  
+                db.executeSql(queryAttr, {}).then((data) => {  
+                    let rows = data.rows;
+                    let routingPolygons: any[] = [];
+                    for (let i = 0; i < rows.length; i++) {
+                        routingPolygons.push({shapeid: rows.item(i).shapeid, name: rows.item(i).name}).toString;
+                    }                    
+                    observer.next(routingPolygons);
+                    console.log("OBSERVER: " + data.rows.item(0).name);
+                    observer.complete();     
+                })                           
+            });
+        })
+    }
+
+    /**
      * Returns room attributes for ListView
     */
-    getRoomList() {
+    public getRoomList() {
         this.allrooms = [];
         return Observable.create(observer => {
             for (let x in this.tables) {
@@ -81,7 +104,7 @@ export class DatabaseService {
      * @param tableAttr 
      * @param shapeid 
      */
-    getAttributesByShapeId(tableAttr: String, shapeid: String) {
+    public getAttributesByShapeId(tableAttr: String, shapeid: String) {
         let queryAttr = "SELECT * FROM " + tableAttr + " WHERE shapeid LIKE '%" + shapeid + "%'";
         return Observable.create(observer => {
             this.sqlite.create(this.options).then((db: SQLiteObject) => {  
@@ -94,7 +117,7 @@ export class DatabaseService {
         })
     }
 
-    getCoordinatesByShapeId(tableCoords: String, shapeid: String) {
+    public getCoordinatesByShapeId(tableCoords: String, shapeid: String) {
         let coordinates: any[] = [];
         let queryAttr = "SELECT * FROM " + tableCoords + " WHERE shapeid LIKE '%" + shapeid + "%'";
         return Observable.create(observer => {
@@ -105,6 +128,42 @@ export class DatabaseService {
                         //console.log("OBSERVER: " + data.rows.item(i).y);
                     }
                     observer.next(coordinates);
+                    observer.complete();     
+                })                           
+            });
+        })
+    }
+
+     /**
+     * Returns
+     * @param tableAttr 
+     * @param point 
+     */
+    public getTablePointsByTableAttr(tableAttr: any) {
+        let queryAttr = "SELECT * FROM layers WHERE attr LIKE '%" + tableAttr + "%'";
+        return Observable.create(observer => {
+            this.sqlite.create(this.options).then((db: SQLiteObject) => {  
+                db.executeSql(queryAttr, {}).then((data) => {  
+                    observer.next(data.rows.item(0));
+                    console.log("OBSERVER POINTS: " + data.rows.item(0).points);
+                    observer.complete();     
+                })                           
+            });
+        })
+    }
+
+    /**
+     * Returns point coordinates from room
+     * @param tablePoints
+     * @param name 
+     */
+    public getCoordsByPoint(tablePoints: any, name: any) {
+        let queryAttr = "SELECT * FROM " + tablePoints + " WHERE name LIKE '%" + name + "%'";
+        return Observable.create(observer => {
+            this.sqlite.create(this.options).then((db: SQLiteObject) => {  
+                db.executeSql(queryAttr, {}).then((data) => {  
+                    observer.next(data.rows.item(0));
+                    console.log("OBSERVER POINTSCOORDS: " + data.rows.item(0).x + ", " + data.rows.item(0).y);
                     observer.complete();     
                 })                           
             });

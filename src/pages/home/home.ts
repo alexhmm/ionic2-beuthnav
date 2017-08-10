@@ -133,7 +133,7 @@ export class HomePage {
     ionViewDidLoad() {
         this.platform.ready().then(() => {   
             // Beacons            
-            this.beaconService.setupBeacons();    
+            this.beaconService.setupBeacons();
             //setTimeout(() => { this.beaconService.startRangingBeacons(); }, 3000);    
             this.beaconService.startRangingBeacons();
 
@@ -367,10 +367,10 @@ export class HomePage {
         //console.log("Interval: getCurrentBuilding()");
         this.previousBuilding = this.currentBuilding;
         // containsLocation() || isLocationOnEdge()
-        this.currentBuilding = "Bauwesen";
+        this.currentBuilding = "BauwesenD";
         //console.log("BUILDING p: " + this.previousBuilding + ", c: " + this.currentBuilding + ", LEVEL p: " + this.previousLevel + ", c: " + this.currentLevel);
         if (this.currentBuilding != this.previousBuilding || this.currentLevel != this.previousLevel) {
-            this.dbService.getAttrCoordsTables(this.currentBuilding, this.currentLevel).subscribe(data => {
+            this.dbService.getTablesByBuildingLevel(this.currentBuilding, this.currentLevel).subscribe(data => {
                 this.currentAttr = data.attr;
                 this.currentCoords = data.coords;                
                 this.loadMap(this.currentBuilding, this.currentLevel);    
@@ -668,6 +668,5 @@ export class HomePage {
     }        
 
     public testGS() {
-         
     }
 }
