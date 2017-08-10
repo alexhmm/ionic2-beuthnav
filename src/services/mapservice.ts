@@ -21,8 +21,8 @@ enum Roomcolor {
 }
 
 enum BuildingLevels {
-    Bauwesen = <any>[0, 1],
-    Beuth = <any>[0, 1]
+    BeuthA = <any>[0, 1],
+    BauwesenD = <any>[0, 1]    
 }
 
 @Injectable()
@@ -60,11 +60,8 @@ export class MapService {
     // POSITION
     public changeCurrentLevel(currentLevel: any, buildingLevels: any, direction: any) {
         let newLevel = currentLevel + direction;
-        if (newLevel > buildingLevels[0] - 1 && newLevel < buildingLevels[1] + 1 ) {
-            return newLevel;
-        } else {
-            return currentLevel;
-        }
+        if (newLevel > buildingLevels[0] - 1 && newLevel < buildingLevels[1] + 1 ) return newLevel;
+        else return currentLevel;
     }
 
     public createPolygonBuildingOptions(paths: any) {
@@ -314,7 +311,7 @@ export class MapService {
     getCurrentPositionGPS() {
         return Observable.create(observer => {
             this.geolocation.getCurrentPosition({enableHighAccuracy:true}).then((position) => {
-                //console.log("GPS POSITION: " + position.coords.latitude + ", " + position.coords.longitude);
+                console.log("GPS POSITION: " + position.coords.latitude + ", " + position.coords.longitude);
                 let lat = position.coords.latitude;
                 let lng = position.coords.longitude;
                 //console.log([lat, lng]);

@@ -133,14 +133,14 @@ export class HomePage {
     ionViewDidLoad() {
         this.platform.ready().then(() => {   
             // Beacons            
-            this.beaconService.setupBeacons();    
+            //this.beaconService.setupBeacons(); ###############
             //setTimeout(() => { this.beaconService.startRangingBeacons(); }, 3000);    
-            this.beaconService.startRangingBeacons();
+            //this.beaconService.startRangingBeacons(); ###############
 
             // Interval positioning from available methods
             setInterval(() => { 
                 this.checkLog = "CHECK LOG: ";
-                this.checkBeacons();
+                //this.checkBeacons(); 1111111111 ##############
                 if (this.mapViewState == 'on') {
                     this.getCurrentPosition();
                     //this.getCurrentBuilding();                     
@@ -334,13 +334,13 @@ export class HomePage {
             console.log(this.checkLog);              
         } else {
             //this.currentPosition = this.getCurrentPositionGPS();
-            this.mapService.getCurrentPositionGPS().subscribe(data => {
-                this.currentPosition = data;
-                this.checkLog += "GPS: " + this.currentPosition.lat + ", " + this.currentPosition.lng;
-                this.paintCurrentPosition();
+            //this.mapService.getCurrentPositionGPS().subscribe(data => {
+                //this.currentPosition = data;
+                //this.checkLog += "GPS: " + this.currentPosition.lat + ", " + this.currentPosition.lng;
+                //this.paintCurrentPosition();
                 this.getCurrentBuilding();
                 console.log(this.checkLog);
-            });            
+            //});            
         }
     }
 
@@ -367,10 +367,10 @@ export class HomePage {
         //console.log("Interval: getCurrentBuilding()");
         this.previousBuilding = this.currentBuilding;
         // containsLocation() || isLocationOnEdge()
-        this.currentBuilding = "Bauwesen";
+        this.currentBuilding = "BauwesenD";
         //console.log("BUILDING p: " + this.previousBuilding + ", c: " + this.currentBuilding + ", LEVEL p: " + this.previousLevel + ", c: " + this.currentLevel);
         if (this.currentBuilding != this.previousBuilding || this.currentLevel != this.previousLevel) {
-            this.dbService.getAttrCoordsTables(this.currentBuilding, this.currentLevel).subscribe(data => {
+            this.dbService.getTablesByBuildingLevel(this.currentBuilding, this.currentLevel).subscribe(data => {
                 this.currentAttr = data.attr;
                 this.currentCoords = data.coords;                
                 this.loadMap(this.currentBuilding, this.currentLevel);    
@@ -644,6 +644,29 @@ export class HomePage {
         /* let rStart = {name: "Start", house: "Bauwesen", tier: 0, lat: 52.54567, lng: 13.35582};
         let rEnd = {name: "End", house: "Bauwesen", tier: 0, lat: 52.54548, lng: 13.35553}; */
 
+        // check location of startPoint
+        let startTables = this.dbService.getTablesByBuildingLevel(this.currentBuilding, this.currentLevel).subscribe(tables => { 
+            let routingPolygons = this.dbService.getRoutingPolygons(tables.attr).subscribe(polygons => {
+                for (let x in polygons) {
+                    let paths
+                }
+            })
+        });
+        //let startPoint = this.dbService.getCoordsByPoint()
+        let startPolygon;
+        let routingPolygons = this.dbService.getRoutingPolygons
+
+        
+        let endName = "D57";
+        let endBuilding = "Beuth";
+        let endLevel = 1;
+
+        let endTables = this.dbService.getTablesByBuildingLevel(endBuilding, endLevel);
+        let endPolygon 
+
+
+
+
         this.dbService.getRoutePointByName("d00Points", "E57").subscribe(data => {
             let rStart = {lng: 13.35530, lat: 52.54520};
             let rEnd = {lat: data.lat, lng: data.lng};   
@@ -668,6 +691,5 @@ export class HomePage {
     }        
 
     public testGS() {
-         
     }
 }
