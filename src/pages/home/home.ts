@@ -133,14 +133,14 @@ export class HomePage {
     ionViewDidLoad() {
         this.platform.ready().then(() => {   
             // Beacons            
-            //this.beaconService.setupBeacons(); ###############
+            this.beaconService.setupBeacons();
             //setTimeout(() => { this.beaconService.startRangingBeacons(); }, 3000);    
-            //this.beaconService.startRangingBeacons(); ###############
+            this.beaconService.startRangingBeacons();
 
             // Interval positioning from available methods
             setInterval(() => { 
                 this.checkLog = "CHECK LOG: ";
-                //this.checkBeacons(); 1111111111 ##############
+                this.checkBeacons();
                 if (this.mapViewState == 'on') {
                     this.getCurrentPosition();
                     //this.getCurrentBuilding();                     
@@ -334,13 +334,13 @@ export class HomePage {
             console.log(this.checkLog);              
         } else {
             //this.currentPosition = this.getCurrentPositionGPS();
-            //this.mapService.getCurrentPositionGPS().subscribe(data => {
-                //this.currentPosition = data;
-                //this.checkLog += "GPS: " + this.currentPosition.lat + ", " + this.currentPosition.lng;
-                //this.paintCurrentPosition();
+            this.mapService.getCurrentPositionGPS().subscribe(data => {
+                this.currentPosition = data;
+                this.checkLog += "GPS: " + this.currentPosition.lat + ", " + this.currentPosition.lng;
+                this.paintCurrentPosition();
                 this.getCurrentBuilding();
                 console.log(this.checkLog);
-            //});            
+            });            
         }
     }
 
