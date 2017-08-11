@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core'; 
 import { MapService } from './mapservice';
+import { DatabaseService } from './databaseservice';
 
 import * as earcut from 'earcut';
 import * as math from 'mathjs';
@@ -30,8 +31,18 @@ export class RoutingService {
     public iPathsC: any[] = [];
     public iPathsCC: any[] = [];
 
-    constructor(private mapService: MapService) {
+    constructor(private dbService: DatabaseService,
+                private mapService: MapService) {
         
+    }
+
+    /**
+     * Returns true if point lies inside polygon
+     * @param point 
+     * @param polygon 
+     */
+    public containsLocation(point: any, polygon: any) {
+        return google.maps.geometry.poly.containsLocation(point, polygon);
     }
 
     public createRouteInPolygon(startPosition, endPosition, routingPolygon) {
@@ -391,8 +402,7 @@ export class RoutingService {
      * @param routePaths 
      */
     public cleanFinalRoute(routePaths: any) {
-        for (let x in routePaths) console.log(routePaths[x].lat + ", " + routePaths[x].lng);
-        console.log("##################");
+        //for (let x in routePaths) console.log(routePaths[x].lat + ", " + routePaths[x].lng);
         let rPaths: any[] = [];
         rPaths = routePaths;
         let lengthBefore = rPaths.length;
@@ -424,7 +434,7 @@ export class RoutingService {
                 lengthAfter = rPaths.length; 
 
                 if (lengthAfter === lengthBefore) {       
-                    for (let x in rPaths) console.log(rPaths[x].lat + ", " + rPaths[x].lng);          
+                    //for (let x in rPaths) console.log(rPaths[x].lat + ", " + rPaths[x].lng);          
                     return rPaths;                    
                 }                       
             }

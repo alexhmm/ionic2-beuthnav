@@ -75,6 +75,7 @@ export class HomePage {
     public attributes = {name: "", type: "", desc: ""};
     public selectedRoom: any[] = [];
     public polygons: any[] = [];
+    public polygonsRouting: any[] = [];
     public marker;
     public polygon;
     public circle;    
@@ -101,10 +102,11 @@ export class HomePage {
     public previousBuilding;
     public previousLevel;
     public currentPosition;
-    public currentBuilding = "";
+    public currentBuilding = "";    
+    public currentLevel = 0;
     public currentAttr;
     public currentCoords;
-    public currentLevel = 0;
+    public currentPoints;
 
     // beacon variables
     public beacons: any[] = [];
@@ -251,11 +253,11 @@ export class HomePage {
         console.log("Interval: loadMap()");
         this.loadMapStyles();    
         if (this.polygons != null) {
-            for (let x in this.polygons) {
-                this.polygons[x].setMap(null);
-            }
+            for (let x in this.polygons) this.polygons[x].setMap(null)
             this.polygons = [];
         }
+
+        if (this.polygonsRouting != null) this.polygons = [];
 
         if (this.currentAttr != null && this.currentLevel != null) {            
             this.dbService.getAllBuildingsAttrCoords(this.currentBuilding).subscribe(data => {
@@ -306,6 +308,11 @@ export class HomePage {
                     polygon.setMap(this.map);
 
                     this.polygons.push(polygon);
+
+                    if (room.routing == "true") { 
+                        this.polygonsRouting.push({shapeid: room.shapeid, polygon: polygon});
+                        console.log("Routing True: " + room.shapeid + ", " + room.name);                                  
+                    }
 
                     if (room.type == "lab" || room.type == "lecture" || room.type == "office" || room.type == "service" || room.type == "wc") {
                         //console.log("TYPE: " + room.type);
@@ -372,7 +379,8 @@ export class HomePage {
         if (this.currentBuilding != this.previousBuilding || this.currentLevel != this.previousLevel) {
             this.dbService.getTablesByBuildingLevel(this.currentBuilding, this.currentLevel).subscribe(data => {
                 this.currentAttr = data.attr;
-                this.currentCoords = data.coords;                
+                this.currentCoords = data.coords;  
+                this.currentPoints = data.points;              
                 this.loadMap(this.currentBuilding, this.currentLevel);    
                 this.startState = 1;            
             });
@@ -386,7 +394,7 @@ export class HomePage {
      */
     public changeCurrentLevel(building: any, direction: any) {
         //console.log("CHANGE CURRENT LEVEL: " + this.currentLevel + ", " + direction);
-        let buildingLevels = this.mapService.getBuildingLevels(this.currentBuilding);
+        let buildingLevels = this.dbService.getBuildingLevels(this.currentBuilding);
         //console.log("BUILDING LEVELS:", buildingLevels);
         this.currentLevel = this.mapService.changeCurrentLevel(this.currentLevel, buildingLevels, direction);
         //console.log("CURRENT LEVEL: " + this.currentLevel);
@@ -644,14 +652,22 @@ export class HomePage {
         /* let rStart = {name: "Start", house: "Bauwesen", tier: 0, lat: 52.54567, lng: 13.35582};
         let rEnd = {name: "End", house: "Bauwesen", tier: 0, lat: 52.54548, lng: 13.35553}; */
 
+        let rStart = {lng: 13.35530, lat: 52.54520};
+        let rStartLatLng = new google.maps.LatLng(rStart.lat, rStart.lng);
+        let routingPolygonIndex;
+
+        for (let x in this.polygonsRouting) {
+            if (this.routingService.containsLocation(rStartLatLng, this.polygonsRouting[x].polygon)) routingPolygonIndex = this.polygonsRouting[x].shapeid;
+        }
+
         this.dbService.getRoutePointByName("d00Points", "E36/2").subscribe(data => {
-            let rStart = {lng: 13.35530, lat: 52.54520};
+            
             let rEnd = {lat: data.lat, lng: data.lng};   
             
             // ### TODO: check if start and end position is in same house and tier
             
             // ### TODO: determine routing polygon (index)
-            let routingPolygonIndex = 84;
+            //routingPolygonIndex = 84;
             let routingPolygon = this.polygons[routingPolygonIndex];
 
             let rPaths = this.routingService.createRouteInPolygon(rStart, rEnd, routingPolygon);

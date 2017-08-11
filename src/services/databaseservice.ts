@@ -2,6 +2,11 @@ import { Injectable } from '@angular/core';
 import { SQLite, SQLiteObject } from "@ionic-native/sqlite";
 import { Observable } from 'rxjs/Observable';
 
+enum BuildingLevels {
+    BeuthA = <any>[0, 1],
+    BauwesenD = <any>[0, 1]    
+}
+
 @Injectable()
 export class DatabaseService {  
 
@@ -30,6 +35,10 @@ export class DatabaseService {
                 console.log("ERROR: ", error);
         });
     } 
+
+    public getBuildingLevels(building: any) {
+        return BuildingLevels[building];
+    }
 
     /**
      * 
@@ -207,7 +216,12 @@ export class DatabaseService {
                 db.executeSql(queryAttr, []).then((data) => {
                     for (let i = 0; i < data.rows.length; i++) {
                         let rows = data.rows;
-                        this.rooms.push({shapeid: rows.item(i).shapeid, name: rows.item(i).name, type: rows.item(i).type, desc: rows.item(i).desc, coordinates: ""}).toString;
+                        this.rooms.push({shapeid: rows.item(i).shapeid,
+                                         name: rows.item(i).name,
+                                         type: rows.item(i).type,
+                                         desc: rows.item(i).desc,
+                                         routing: rows.item(i).routing,
+                                         coordinates: ""}).toString;
                     }                    
                 })
                 db.executeSql(queryCoords, []).then((data) => {   
@@ -265,6 +279,11 @@ export class DatabaseService {
         })
     }  
     
+    /**
+     * Returns point of destination with coordinates
+     * @param tablePoints 
+     * @param name 
+     */
     public getRoutePointByName(tablePoints: any, name: any) {
         let queryName = "SELECT * FROM " + tablePoints + " WHERE name LIKE '%" + name + "%'";       
         let selectedRoom: String[] = [];

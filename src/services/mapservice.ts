@@ -20,10 +20,7 @@ enum Roomcolor {
     wcPrivate = <any>"#BBBBBB"
 }
 
-enum BuildingLevels {
-    BeuthA = <any>[0, 1],
-    BauwesenD = <any>[0, 1]    
-}
+
 
 @Injectable()
 export class MapService {  
@@ -51,11 +48,7 @@ export class MapService {
         this.wgs84e = math.sqrt(math.divide(math.subtract(this.wgs84a2, this.wgs84b2), this.wgs84a2));
         this.wgs84e2 = math.pow(this.wgs84e, 2);
         this.wgs84ep = math.sqrt(math.divide(math.subtract(this.wgs84a2, this.wgs84b2), this.wgs84b2));
-    } 
-
-    public getBuildingLevels(building: any) {
-        return BuildingLevels[building];
-    }
+    }     
 
     // POSITION
     public changeCurrentLevel(currentLevel: any, buildingLevels: any, direction: any) {
