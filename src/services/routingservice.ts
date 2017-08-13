@@ -45,6 +45,15 @@ export class RoutingService {
         return google.maps.geometry.poly.containsLocation(point, polygon);
     }
 
+    /**
+     * Returns distance between two LatLng points
+     * @param pointA 
+     * @param pointB 
+     */
+    public computeDistance(pointA: any, pointB: any) {
+        return google.maps.geometry.spherical.computeDistanceBetween (pointA, pointB);
+    }
+
     public createRouteInPolygon(startPosition, endPosition, routingPolygon) {
         // Reset routing and intersect paths, clock and counter-clock
         this.rPathsC = [];

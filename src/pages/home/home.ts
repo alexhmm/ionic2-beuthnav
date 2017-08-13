@@ -72,7 +72,8 @@ export class HomePage {
 
     public allrooms: any[] = [];
     public allroomsBackup: any[] = [];
-    public attributes = {name: "", type: "", desc: ""};
+    public allPoints: any[] = [];
+    public attributes = {name: "", type: "", desc: "", tablePoints: ""};
     public selectedRoom: any[] = [];
     public polygons: any[] = [];
     public polygonsRouting: any[] = [];
@@ -309,10 +310,7 @@ export class HomePage {
 
                     this.polygons.push(polygon);
 
-                    if (room.routing == "true") { 
-                        this.polygonsRouting.push({shapeid: room.shapeid, polygon: polygon});
-                        console.log("Routing True: " + room.shapeid + ", " + room.name);                                  
-                    }
+                    if (room.routing == "true") this.polygonsRouting.push({shapeid: room.shapeid, name: room.name, polygon: polygon})
 
                     if (room.type == "lab" || room.type == "lecture" || room.type == "office" || room.type == "service" || room.type == "wc") {
                         //console.log("TYPE: " + room.type);
@@ -378,12 +376,18 @@ export class HomePage {
         //console.log("BUILDING p: " + this.previousBuilding + ", c: " + this.currentBuilding + ", LEVEL p: " + this.previousLevel + ", c: " + this.currentLevel);
         if (this.currentBuilding != this.previousBuilding || this.currentLevel != this.previousLevel) {
             this.dbService.getTablesByBuildingLevel(this.currentBuilding, this.currentLevel).subscribe(data => {
+                console.log("getTablesByBuildingLevel");
                 this.currentAttr = data.attr;
-                this.currentCoords = data.coords;  
-                this.currentPoints = data.points;              
+                this.currentCoords = data.coords;          
+                this.currentPoints = data.points; 
                 this.loadMap(this.currentBuilding, this.currentLevel);    
-                this.startState = 1;            
+                this.startState = 1;     
+                console.log("Current Points: " + this.currentPoints);
+                this.dbService.getAllPoints(this.currentPoints).subscribe(data => {
+                    this.allPoints = data;   
+                });     
             });
+            
         }
         this.previousLevel = this.currentLevel;
     }
@@ -449,9 +453,12 @@ export class HomePage {
 
         this.attributes.name = attributes.name;
         this.attributes.desc = attributes.desc;
+        this.attributes.tablePoints = attributes.tablePoints;
         if (this.infoViewState == 'out') {
             this.toggleInfoView();
         }
+
+        console.log("InfoViewAttributes: " + this.attributes.name + ", " + this.attributes.desc + ", " + this.attributes.tablePoints);
 
         let latLngStr = event.latLng + "";
         let latLngStrSub = latLngStr.substring(1, latLngStr.length);
@@ -475,6 +482,7 @@ export class HomePage {
             }
             this.attributes.name = room.name;
             this.attributes.desc = room.desc;
+            this.attributes.tablePoints = room.tablePoints;
             if (this.infoViewState == 'out') {
                 this.toggleInfoView();
                 console.log("Info: " + this.infoViewState);
@@ -648,29 +656,103 @@ export class HomePage {
     }
 
     public testRouting() {
+        let rPaths: any[] = [];
         // set start and endpoint
         /* let rStart = {name: "Start", house: "Bauwesen", tier: 0, lat: 52.54567, lng: 13.35582};
         let rEnd = {name: "End", house: "Bauwesen", tier: 0, lat: 52.54548, lng: 13.35553}; */
 
-        let rStart = {lng: 13.35530, lat: 52.54520};
-        let rStartLatLng = new google.maps.LatLng(rStart.lat, rStart.lng);
-        let routingPolygonIndex;
+        let rStart = {lng: "13.35482", lat: "52.54532"};
+        let rStartLatLng = new google.maps.LatLng(parseFloat(rStart.lat), parseFloat(rStart.lng));
 
+        let startRoutingPolygonIndex, startRoutingPolygonName,
+        endRoutingPolygonIndex, endRoutingPolygonName;
+
+        // set start routing polygon index and name
         for (let x in this.polygonsRouting) {
-            if (this.routingService.containsLocation(rStartLatLng, this.polygonsRouting[x].polygon)) routingPolygonIndex = this.polygonsRouting[x].shapeid;
+            if (this.routingService.containsLocation(rStartLatLng, this.polygonsRouting[x].polygon)) {
+                startRoutingPolygonIndex = this.polygonsRouting[x].shapeid;
+                startRoutingPolygonName = this.polygonsRouting[x].name;
+            }
         }
 
-        this.dbService.getRoutePointByName("d00Points", "E36/2").subscribe(data => {
+        // ###### temporary
+        let pTable = "d00Points";
+        let eName = "E47";
+        // ################
+
+        this.dbService.getRoutePointByName(pTable, eName).subscribe(data => {
+        //this.dbService.getRoutePointByName(this.attributes.tablePoints, this.attributes.name).subscribe(data => {
             
             let rEnd = {lat: data.lat, lng: data.lng};   
-            
+            let rEndLatLng = new google.maps.LatLng(parseFloat(rEnd.lat), parseFloat(rEnd.lng));
+
+            // set end routing polygon index and name
+            for (let x in this.polygonsRouting) {
+                if (this.routingService.containsLocation(rEndLatLng, this.polygonsRouting[x].polygon)) {
+                    endRoutingPolygonIndex = this.polygonsRouting[x].shapeid;
+                    endRoutingPolygonName = this.polygonsRouting[x].name;
+                }
+            }
+
+            // check if start and end position is in same routing polygon  
+            if (startRoutingPolygonIndex != endRoutingPolygonIndex) {
+                let startCNDistances: any[] = [];
+                let startPolygon = this.polygons[startRoutingPolygonIndex];
+                // get connector name from polygon
+                let startConnect = startRoutingPolygonName + "CN";
+                for (let i = 0; i < this.allPoints.length; i++) {
+                    if (this.allPoints[i].name == startConnect) {
+                        let pointConnect = new google.maps.LatLng(this.allPoints[i].lat, this.allPoints[i].lng);
+                        startCNDistances.push({shapeid: this.allPoints[i].shapeid,
+                                        lat: this.allPoints[i].lat,
+                                        lng: this.allPoints[i].lng,
+                                        // calculate distance between starting point and connection points of startRoutingPolygon
+                                        distance: this.routingService.computeDistance(rStartLatLng, pointConnect)});
+                    }
+                }
+                // sort connector distances
+                startCNDistances.sort(function(a,b) {return (a.distance > b.distance) ? 1 : ((b.distance > a.distance) ? -1 : 0);} ); 
+                
+                // nearest connection point = end
+                let startPolygonEnd = {lat: parseFloat(startCNDistances[0].lat), lng: parseFloat(startCNDistances[0].lng)};
+                let startPolygonPaths = this.routingService.createRouteInPolygon(rStart, startPolygonEnd, startPolygon);
+
+                // push paths to overall paths array
+                for (let x in startPolygonPaths) rPaths.push(startPolygonPaths[x]);
+
+                let oldCN = new google.maps.LatLng(startCNDistances[0].lat, startCNDistances[0].lng);
+                let CNCNDistances: any[] = [];
+
+                let endConnect = endRoutingPolygonName + "CN";
+                for (let i = 0; i < this.allPoints.length; i++) {
+                    if (this.allPoints[i].name == endConnect) {
+                        let pointCN = new google.maps.LatLng(this.allPoints[i].lat, this.allPoints[i].lng);
+                        CNCNDistances.push({shapeid: this.allPoints[i].shapeid,
+                                        lat: this.allPoints[i].lat,
+                                        lng: this.allPoints[i].lng,
+                                        distance: this.routingService.computeDistance(oldCN, pointCN)});
+                    }
+                }
+                
+                // sort connector distances
+                CNCNDistances.sort(function(a,b) {return (a.distance > b.distance) ? 1 : ((b.distance > a.distance) ? -1 : 0);} ); 
+
+                // set nearest connector as temporary start point
+                let CNStart = {lat: CNCNDistances[0].lat, lng: CNCNDistances[0].lng};
+                let endPolygon = this.polygons[endRoutingPolygonIndex];
+
+                let endPolygonPaths = this.routingService.createRouteInPolygon(CNStart, rEnd, endPolygon);
+                for (let x in endPolygonPaths) rPaths.push(endPolygonPaths[x]);
+                //rPaths.concat(finalPaths);
+            } else {
+                let routingPolygon = this.polygons[startRoutingPolygonIndex];
+                rPaths = this.routingService.createRouteInPolygon(rStart, rEnd, routingPolygon);
+            }            
             // ### TODO: check if start and end position is in same house and tier
             
             // ### TODO: determine routing polygon (index)
             //routingPolygonIndex = 84;
-            let routingPolygon = this.polygons[routingPolygonIndex];
-
-            let rPaths = this.routingService.createRouteInPolygon(rStart, rEnd, routingPolygon);
+            
             let polyline = this.mapService.createPolyline(rPaths);                
             polyline.setMap(this.map);
         });
