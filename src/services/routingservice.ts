@@ -599,21 +599,19 @@ export class RoutingService {
 
     /**
      * Returns sorted array list by distances
-     * @param allPoints 
-     * @param pointALatLng 
-     * @param pointBName 
+     * @param connectors 
+     * @param point 
+     * @param pointB 
      */
-    public sortDistances(allPoints: any, pointALatLng: any, pointBName: any) {
+    public sortByDistance(connectors: any, point: any) {
         let distances: any[] = [];
-        for (let i = 0; i < allPoints.length; i++) {
-            if (allPoints[i].name == pointBName) {
-                let pointConnect = new google.maps.LatLng(allPoints[i].lat, allPoints[i].lng);
-                distances.push({shapeid: allPoints[i].shapeid,
-                                lat: allPoints[i].lat,
-                                lng: allPoints[i].lng,
-                                // calculate distance between starting point and connection points of startRoutingPolygon
-                                distance: this.computeDistance(pointALatLng, pointConnect)});
-            }
+        for (let i = 0; i < connectors.length; i++) {  
+            let connector = new google.maps.LatLng(connectors[i].lat, connectors[i].lng);
+            distances.push({shapeid: connectors[i].shapeid,
+                            lat: connectors[i].lat,
+                            lng: connectors[i].lng,
+                            // calculate distance between starting point and connection points of startRoutingPolygon
+                            distance: this.computeDistance(connector, point)});            
         }
         // sort distances
         return distances.sort(function(a,b) {return (a.distance > b.distance) ? 1 : ((b.distance > a.distance) ? -1 : 0);} ); 
