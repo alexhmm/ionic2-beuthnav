@@ -598,6 +598,28 @@ export class RoutingService {
     }
 
     /**
+     * Returns sorted array list by distances
+     * @param allPoints 
+     * @param pointALatLng 
+     * @param pointBName 
+     */
+    public sortDistances(allPoints: any, pointALatLng: any, pointBName: any) {
+        let distances: any[] = [];
+        for (let i = 0; i < allPoints.length; i++) {
+            if (allPoints[i].name == pointBName) {
+                let pointConnect = new google.maps.LatLng(allPoints[i].lat, allPoints[i].lng);
+                distances.push({shapeid: allPoints[i].shapeid,
+                                lat: allPoints[i].lat,
+                                lng: allPoints[i].lng,
+                                // calculate distance between starting point and connection points of startRoutingPolygon
+                                distance: this.computeDistance(pointALatLng, pointConnect)});
+            }
+        }
+        // sort distances
+        return distances.sort(function(a,b) {return (a.distance > b.distance) ? 1 : ((b.distance > a.distance) ? -1 : 0);} ); 
+    }
+
+    /**
      * See if two line segments intersect
      * @author Peter Kelley
      * @author pgkelley4@gmail.com

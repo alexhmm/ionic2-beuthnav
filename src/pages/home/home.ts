@@ -696,23 +696,13 @@ export class HomePage {
 
             // check if start and end position is in same routing polygon  
             if (startRoutingPolygonIndex != endRoutingPolygonIndex) {
-                let startCNDistances: any[] = [];
+                
+                //let startCNDistances: any[] = [];
                 let startPolygon = this.polygons[startRoutingPolygonIndex];
                 // get connector name from polygon
-                let startConnect = startRoutingPolygonName + "CN";
-                for (let i = 0; i < this.allPoints.length; i++) {
-                    if (this.allPoints[i].name == startConnect) {
-                        let pointConnect = new google.maps.LatLng(this.allPoints[i].lat, this.allPoints[i].lng);
-                        startCNDistances.push({shapeid: this.allPoints[i].shapeid,
-                                        lat: this.allPoints[i].lat,
-                                        lng: this.allPoints[i].lng,
-                                        // calculate distance between starting point and connection points of startRoutingPolygon
-                                        distance: this.routingService.computeDistance(rStartLatLng, pointConnect)});
-                    }
-                }
-                // sort connector distances
-                startCNDistances.sort(function(a,b) {return (a.distance > b.distance) ? 1 : ((b.distance > a.distance) ? -1 : 0);} ); 
-                
+                let startConnectName = startRoutingPolygonName + "CN";
+                let startCNDistances = this.routingService.sortDistances(this.allPoints, rStartLatLng, startConnectName);
+                                
                 // nearest connection point = end
                 let startPolygonEnd = {lat: parseFloat(startCNDistances[0].lat), lng: parseFloat(startCNDistances[0].lng)};
                 let startPolygonPaths = this.routingService.createRouteInPolygon(rStart, startPolygonEnd, startPolygon);
@@ -720,23 +710,11 @@ export class HomePage {
                 // push paths to overall paths array
                 for (let x in startPolygonPaths) rPaths.push(startPolygonPaths[x]);
 
-                let oldCN = new google.maps.LatLng(startCNDistances[0].lat, startCNDistances[0].lng);
-                let CNCNDistances: any[] = [];
+                let oldCN = new google.maps.LatLng(startCNDistances[0].lat, startCNDistances[0].lng);               
 
-                let endConnect = endRoutingPolygonName + "CN";
-                for (let i = 0; i < this.allPoints.length; i++) {
-                    if (this.allPoints[i].name == endConnect) {
-                        let pointCN = new google.maps.LatLng(this.allPoints[i].lat, this.allPoints[i].lng);
-                        CNCNDistances.push({shapeid: this.allPoints[i].shapeid,
-                                        lat: this.allPoints[i].lat,
-                                        lng: this.allPoints[i].lng,
-                                        distance: this.routingService.computeDistance(oldCN, pointCN)});
-                    }
-                }
+                let endConnectName = endRoutingPolygonName + "CN";
+                let CNCNDistances = this.routingService.sortDistances(this.allPoints, oldCN, endConnectName);
                 
-                // sort connector distances
-                CNCNDistances.sort(function(a,b) {return (a.distance > b.distance) ? 1 : ((b.distance > a.distance) ? -1 : 0);} ); 
-
                 // set nearest connector as temporary start point
                 let CNStart = {lat: CNCNDistances[0].lat, lng: CNCNDistances[0].lng};
                 let endPolygon = this.polygons[endRoutingPolygonIndex];
@@ -763,6 +741,12 @@ export class HomePage {
         // start 13.35582,52.54567
         // end1 52.54548, 13.35553
         // end3 52.54557, 13.35569
+
+        // 1    startPolygon != endPolygon
+        // 2    startPolygon CN nearest to End = tempEnd
+        // 3    nearest CN to tempEnd
+        // 4    if nearest CN != endPolygon von vorne
+
     }        
 
     public testGS() {
