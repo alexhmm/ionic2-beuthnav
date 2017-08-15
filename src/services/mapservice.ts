@@ -176,7 +176,7 @@ export class MapService {
         return circleOptions;
     }
 
-        public createCircleOptions2(position: any, radius: any) {
+    public createCircleOptions2(position: any, radius: any) {
         console.log("CircleOptions: " + position.lat + ", " + position.lng);
         let circleOptions: any = {
             center: {lat: parseFloat(position.lat), lng: parseFloat(position.lng)},
@@ -186,6 +186,27 @@ export class MapService {
         }
         return circleOptions;
     }
+
+    public createInfoWindow(position: any, text: String) {
+        return new google.maps.InfoWindow({
+            position: new google.maps.LatLng(position.lat, position.lng),
+            content: text,
+            disableAutoPan: true
+        });
+    }
+
+    // no Text labels available for google maps
+    /* public createMapLabel(point: any, text: any) {
+        let mapLabelOptions: any = {
+            text: text,
+            position: new google.maps.LatLng(point.lat, point.lng),
+            fontSize: 20,
+            align: 'center'
+        }
+        let mapLabel = new google.maps.MapLabel();
+        mapLabel.setOptions(mapLabelOptions);
+        return mapLabel;
+    } */
 
     /**
      * 

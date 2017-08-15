@@ -80,6 +80,7 @@ export class HomePage {
     public marker;
     public polygon;
     public circle;    
+    public infoWindows: any[] = [];
 
     public trianglePolygons: any[] = [];
 
@@ -111,15 +112,8 @@ export class HomePage {
 
     // beacon variables
     public beacons: any[] = [];
-    public rssis: any[] = [];
     public tricons: any[] = [];
     public triconsACC: any[] = [];
-
-    // vertices
-    public pVertexC;
-    public nVertexC;
-    public pVertexCC;
-    public nVertexCC;
 
     constructor(public navCtrl: NavController,
                 public platform: Platform,
@@ -142,7 +136,7 @@ export class HomePage {
 
             // Interval positioning from available methods
             setInterval(() => { 
-                this.checkLog = "CHECK LOG: ";
+                this.checkLog = "";
                 this.checkBeacons();
                 if (this.mapViewState == 'on') {
                     this.getCurrentPosition();
@@ -215,7 +209,7 @@ export class HomePage {
      * 
      */
     public loadMapStyles() { 
-        console.log("Loadmapstyles");
+        console.log("Load map styles.");
         let mapOptions = {
             //center: latlng,
             center: {lat: 52.545165, lng: 13.355360},
@@ -242,7 +236,7 @@ export class HomePage {
         });
 
         google.maps.event.addListener(this.map, 'click', (event) => {
-            console.log("CLICK MAP: " + event.latLng);
+            console.log("Click on map: " + event.latLng);
         })
     }
 
@@ -260,37 +254,11 @@ export class HomePage {
 
         if (this.polygonsRouting != null) this.polygons = [];
 
-        if (this.currentAttr != null && this.currentLevel != null) {            
-            this.dbService.getAllBuildingsAttrCoords(this.currentBuilding).subscribe(data => {
-                console.log("MAP BUILDINGS");
-                let building: any = {};
-                
-                for (let x in data) {
-                    let paths: any[] = [];
-
-                    building = data[x];
-
-                    let allCoordinates = building.coordinates;
-                    let coordinates: String[] = allCoordinates.split(";");
-
-                    paths = this.mapService.splitCoordinatesToLatLng(coordinates);
-
-                    let polygon = new google.maps.Polygon();
-                    polygon.setOptions(this.mapService.createPolygonBuildingOptions(paths));
-                    polygon.setMap(this.map);
-
-                    google.maps.event.addListener(polygon, 'click', (event) => {
-                        //console.log("CLICK: " + event.latLng + ", shapeid: " + room.shapeid);
-                        //let attributes = this.getAttributesByShapeId(room.shapeid);
-                        console.log("Building name: " + building.name);
-                    })
-                }
-            })
-
+        if (this.currentAttr != null && this.currentLevel != null) {   
             // SQLite Code with Observable
             //this.dbService.selectRooms("d00").subscribe(data => {            
             this.dbService.getAllRoomsAttrCoords(this.currentAttr, this.currentCoords).subscribe(data => {
-                console.log("MAP ROOMS");
+                console.log("Loading map polygons.");
                 for (let x in data) {
                     //console.log("LOADMAP: " + data[x].name + ", " + data[x].type + ", " + data[x].desc + ", " + data[x].coordinates);
                     let room: any = {};
@@ -322,15 +290,59 @@ export class HomePage {
                         })
                     }
                 }   
-                console.log("LOAD MAP LENGTH: " + this.polygons.length);
+                console.log("Polygons loaded: " + this.polygons.length);
             })  
+
+            this.dbService.getAllBuildingsAttrCoords(this.currentBuilding).subscribe(data => {
+                console.log("Loading map buildings.");
+
+                if (this.infoWindows != null) {
+                    for (let x in this.infoWindows) this.infoWindows[x].setMap(null);
+                    this.infoWindows = [];
+                }
+
+                let building: any = {};
+                
+                for (let x in data) {
+                    let paths: any[] = [];
+
+                    building = data[x];
+
+                    let allCoordinates = building.coordinates;
+                    let coordinates: String[] = allCoordinates.split(";");
+
+                    paths = this.mapService.splitCoordinatesToLatLng(coordinates);
+                    
+
+                    let polygon = new google.maps.Polygon();
+                    polygon.setOptions(this.mapService.createPolygonBuildingOptions(paths));
+                    polygon.setMap(this.map);
+
+                    google.maps.event.addListener(polygon, 'click', (event) => {
+                        //console.log("CLICK: " + event.latLng + ", shapeid: " + room.shapeid);
+                        //let attributes = this.getAttributesByShapeId(room.shapeid);
+                        console.log("Building name: " + building.name);
+                    })
+
+                    let centroid = this.mapService.getPolygonCentroid(paths);
+                    let infoWindow = this.mapService.createInfoWindow(centroid, building.name);
+                    infoWindow.setMap(this.map);
+                    infoWindow.open;
+                    this.infoWindows.push(infoWindow);  
+                }
+
+                // replace with centroid of currentBuilding
+                /* let center = this.map.getCenter();
+                center = new google.maps.LatLng(52.545165, 13.355360);
+                this.map.panTo(center); */
+            })
         }
     }   
 
     /**
      * 
      */
-    public getCurrentPosition() {
+    public getCurrentPosition() {        
         this.checkLog += "Position-"        
         if (this.beacons.length > 2) {
             this.currentPosition = this.getCurrentPositionBeacons(); 
@@ -377,22 +389,20 @@ export class HomePage {
         try {
             let buildingsSort = this.routingService.sortByDistance(buildings, currentPositionLatLng);
             this.currentBuilding = buildingsSort[0].shapeid;
-            this.checkLog += ", Haus: " + this.currentBuilding;
+            this.checkLog += ", Current Building: " + this.currentBuilding;
         } catch (e) {
-            console.log("Get current building ERROR: " + e);
+            console.log("Get current building, ERROR: " + e);
             this.currentBuilding = "BauwesenD";
         }
 
         //console.log("BUILDING p: " + this.previousBuilding + ", c: " + this.currentBuilding + ", LEVEL p: " + this.previousLevel + ", c: " + this.currentLevel);
         if (this.currentBuilding != this.previousBuilding || this.currentLevel != this.previousLevel) {
             this.dbService.getTablesByBuildingLevel(this.currentBuilding, this.currentLevel).subscribe(data => {
-                console.log("getTablesByBuildingLevel");
                 this.currentAttr = data.attr;
                 this.currentCoords = data.coords;          
                 this.currentPoints = data.points; 
                 this.loadMap(this.currentBuilding, this.currentLevel);    
-                this.startState = 1;     
-                console.log("Current Points: " + this.currentPoints);
+                this.startState = 1;   
                 this.dbService.getAllPoints(this.currentPoints).subscribe(data => {
                     this.allPoints = data;   
                 });     

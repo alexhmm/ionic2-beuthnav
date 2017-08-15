@@ -59,7 +59,7 @@ export class DatabaseService {
             this.sqlite.create(this.options).then((db: SQLiteObject) => {  
                 db.executeSql(query, {}).then((data) => {  
                     observer.next({attr: data.rows.item(0).attr, coords: data.rows.item(0).coords, points: data.rows.item(0).points});
-                    console.log("CURRENT TABLES: " + data.rows.item(0).attr + ", " + data.rows.item(0).coords + ", " + data.rows.item(0).points);
+                    console.log("Selected tables: " + data.rows.item(0).attr + ", " + data.rows.item(0).coords + ", " + data.rows.item(0).points);
                     observer.complete();     
                 })                           
             }); 
@@ -219,7 +219,7 @@ export class DatabaseService {
      */
     getAllRoomsAttrCoords(tableAttr: String, tableCoords: String) {
         this.rooms = [];
-        console.log("SELECT ROOMS ATTRIBUTES");
+        console.log("Select room attributes.");
         let queryAttr = "SELECT * FROM " + tableAttr;
         let queryCoords = "SELECT * FROM " + tableCoords;
         let queryPoints = "SELECT points FROM layers WHERE attr LIKE '%" + tableAttr + "%'";
@@ -233,8 +233,7 @@ export class DatabaseService {
                                          type: rows.item(i).type,
                                          desc: rows.item(i).desc,
                                          routing: rows.item(i).routing,
-                                         coordinates: "".toString,
-                                         points: ""});
+                                         coordinates: "".toString});
                     }                    
                 })
                 db.executeSql(queryCoords, []).then((data) => {   
