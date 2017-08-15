@@ -371,8 +371,18 @@ export class HomePage {
     public getCurrentBuilding() {
         //console.log("Interval: getCurrentBuilding()");
         this.previousBuilding = this.currentBuilding;
-        // containsLocation() || isLocationOnEdge()
-        this.currentBuilding = "BauwesenD";
+        // containsLocation() || isLocationOnEdge() 
+        let buildings = this.dbService.getBuildingsCentroids();
+        let currentPositionLatLng = new google.maps.LatLng(this.currentPosition.lat, this.currentPosition.lng);
+        try {
+            let buildingsSort = this.routingService.sortByDistance(buildings, currentPositionLatLng);
+            this.currentBuilding = buildingsSort[0].shapeid;
+            this.checkLog += ", Haus: " + this.currentBuilding;
+        } catch (e) {
+            console.log("Get current building ERROR: " + e);
+            this.currentBuilding = "BauwesenD";
+        }
+
         //console.log("BUILDING p: " + this.previousBuilding + ", c: " + this.currentBuilding + ", LEVEL p: " + this.previousLevel + ", c: " + this.currentLevel);
         if (this.currentBuilding != this.previousBuilding || this.currentLevel != this.previousLevel) {
             this.dbService.getTablesByBuildingLevel(this.currentBuilding, this.currentLevel).subscribe(data => {
@@ -473,7 +483,7 @@ export class HomePage {
         console.log("Selected room.name: " + room.name);    
         console.log("Before: " + this.infoViewState);
         // Observable SQLite Code
-        this.dbService.selectRoom(room.name, room.table, room.shapeid).subscribe(data => {   
+        this.dbService.selectRoom(room.shapeid, room.name, room.building, room.level).subscribe(data => {   
             let mapRoomCentroid: any = {lat: 0, lng: 0};
             mapRoomCentroid = this.mapService.getPolygonCentroid(data);
 

@@ -603,7 +603,7 @@ export class RoutingService {
      * @param point 
      * @param pointB 
      */
-    public sortByDistance(connectors: any, point: any) {
+    public sortByDistance(connectors: any, point: any) {        
         let distances: any[] = [];
         for (let i = 0; i < connectors.length; i++) {  
             let connector = new google.maps.LatLng(connectors[i].lat, connectors[i].lng);

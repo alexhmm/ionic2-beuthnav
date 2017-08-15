@@ -25,16 +25,23 @@ export class DatabaseService {
     public database;
 
     constructor(private sqlite: SQLite) {
+        this.buildings = [{shapeid: "BeuthA", lat: 52.545189, lng: 13.351602},
+                          {shapeid: "GaußB", lat: 52.543267, lng: 13.350684},
+                          {shapeid: "GrashofC", lat: 52.544383, lng: 13.352583},   
+                          {shapeid: "BauwesenD", lat: 52.545246, lng: 13.355341}];                          
         this.tables = [{building: "BauwesenD", level: 0, attr: "d00Attr", coords: "d00Coords", points: "d00Points"},
                        {building: "BauwesenD", level: 1, attr: "d01Attr", coords: "d01Coords", points: "d01Points"}];
-
         this.database = new SQLite();
             this.database.create(this.options).then(() => {
                 console.log("Database opened.");
             }, (error) => {
                 console.log("ERROR: ", error);
         });
-    } 
+    }
+    
+    public getBuildingsCentroids() {
+        return this.buildings;
+    }
 
     public getBuildingLevels(building: any) {
         return BuildingLevels[building];
@@ -98,7 +105,8 @@ export class DatabaseService {
                                 this.allrooms.push({shapeid: rows.item(i).shapeid,
                                                     name: rows.item(i).name,
                                                     desc: rows.item(i).desc,
-                                                    table: this.tables[x].attr}).toString;
+                                                    building: this.tables[x].building,
+                                                    level: this.tables[x].level}).toString;
                                 //console.log("this.allrooms: " + rows.item(i).name + ", " + this.tables[x].attr);
                             }
                         }
@@ -188,16 +196,16 @@ export class DatabaseService {
      * @param exclude 
      */
     getAllBuildingsAttrCoords(skip: String) {
-        this.buildings = [];
+        let buildingsSkip: any[] = [];
         let query = "SELECT * FROM buildings WHERE name NOT LIKE '%" + skip + "%'";
         return Observable.create(observer => {
             this.sqlite.create(this.options).then((db: SQLiteObject) => {
                 db.executeSql(query, []).then((data) => {
                     for (let i = 0; i < data.rows.length; i++) {
                         let rows = data.rows;
-                        this.buildings.push({name: rows.item(i).name, coordinates: rows.item(i).coordinates})
+                        buildingsSkip.push({name: rows.item(i).name, coordinates: rows.item(i).coordinates})
                     }
-                    observer.next(this.buildings);
+                    observer.next(buildingsSkip);
                     observer.complete();
                 })                
             })
@@ -282,10 +290,11 @@ export class DatabaseService {
         })
     }
 
-    public selectRoom(name: any, tableAttr: any, shapeid: any) {
-        let tableCoords;
+    public selectRoom(shapeid: any, name: any, building: any, level: any) {
+        let tableAttr, tableCoords;
         for (let x in this.tables) {
-            if (tableAttr == this.tables[x].attr) {
+            if (building == this.tables[x].building && level == this.tables[x].level) {
+                tableAttr = this.tables[x].attr;
                 tableCoords = this.tables[x].coords;
             }
         }
