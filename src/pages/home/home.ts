@@ -661,22 +661,46 @@ export class HomePage {
         /* let rStart = {name: "Start", house: "Bauwesen", tier: 0, lat: 52.54567, lng: 13.35582};
         let rEnd = {name: "End", house: "Bauwesen", tier: 0, lat: 52.54548, lng: 13.35553}; */
 
-        let currentStart = {lng: "13.35535", lat: "52.54572"};
-        let routingStartLatLng = new google.maps.LatLng(parseFloat(currentStart.lat), parseFloat(currentStart.lng));
+        //let currentStart = {lng: "13.35535", lat: "52.54572"};
+        let currentStart = null;
+        let currentStartLatLng = new google.maps.LatLng(parseFloat(this.currentPosition.lat), parseFloat(this.currentPoints.lng));
 
-        let currentRoutingPolygonIndex, currentRoutingPolygonName,
-        endRoutingPolygonIndex, endRoutingPolygonName;
+        //let routingStartLatLng = new google.maps.LatLng(parseFloat(currentStart.lat), parseFloat(currentStart.lng));
 
-        // set start routing polygon index and name
-        for (let x in this.polygonsRouting) {
-            if (this.routingService.containsLocation(routingStartLatLng, this.polygonsRouting[x].polygon)) {
+        let currentRoutingPolygonIndex = null;
+        let currentRoutingPolygonName = null;
+        let endRoutingPolygonIndex, endRoutingPolygonName;
+
+        // set start routing polygon index, name and position
+        for (let x in this.polygonsRouting) {            
+            if (this.routingService.containsLocation(currentStartLatLng, this.polygonsRouting[x].polygon)) {
                 currentRoutingPolygonIndex = this.polygonsRouting[x].shapeid;
                 currentRoutingPolygonName = this.polygonsRouting[x].name;
+                currentStart = {lat: this.currentPosition.lat, lng: this.currentPosition.lng};
+                break;
             }
         }
 
+        // if currentPosition is none routing polygons, get nearest routing point
+        try {
+            if (currentStart == null && currentRoutingPolygonIndex == null && currentRoutingPolygonName == null) {
+                for (let x in this.allPoints) {
+                    let currentStartDistances = this.routingService.sortByDistance(this.allPoints, currentStartLatLng);                                    
+                    // nearest route point = start
+                    currentStart = {lat: parseFloat(currentStartDistances[0].lat), lng: parseFloat(currentStartDistances[0].lng)};
+                    currentStartLatLng =  new google.maps.LatLng(parseFloat(currentStart.lat), (parseFloat(currentStart.lng)));
+                }
+                for (let x in this.polygonsRouting) {   
+                    if (this.routingService.containsLocation(currentStartLatLng, this.polygonsRouting[x].polygon)) {
+                        currentRoutingPolygonIndex = this.polygonsRouting[x].shapeid;
+                        currentRoutingPolygonName = this.polygonsRouting[x].name;
+                    }
+                }
+            }
+        } catch (e) { console.log("No start point for routing found: " + e) };
+
         // ###### temporary
-        let tempName = "D E25";
+        let tempName = "D E00";
         // ################
 
         this.dbService.getRoutePointByName(this.currentPoints, tempName).subscribe(data => {
