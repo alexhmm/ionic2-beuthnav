@@ -12,12 +12,10 @@ public networks: any[] = [];
 
     }  
 
-    //startScan(): any[] {
     startScan() {
         return Observable.create(observer => {
             if (typeof WifiWizard !== 'undefined') {
                     console.log("WifiWizard loaded: ");
-                    console.log(WifiWizard);
             } else {
                 console.warn('WifiWizard not loaded.');
             }              
@@ -33,18 +31,18 @@ public networks: any[] = [];
             let listHandler = (a: any) => {
                 this.networks = [];
                 for (let x in a) {                    
-                    console.log(a[x].SSID + ", " + a[x].BSSID + ", " + a[x].level);  
+                    console.log(a[x].SSID + ", " + a[x].BSSID + ", " + a[x].level + ", " + a[x].frequency + ", " + a[x].capabilities);  
                     observer.next(x);
                     this.networks.push({
                         SSID: a[x].SSID,
                         BSSID: a[x].BSSID,
-                        level: a[x].level});    
-                        console.log(this.networks[x].ssid);
+                        level: a[x].level,
+                        frequency: a[x].frequency,
+                        capabilities: a[x].capabilities});
                 }                  
             }
             WifiWizard.startScan(successNetwork, failNetwork);
             observer.complete();
-                        //return this.networks;   
         })
     }
 

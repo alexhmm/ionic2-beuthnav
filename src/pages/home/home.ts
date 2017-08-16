@@ -70,8 +70,8 @@ export class HomePage {
     public levelViewState = 'in'
     public mapViewState = 'on'
 
-    public allrooms: any[] = [];
-    public allroomsBackup: any[] = [];
+    public allRooms: any[] = [];
+    public allRoomsBackup: any[] = [];
     public allPoints: any[] = [];
     public attributes = {name: "", type: "", desc: "", tablePoints: ""};
     public selectedRoom: any[] = [];
@@ -200,8 +200,8 @@ export class HomePage {
 
     public initializeRoomListView() {    
         this.dbService.getRoomList().subscribe(data => {
-            this.allrooms = data;
-            this.allroomsBackup = this.allrooms;
+            this.allRooms = data;
+            this.allRoomsBackup = this.allRooms;
         });
     }
 
@@ -434,12 +434,12 @@ export class HomePage {
                 this.toggleInfoView();
         }   
         //this.initializeRooms();
-        this.allrooms = this.allroomsBackup;
+        this.allRooms = this.allRoomsBackup;
 
         let value = event.target.value;
 
         if (value && value.trim() != '') {    
-            this.allrooms = this.allrooms.filter((room) => {
+            this.allRooms = this.allRooms.filter((room) => {
                 return (room.name.toLowerCase().indexOf(value.toLowerCase()) > -1 || room.desc.toLowerCase().indexOf(value.toLowerCase()) > -1);
             })
             if (this.listViewState == 'out') {
@@ -744,7 +744,7 @@ export class HomePage {
                 let connectors: any[] = [];
                 console.log("Connectors:");
                 for (let x in this.allPoints) {
-                    if (this.allPoints[x].name.includes("CN")) {
+                    if (this.allPoints[x].type == "connect") {
                         connectors.push(this.allPoints[x]);
                     }
                 }
@@ -754,10 +754,9 @@ export class HomePage {
                     console.log("Current polygon index: " + currentRoutingPolygonIndex + ", End: " + endRoutingPolygonIndex);
 
                     // get connector name from polygon, calculate shortest distance to endPoint
-                    let currentConnectorName = currentRoutingPolygonName + "CN";
                     let currentConnectors: any[] = [];
                     for (let x in this.allPoints) {
-                        if (this.allPoints[x].name == currentConnectorName) currentConnectors.push(this.allPoints[x]);
+                        if (this.allPoints[x].name == currentRoutingPolygonName && this.allPoints[x].type == "connect") currentConnectors.push(this.allPoints[x]);
                     }      
                     let currentCNDistances = this.routingService.sortByDistance(currentConnectors, routingEndLatLng);
                                     

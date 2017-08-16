@@ -267,7 +267,7 @@ export class MapService {
         }
         centroid.lat = centroid.lat / points.length;
         centroid.lng = centroid.lng / points.length;
-        console.log("Polygon Centroid: " + centroid.lat + ", " + centroid.lng);
+        //console.log("Polygon Centroid: " + centroid.lat + ", " + centroid.lng);
         return centroid;
     }
 

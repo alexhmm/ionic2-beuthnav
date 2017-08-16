@@ -101,7 +101,8 @@ export class DatabaseService {
                     db.executeSql(query, {}).then((data) => { 
                         let rows = data.rows;
                         for (let i = 0; i < rows.length; i++) {
-                            if (rows.item(i).type == "lab" || "lecture" || "office" || "service" || "wc") {
+                            //if (rows.item(i).type == "lab" || "lecture" || "office" || "service" || "wc") {
+                            if (rows.item(i).type == "lab" || "lecture" || "office" || "service") {
                                 this.allrooms.push({shapeid: rows.item(i).shapeid,
                                                     name: rows.item(i).name,
                                                     desc: rows.item(i).desc,
@@ -269,7 +270,7 @@ export class DatabaseService {
     }
 
     /**
-     * Returns all points of current building level
+     * Returns all routing points of current building level
      * @param tablePoints 
      */
     public getAllPoints(tablePoints: any) {
@@ -280,7 +281,11 @@ export class DatabaseService {
                 db.executeSql(query, []).then((data) => {
                     for (let i = 0; i < data.rows.length; i++) {
                         let rows = data.rows;
-                        points.push({shapeid: rows.item(i).shapeid, name: rows.item(i).name, lat: parseFloat(rows.item(i).y), lng: parseFloat(rows.item(i).x)});
+                        points.push({shapeid: rows.item(i).shapeid,
+                                     name: rows.item(i).name,
+                                     type: rows.item(i).type,
+                                     lat: parseFloat(rows.item(i).y),
+                                     lng: parseFloat(rows.item(i).x)});
                     }
                     observer.next(points);
                     observer.complete();
