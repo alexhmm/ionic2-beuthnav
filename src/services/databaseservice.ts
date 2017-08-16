@@ -25,10 +25,10 @@ export class DatabaseService {
     public database;
 
     constructor(private sqlite: SQLite) {
-        this.buildings = [{shapeid: "BeuthA", lat: 52.545189, lng: 13.351602},
-                          {shapeid: "GaußB", lat: 52.543267, lng: 13.350684},
-                          {shapeid: "GrashofC", lat: 52.544383, lng: 13.352583},   
-                          {shapeid: "BauwesenD", lat: 52.545246, lng: 13.355341}];                          
+        this.buildings = [{shapeid: 0, name: "BeuthA", lat: 52.545189, lng: 13.351602},
+                          {shapeid: 1, name: "GaußB", lat: 52.543267, lng: 13.350684},
+                          {shapeid: 2, name: "GrashofC", lat: 52.544383, lng: 13.352583},   
+                          {shapeid: 3, name : "BauwesenD", lat: 52.545246, lng: 13.355341}];                          
         this.tables = [{building: "BauwesenD", level: 0, attr: "d00Attr", coords: "d00Coords", points: "d00Points"},
                        {building: "BauwesenD", level: 1, attr: "d01Attr", coords: "d01Coords", points: "d01Points"}];
         this.database = new SQLite();

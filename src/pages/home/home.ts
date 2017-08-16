@@ -248,11 +248,14 @@ export class HomePage {
         console.log("Interval: loadMap()");
         this.loadMapStyles();    
         if (this.polygons != null) {
-            for (let x in this.polygons) this.polygons[x].setMap(null)
+            for (let x in this.polygons) this.polygons[x].setMap(null);
             this.polygons = [];
         }
 
-        if (this.polygonsRouting != null) this.polygons = [];
+        if (this.polygonsRouting != null) {
+            for (let x in this.polygonsRouting) this.polygonsRouting[x].polygon.setMap(null);
+            this.polygonsRouting = [];
+        }
 
         if (this.currentAttr != null && this.currentLevel != null) {   
             // SQLite Code with Observable
@@ -388,7 +391,7 @@ export class HomePage {
         let currentPositionLatLng = new google.maps.LatLng(this.currentPosition.lat, this.currentPosition.lng);
         try {
             let buildingsSort = this.routingService.sortByDistance(buildings, currentPositionLatLng);
-            this.currentBuilding = buildingsSort[0].shapeid;
+            this.currentBuilding = buildingsSort[0].name;
             this.checkLog += ", Current Building: " + this.currentBuilding;
         } catch (e) {
             console.log("Get current building, ERROR: " + e);
@@ -675,133 +678,109 @@ export class HomePage {
         console.log("Polyline length: " + lengthInMeters);
     }
 
+
+
+    // ######################### \\
+    // ######## ROUTING ######## \\
+    // ######################### \\
     public testRouting() {
-        let rPaths: any[] = [];
-        // set start and endpoint
-        /* let rStart = {name: "Start", house: "Bauwesen", tier: 0, lat: 52.54567, lng: 13.35582};
-        let rEnd = {name: "End", house: "Bauwesen", tier: 0, lat: 52.54548, lng: 13.35553}; */
+        
+        let currentPosition = this.currentPosition;
+        // let currentPosition = {lng: 13.35537, lat: 52.54572}; // oben rechts
+        //let currentPosition = {lng: 13.35417, lat: 52.54486};  // unten links 1. og
+        let currentPositionLatLng = new google.maps.LatLng(currentPosition.lat, currentPosition.lng);
+        let routeInCurrentLevelStart, routeInCurrentLevelEnd;
+        let rPaths; // paths for routing polyline
 
-        //let currentStart = {lng: "13.35535", lat: "52.54572"};
-        let currentStart = null;
-        let currentStartLatLng = new google.maps.LatLng(parseFloat(this.currentPosition.lat), parseFloat(this.currentPoints.lng));
-
-        //let routingStartLatLng = new google.maps.LatLng(parseFloat(currentStart.lat), parseFloat(currentStart.lng));
-
-        let currentRoutingPolygonIndex = null;
-        let currentRoutingPolygonName = null;
-        let endRoutingPolygonIndex, endRoutingPolygonName;
-
-        // set start routing polygon index, name and position
-        for (let x in this.polygonsRouting) {            
-            if (this.routingService.containsLocation(currentStartLatLng, this.polygonsRouting[x].polygon)) {
-                currentRoutingPolygonIndex = this.polygonsRouting[x].shapeid;
-                currentRoutingPolygonName = this.polygonsRouting[x].name;
-                currentStart = {lat: this.currentPosition.lat, lng: this.currentPosition.lng};
+        for (let x in this.polygonsRouting) {
+            if (this.routingService.containsLocation(currentPositionLatLng, this.polygonsRouting[x].polygon)) {
+                routeInCurrentLevelStart = currentPosition;
                 break;
+            } else {
+                let currentStartDistances = this.routingService.sortByDistance(this.allPoints, currentPositionLatLng);                                    
+                // nearest route point = start
+                routeInCurrentLevelStart = {lat: parseFloat(currentStartDistances[0].lat), lng: parseFloat(currentStartDistances[0].lng)};
             }
-        }
-
-        // if currentPosition is none routing polygons, get nearest routing point
-        try {
-            if (currentStart == null && currentRoutingPolygonIndex == null && currentRoutingPolygonName == null) {
-                for (let x in this.allPoints) {
-                    let currentStartDistances = this.routingService.sortByDistance(this.allPoints, currentStartLatLng);                                    
-                    // nearest route point = start
-                    currentStart = {lat: parseFloat(currentStartDistances[0].lat), lng: parseFloat(currentStartDistances[0].lng)};
-                    currentStartLatLng =  new google.maps.LatLng(parseFloat(currentStart.lat), (parseFloat(currentStart.lng)));
-                }
-                for (let x in this.polygonsRouting) {   
-                    if (this.routingService.containsLocation(currentStartLatLng, this.polygonsRouting[x].polygon)) {
-                        currentRoutingPolygonIndex = this.polygonsRouting[x].shapeid;
-                        currentRoutingPolygonName = this.polygonsRouting[x].name;
-                    }
-                }
-            }
-        } catch (e) { console.log("No start point for routing found: " + e) };
+        }   
 
         // ###### temporary
-        let tempName = "D E00";
+        // let endName = "D 110";
+        let endName = "D 121";
+        let endBuilding = "BauwesenD"
+        let endLevel = 1;
+        let tempName;
         // ################
 
-        this.dbService.getRoutePointByName(this.currentPoints, tempName).subscribe(data => {
-        //this.dbService.getRoutePointByName(this.attributes.tablePoints, this.attributes.name).subscribe(data => {
-            
-            let routingEnd = {lat: data.lat, lng: data.lng};   
-            let routingEndLatLng = new google.maps.LatLng(parseFloat(routingEnd.lat), parseFloat(routingEnd.lng));
+       /*  for (let x in this.allPoints) {
 
-            // set end routing polygon index and name
-            for (let x in this.polygonsRouting) {
-                if (this.routingService.containsLocation(routingEndLatLng, this.polygonsRouting[x].polygon)) {
-                    endRoutingPolygonIndex = this.polygonsRouting[x].shapeid;
-                    endRoutingPolygonName = this.polygonsRouting[x].name;
+        } */
+        //  if (this.allPoints[x].name.includes("CN")) {
+
+        // routing through multiple levels
+        if (endBuilding == this.currentBuilding && endLevel == this.currentLevel) {
+            console.log("0: endBuilding: " + endBuilding + " == this.currentBuilding: " + this.currentBuilding + " && endLevel: " + endLevel + " == this.currentLevel: " + this.currentLevel);
+            for (let x in this.allPoints) {
+                if (this.allPoints[x].name.includes(endName)) {
+                    routeInCurrentLevelEnd = {lat: parseFloat(this.allPoints[x].lat), lng: parseFloat(this.allPoints[x].lng)};
+                    break;
                 }
-            }
-
-            let currentPolygon;
-
-            // check if start and end position is in same routing polygon  
-            if (currentRoutingPolygonIndex != endRoutingPolygonIndex) {
-                let connectors: any[] = [];
-                console.log("Connectors:");
-                for (let x in this.allPoints) {
-                    if (this.allPoints[x].type == "connect") {
-                        connectors.push(this.allPoints[x]);
-                    }
-                }
-                while (currentRoutingPolygonIndex != endRoutingPolygonIndex) {
-                    // get current routingPolygon by polygonIndex
-                    currentPolygon = this.polygons[currentRoutingPolygonIndex];
-                    console.log("Current polygon index: " + currentRoutingPolygonIndex + ", End: " + endRoutingPolygonIndex);
-
-                    // get connector name from polygon, calculate shortest distance to endPoint
-                    let currentConnectors: any[] = [];
-                    for (let x in this.allPoints) {
-                        if (this.allPoints[x].name == currentRoutingPolygonName && this.allPoints[x].type == "connect") currentConnectors.push(this.allPoints[x]);
-                    }      
-                    let currentCNDistances = this.routingService.sortByDistance(currentConnectors, routingEndLatLng);
-                                    
-                    // nearest connection point = temporary end
-                    let currentPolygonEnd = {lat: parseFloat(currentCNDistances[0].lat), lng: parseFloat(currentCNDistances[0].lng)};
-                    let currentPolygonPaths = this.routingService.createRouteInPolygon(currentStart, currentPolygonEnd, currentPolygon);
-
-                    // push paths to overall paths array
-                    for (let x in currentPolygonPaths) rPaths.push(currentPolygonPaths[x]);
-
-                    // calculate shortest distance connector to current polygon End
-                    let currentPolygonEndLatLng = new google.maps.LatLng(currentPolygonEnd.lat, currentPolygonEnd.lng);
-                    let CNCNDistances = this.routingService.sortByDistance(connectors, currentPolygonEndLatLng);
-                    CNCNDistances.splice(0, 1); // remove identical connector
-
-                    // set nearest connector neighbor to current polygon end
-                    currentStart = {lat: CNCNDistances[0].lat + "", lng: CNCNDistances[0].lng + ""};
-                    let currentStartLatLng = new google.maps.LatLng(parseFloat(currentStart.lat), parseFloat(currentStart.lng));
-
-                    // set new routing polygon for next loop
-                    for (let x in this.polygonsRouting) {
-                        if (this.routingService.containsLocation(currentStartLatLng, this.polygonsRouting[x].polygon)) {
-                            currentRoutingPolygonIndex = this.polygonsRouting[x].shapeid;
-                            currentRoutingPolygonName = this.polygonsRouting[x].name;
-                        }
-                    }
-                    if (currentRoutingPolygonIndex == endRoutingPolygonIndex) {
-                        console.log("Finish while loop.");
-                        let endPolygon = this.polygons[currentRoutingPolygonIndex];
-                        let endPolygonPaths = this.routingService.createRouteInPolygon(currentStart, routingEnd, endPolygon);
-                        for (let x in endPolygonPaths) rPaths.push(endPolygonPaths[x]);
-                    }
-                }
-            } else {
-                let routingPolygon = this.polygons[currentRoutingPolygonIndex];
-                rPaths = this.routingService.createRouteInPolygon(currentStart, routingEnd, routingPolygon);
             }            
-            // ### TODO: check if start and end position is in same house and tier
-            
-            // ### TODO: determine routing polygon (index)
-            //routingPolygonIndex = 84;
-            
+            //startPosition: any, endPosition: any,  routingEndName: String, routingPolygons: any,routingPoints: any,   tablePoints: any) {
+            rPaths = this.routingService.createRouteInLevel(routeInCurrentLevelStart, routeInCurrentLevelEnd, this.polygonsRouting, this.allPoints); 
             let polyline = this.mapService.createPolyline(rPaths);                
             polyline.setMap(this.map);
-        });
+
+        } else if (endBuilding == this.currentBuilding && endLevel != this.currentLevel) {
+            console.log("1: endBuilding: " + endBuilding + " == this.currentBuilding: " + this.currentBuilding + " && endLevel: " + endLevel + " != this.currentLevel: " + this.currentLevel);
+            // nearest lift / stairs
+            let stairs: any[] = [];
+            for (let x in this.allPoints) {
+                if (this.allPoints[x].type == "staircase") stairs.push(this.allPoints[x]);
+            }
+            let stairsDistances = this.routingService.sortByDistance(stairs, currentPositionLatLng);            
+            routeInCurrentLevelEnd = {lat: parseFloat(stairsDistances[0].lat), lng: parseFloat(stairsDistances[0].lng)};            
+
+            rPaths = this.routingService.createRouteInLevel(routeInCurrentLevelStart, routeInCurrentLevelEnd, this.polygonsRouting, this.allPoints);               
+            let polyline = this.mapService.createPolyline(rPaths);                
+            polyline.setMap(this.map);
+
+            // if tempEnd distance to currentPosition is < 1m getCurrentBuilding(currentBuilding, endLevel);
+
+        } else if (endBuilding != this.currentBuilding) {
+            console.log("2: endBuilding: " + endBuilding + " != this.currentBuilding: " + this.currentBuilding);
+            if (this.currentLevel != 0) {
+                console.log("2.1: this.currentLevel: + " + this.currentLevel + " != 0");
+                let lifts: any[] = [];
+                for (let x in this.allPoints) {
+                    if (this.allPoints[x].type == "lift") lifts.push(this.allPoints[x]);
+                }
+                let liftsDistances = this.routingService.sortByDistance(lifts, currentPositionLatLng);            
+                routeInCurrentLevelEnd = {lat: parseFloat(liftsDistances[0].lat), lng: parseFloat(liftsDistances[0].lng)};
+
+                rPaths = this.routingService.createRouteInLevel(routeInCurrentLevelStart, routeInCurrentLevelEnd, this.polygonsRouting, this.allPoints);               
+                let polyline = this.mapService.createPolyline(rPaths);                
+                polyline.setMap(this.map);
+
+                // if tempEnd distance to currentPosition is < 1m getCurrentBuilding(currentBuilding, level 0);
+                // set nearest neighbor (shortest distance) of (new loaded) allPoints
+                // route to exit in same level
+
+            } else {
+                console.log("2.2: this.currentLevel == 0");
+                let exits: any[] = [];
+                for (let x in this.allPoints) {
+                    if (this.allPoints[x].type == "exit") exits.push(this.allPoints[x]);
+                }
+                let exitsDistances = this.routingService.sortByDistance(exits, currentPositionLatLng);            
+                routeInCurrentLevelEnd = {lat: parseFloat(exitsDistances[0].lat), lng: parseFloat(exitsDistances[0].lng)};
+
+                rPaths = this.routingService.createRouteInLevel(routeInCurrentLevelStart, routeInCurrentLevelEnd, this.polygonsRouting, this.allPoints);               
+                let polyline = this.mapService.createPolyline(rPaths);                
+                polyline.setMap(this.map);
+
+                // route to exit in same level
+            }   
+        }             
     }        
 
     public testGS() {

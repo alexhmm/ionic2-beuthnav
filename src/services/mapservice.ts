@@ -132,6 +132,23 @@ export class MapService {
         return polyline;
     }
 
+       /**
+     * Creates remaining routing polyline for Google map
+     * @param points
+     */
+    public createPolylineRemaining(points: any) {
+        let polylineOptions: any = {
+          path: points,
+          geodesic: true,
+          strokeColor: '#FF0000',
+          strokeOpacity: 0.5,
+          strokeWeight: 3
+        }
+        let polyline = new google.maps.Polyline();
+        polyline.setOptions(polylineOptions);
+        return polyline;
+    }
+
         /**
      * Creates routing polyline for Google map
      * @param points
