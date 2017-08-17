@@ -73,7 +73,7 @@ export class HomePage {
     public allRooms: any[] = [];
     public allRoomsBackup: any[] = [];
     public allPoints: any[] = [];
-    public attributes = {name: "", type: "", desc: "", tablePoints: ""};
+    public attributes = {name: "", type: "", desc: "", position: ""};
     public selectedRoom: any[] = [];
     public polygons: any[] = [];
     public polygonsRouting: any[] = [];
@@ -106,7 +106,7 @@ export class HomePage {
     // location variables
     public previousBuilding;
     public previousLevel;
-    public currentPosition;
+    public currentPosition = null;
     public currentBuilding = "";    
     public currentLevel = 0;
     public currentAttr;
@@ -230,12 +230,11 @@ export class HomePage {
 
         // Zoom changed listener
         google.maps.event.addListener(this.map, 'zoom_changed', () => {
-            if (this.circle != null) {  
-                this.circle.setRadius(this.mapService.getCircleRadius(this.getMapZoom()));
-                for (let x in this.customMarkers) {                    
-                    this.customMarkers[x].setIcon(this.mapService.getCustomMarkerIcon(this.customMarkers[x].getIcon().url, this.mapService.getMarkerSize(this.getMapZoom())));
-                }
-            }            
+            if (this.circle != null) this.circle.setRadius(this.mapService.getCircleRadius(this.getMapZoom()));      
+            if (this.marker != null) this.marker.setIcon(this.mapService.getCustomMarkerIcon(this.marker.getIcon().url, this.mapService.getRouteMarkerSize(this.getMapZoom())));
+            for (let x in this.customMarkers) {                    
+                this.customMarkers[x].setIcon(this.mapService.getCustomMarkerIcon(this.customMarkers[x].getIcon().url, this.mapService.getCustomMarkerSize(this.getMapZoom())));
+            }
         });
 
         google.maps.event.addListener(this.map, 'click', (event) => {
@@ -247,7 +246,7 @@ export class HomePage {
      * Loads polygon data on google map
      * @param floor 
      */
-    public loadMap(building: any, level: any) { 
+    public loadMap() { 
         console.log("Interval: loadMap()");
         this.loadMapStyles();  
 
@@ -268,7 +267,7 @@ export class HomePage {
         if (this.currentAttr != null && this.currentLevel != null) {   
             // SQLite Code with Observable
             //this.dbService.selectRooms("d00").subscribe(data => {            
-            this.dbService.getAllRoomsAttrCoords(this.currentAttr, this.currentCoords).subscribe(data => {
+            this.dbService.getCurrentAttrCoords(this.currentAttr, this.currentCoords).subscribe(data => {
                 console.log("Loading map polygons.");
                 for (let x in data) {
                     //console.log("LOADMAP: " + data[x].name + ", " + data[x].type + ", " + data[x].desc + ", " + data[x].coordinates);
@@ -276,8 +275,6 @@ export class HomePage {
                     let paths: any[] = [];
 
                     room = data[x];
-
-                    console.log("Room type: " + room.type);
 
                     let allCoordinates = room.coordinates;
                     let coordinates: String[] = allCoordinates.split("; ");
@@ -296,10 +293,8 @@ export class HomePage {
                     if (room.type == "lab" || room.type == "lecture" || room.type == "office" || room.type == "service" || room.type == "wc" || room.type == "cafe" || room.type == "mensa") {
                         //console.log("TYPE: " + room.type);
                         google.maps.event.addListener(polygon, 'click', (event) => {
-                            //console.log("CLICK: " + event.latLng + ", shapeid: " + room.shapeid);
-                            //let attributes = this.getAttributesByShapeId(room.shapeid);
-                            let attributes = {name: room.name, desc: room.desc};
-                            this.openInfoView(event, attributes);
+                            let attributes = {shapeid: room.shapeid, name: room.name, desc: room.desc, building: this.currentBuilding, level: this.currentLevel};
+                            this.selectRoom(attributes);
                         })
                     }
 
@@ -368,7 +363,7 @@ export class HomePage {
         if (this.beacons.length > 2) {
             this.currentPosition = this.getCurrentPositionBeacons(); 
             this.paintCurrentPosition();
-            this.getCurrentBuilding();    
+            if (this.currentPosition != null) this.getCurrentBuilding();    
             console.log(this.checkLog);              
         } else {
             //this.currentPosition = this.getCurrentPositionGPS();
@@ -376,7 +371,7 @@ export class HomePage {
                 this.currentPosition = data;
                 this.checkLog += "GPS: " + this.currentPosition.lat + ", " + this.currentPosition.lng;
                 this.paintCurrentPosition();
-                this.getCurrentBuilding();
+                if (this.currentPosition != null) this.getCurrentBuilding();
                 console.log(this.checkLog);
             });            
         }
@@ -402,35 +397,45 @@ export class HomePage {
      * 
      */
     public getCurrentBuilding() {
-        //console.log("Interval: getCurrentBuilding()");
-        this.previousBuilding = this.currentBuilding;
-        // containsLocation() || isLocationOnEdge() 
-        let buildings = this.dbService.getBuildingsCentroids();
-        let currentPositionLatLng = new google.maps.LatLng(this.currentPosition.lat, this.currentPosition.lng);
-        try {
-            let buildingsSort = this.routingService.sortByDistance(buildings, currentPositionLatLng);
-            this.currentBuilding = buildingsSort[0].name;
-            this.checkLog += ", Current Building: " + this.currentBuilding;
-        } catch (e) {
-            console.log("Get current building, ERROR: " + e);
-            this.currentBuilding = "BauwesenD";
-        }
+        //if (this.currentPosition != null) {
+            //console.log("Interval: getCurrentBuilding()");
+            this.previousBuilding = this.currentBuilding;
+            // containsLocation() || isLocationOnEdge() 
+            let buildings = this.dbService.getBuildingsCentroids();
+            let currentPositionLatLng = new google.maps.LatLng(this.currentPosition.lat, this.currentPosition.lng);
+            try {
+                let buildingsSort = this.routingService.sortByDistance(buildings, currentPositionLatLng);
+                this.currentBuilding = buildingsSort[0].name;
+                this.checkLog += ", Current Building: " + this.currentBuilding;
+            } catch (e) {
+                console.log("Get current building, ERROR: " + e);
+                this.currentBuilding = "BauwesenD";
+            }
 
-        //console.log("BUILDING p: " + this.previousBuilding + ", c: " + this.currentBuilding + ", LEVEL p: " + this.previousLevel + ", c: " + this.currentLevel);
-        if (this.currentBuilding != this.previousBuilding || this.currentLevel != this.previousLevel) {
-            this.dbService.getTablesByBuildingLevel(this.currentBuilding, this.currentLevel).subscribe(data => {
-                this.currentAttr = data.attr;
-                this.currentCoords = data.coords;          
-                this.currentPoints = data.points; 
-                this.loadMap(this.currentBuilding, this.currentLevel);    
+            //console.log("BUILDING p: " + this.previousBuilding + ", c: " + this.currentBuilding + ", LEVEL p: " + this.previousLevel + ", c: " + this.currentLevel);
+            if (this.currentBuilding != this.previousBuilding || this.currentLevel != this.previousLevel) {
+                /* this.dbService.getTablesByBuildingLevel(this.currentBuilding, this.currentLevel).subscribe(data => {
+                    this.currentAttr = data.attr;
+                    this.currentCoords = data.coords;          
+                    this.currentPoints = data.points; 
+                    this.loadMap(this.currentBuilding, this.currentLevel);    
+                    this.startState = 1;   
+                    this.dbService.getCurrentPoints(this.currentPoints).subscribe(data => {
+                        this.allPoints = data;   
+                    });     
+                }); */
+                let tables = this.dbService.getCurrentBuildingTables(this.currentBuilding, this.currentLevel);
+                this.currentAttr = tables.attr;
+                this.currentCoords = tables.coords;
+                this.currentPoints = tables.points;
+                this.loadMap();    
                 this.startState = 1;   
-                this.dbService.getAllPoints(this.currentPoints).subscribe(data => {
+                this.dbService.getCurrentPoints(this.currentPoints).subscribe(data => {
                     this.allPoints = data;   
-                });     
-            });
-            
-        }
-        this.previousLevel = this.currentLevel;
+                });   
+            }
+            this.previousLevel = this.currentLevel;
+        //}
     }
 
     /**
@@ -484,75 +489,28 @@ export class HomePage {
     }
 
     /**
-     * Opens info view for specific room
-     * @param event 
-     * @param attributes 
-     */
-    public openInfoView(event: any, attributes: any) {
-        // function currentBuilding TBA
-        console.log("GET ROOM INFO: " + this.polygons.length);
-
-        this.attributes.name = attributes.name;
-        this.attributes.desc = attributes.desc;
-        this.attributes.tablePoints = attributes.tablePoints;
-        if (this.infoViewState == 'out') {
-            this.toggleInfoView();
-        }
-
-        console.log("InfoViewAttributes: " + this.attributes.name + ", " + this.attributes.desc + ", " + this.attributes.tablePoints);
-
-        let latLngStr = event.latLng + "";
-        let latLngStrSub = latLngStr.substring(1, latLngStr.length);
-        this.addMarker(latLngStrSub, "blabla");        
-    }
-
-    /**
      * 
      * @param room 
      */
     public selectRoom(room: any) {
-        console.log("Selected room.name: " + room.name);    
-        console.log("Before: " + this.infoViewState);
-        // Observable SQLite Code
-        this.dbService.selectRoom(room.shapeid, room.name, room.building, room.level).subscribe(data => {   
-            let mapRoomCentroid: any = {lat: 0, lng: 0};
-            mapRoomCentroid = this.mapService.getPolygonCentroid(data);
+        this.dbService.getRoomCoordinates(room.shapeid, room.building, room.level).subscribe(data => {
+            let roomCentroid = this.mapService.getPolygonCentroid(data);
+            let position = new google.maps.LatLng(parseFloat(roomCentroid.lat), parseFloat(roomCentroid.lng));  
 
-            if (this.listViewState == 'in') {
-                this.toggleListView();
-            }
             this.attributes.name = room.name;
             this.attributes.desc = room.desc;
-            this.attributes.tablePoints = room.tablePoints;
-            if (this.infoViewState == 'out') {
-                this.toggleInfoView();
-                console.log("Info: " + this.infoViewState);
-            }     
-        });
-    }
 
-    /**
-     * Adds a marker to a specific position on the map
-     * @param position
-     */
-    public addMarker(position: any, content: any) {
-        /* if (this.marker != null) {
-            this.marker.setMap(null);
-        } */
+            if (this.marker != null) {
+                this.marker.setMap(null);
+            }
+            
+            this.marker = this.mapService.createRouteMarker(position, "./assets/icon/marker.png", 48);
+            this.marker.setMap(this.map);
+            this.map.panTo(position);
 
-        this.marker = new google.maps.Marker({
-            animation: google.maps.Animation.DROP,
-            position: new google.maps.LatLng(parseFloat(position.lat), parseFloat(position.lng)),
-            title: content
-        }); 
-
-        this.marker.setMap(this.map);
-        //console.log("MarkerContent: " + content);
-
-        this.addInfoWindow(this.marker, content);
-        let center = new google.maps.LatLng(parseFloat(position.lat), parseFloat(position.lng));
-        // using global variable:
-        this.map.panTo(center);
+            if (this.listViewState == 'in') this.toggleListView();
+            if (this.infoViewState == 'out') this.toggleInfoView();
+        });  
     }
 
     /**

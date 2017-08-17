@@ -85,22 +85,48 @@ export class MapService {
         else return currentLevel;
     }
 
-    public getCustomMarkerIcon(path: any, size: any) {
+    public createMarker(position: any, path: any, size: any) {
+        let icon = this.getCustomMarkerIcon(path, size);
+        let customMarker = new google.maps.Marker({
+            position: position,
+            icon: icon
+        });
+    }
+
+    public getCustomMarkerIcon(url: any, size: any) {
         let icon = {
-            url: path,
+            url: url,
             scaledSize: new google.maps.Size(size, size),
             anchor: new google.maps.Point(size / 2, size / 2)
         }
         return icon;
     }
 
-    public createCustomMarker(position: any, path: any, size: any) {        
-        let icon = this.getCustomMarkerIcon(path, size);
+    public getRouteMarkerIcon(url: any, size: any) {
+        let icon = {
+            url: url,
+            scaledSize: new google.maps.Size(size, size)
+        }
+        return icon;
+    }
+
+    public createRouteMarker(position: any, url: any, size: any) {        
+        let icon = this.getRouteMarkerIcon(url, size);
+        let routeMarker = new google.maps.Marker({
+            animation: google.maps.Animation.DROP,
+            position: position,
+            icon: icon
+        });
+        return routeMarker;
+    }
+
+    public createCustomMarker(position: any, url: any, size: any) {        
+        let icon = this.getCustomMarkerIcon(url, size);
         let customMarker = new google.maps.Marker({
             position: position,
             icon: icon
         });
-        return customMarker
+        return customMarker;
     }
 
     public createPolygonBuildingOptions(paths: any) {
@@ -287,7 +313,16 @@ export class MapService {
         }     
     }
 
-    public getMarkerSize(zoom: any) {
+    public getRouteMarkerSize(zoom: any) {
+        let zoomDiff = 18 - zoom;
+        switch(true) {
+            case (zoomDiff > 0): return 48 - (zoomDiff * 4);              
+            case (zoomDiff < 0): return 48 + (zoomDiff / 4);    
+            default: return 48;
+        }     
+    }
+
+    public getCustomMarkerSize(zoom: any) {
         let zoomDiff = 18 - zoom;
         switch(true) {
             case (zoomDiff > 0):

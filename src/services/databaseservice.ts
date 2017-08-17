@@ -47,6 +47,16 @@ export class DatabaseService {
         return BuildingLevels[building];
     }
 
+    public getCurrentBuildingTables(building: any, level: any) {
+        for (let x in this.tables) {
+            if (building == this.tables[x].building && level == this.tables[x].level) {
+                console.log("getCurrentBuildingTables: " + this.tables[x].attr);
+                return {attr: this.tables[x].attr, coords: this.tables[x].coords, points: this.tables[x].points}
+            }
+        }
+        return {attr: "d00Attr", coords: "d00Coords", points: "d00Points"};
+    }
+
     /**
      * 
      * @param building 
@@ -218,8 +228,8 @@ export class DatabaseService {
      * @param tableAttributes 
      * @param tableCoordinates 
      */
-    getAllRoomsAttrCoords(tableAttr: String, tableCoords: String) {
-        this.rooms = [];
+    public getCurrentAttrCoords(tableAttr: String, tableCoords: String) {
+        let rooms: any[] = [];
         console.log("Select room attributes.");
         let queryAttr = "SELECT * FROM " + tableAttr;
         let queryCoords = "SELECT * FROM " + tableCoords;
@@ -229,7 +239,7 @@ export class DatabaseService {
                 db.executeSql(queryAttr, []).then((data) => {
                     for (let i = 0; i < data.rows.length; i++) {
                         let rows = data.rows;
-                        this.rooms.push({shapeid: rows.item(i).shapeid,
+                        rooms.push({shapeid: rows.item(i).shapeid,
                                          name: rows.item(i).name,
                                          type: rows.item(i).type,
                                          desc: rows.item(i).desc,
@@ -238,13 +248,13 @@ export class DatabaseService {
                     }                    
                 })
                 db.executeSql(queryCoords, []).then((data) => {   
-                    for (let i = 0; i < this.rooms.length; i++) {
+                    for (let i = 0; i < rooms.length; i++) {
                         let coordinateArray = [];
                         let coordinatesStr = "";
-                        //let index = this.rooms.map(function(e) { return e.shapeid; }).indexOf(this.rooms[i].shapeid);
+                        //let index = rooms.map(function(e) { return e.shapeid; }).indexOf(rooms[i].shapeid);
                         for (let j = 0; j < data.rows.length; j++) {
                             let rows = data.rows;
-                            if (rows.item(j).shapeid === this.rooms[i].shapeid) {
+                            if (rows.item(j).shapeid === rooms[i].shapeid) {
                                 coordinateArray.push(rows.item(j).y + ", " + rows.item(j).x + "; ");
                                 //coordinatesStr += rows.item(j).y + ", " + rows.item(j).x;
                             }
@@ -255,14 +265,14 @@ export class DatabaseService {
                             coordinatesStr += coordinateArray[x];
                         }
                         coordinatesStr = coordinatesStr.substring(0, coordinatesStr.length - 2);
-                        this.rooms[i].coordinates = coordinatesStr;         
+                        rooms[i].coordinates = coordinatesStr;         
                         //console.log("NEW: " + this.rooms[i].name + " || " + this.rooms[i].coordinates);                                                
                     }                        
                 })   
                 db.executeSql(queryPoints, []).then((data) => { 
                     let tablePoints = data.rows.item(0).points;                    
-                    for (let i = 0; i < this.rooms.length; i++) this.rooms[i].points = tablePoints;
-                    observer.next(this.rooms);                
+                    for (let i = 0; i < rooms.length; i++) rooms[i].points = tablePoints;
+                    observer.next(rooms);                
                     observer.complete();
                 });             
             })
@@ -273,7 +283,7 @@ export class DatabaseService {
      * Returns all routing points of current building level
      * @param tablePoints 
      */
-    public getAllPoints(tablePoints: any) {
+    public getCurrentPoints(tablePoints: any) {        
         let points: any[] = [];
         let query = "SELECT * FROM " + tablePoints;
         return Observable.create(observer => {
@@ -294,27 +304,25 @@ export class DatabaseService {
         })
     }
 
-    public selectRoom(shapeid: any, name: any, building: any, level: any) {
-        let tableAttr, tableCoords;
+    public getRoomCoordinates(shapeid: any, building: any, level: any) {
+        let tableCoords;
         for (let x in this.tables) {
             if (building == this.tables[x].building && level == this.tables[x].level) {
-                tableAttr = this.tables[x].attr;
                 tableCoords = this.tables[x].coords;
+                break;
             }
         }
-        console.log("# DB SERVICE GET ROOM #  " + name + ", " + tableAttr + ", " + tableCoords);
-        let queryCoords = "SELECT * FROM " + tableCoords + " WHERE shapeid LIKE '%" + shapeid + "%'";
-       
-        let selectedRoom: String[] = [];
 
+        let queryCoords = "SELECT * FROM " + tableCoords + " WHERE shapeid = " + shapeid;      
+        console.log(queryCoords);
         return Observable.create(observer => {     
             this.sqlite.create(this.options).then((db: SQLiteObject) => {
-                db.executeSql(queryCoords, []).then((data) => {  
+                db.executeSql(queryCoords, []).then((data) => {
                     let coordinates: any[] = []; 
-                    for (let i = 0; i < data.length; i++) {
-                        coordinates.push({lat: data.rows(i).y, lng: data.rows(i).x});
-                        //console.log("NEW: " + this.rooms[i].name + " || " + this.rooms[i].coordinates);                                                
+                    for (let i = 0; i < data.rows.length; i++) {
+                        coordinates.push({lat: parseFloat(data.rows.item(i).y), lng: parseFloat(data.rows.item(i).x)});                                      
                     } 
+                    coordinates.splice(coordinates.length - 1, 1);
                     observer.next(coordinates);                
                     observer.complete();
                 })
