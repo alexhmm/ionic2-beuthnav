@@ -12,7 +12,6 @@
     <ion-searchbar (ionInput)="getRoomListView($event)" placeholder="Suche"></ion-searchbar>    
     <ion-buttons>        
         <button ion-button (click)="toggleMapView()">ToggleMapView</button>
-        <button ion-button (click)="routingMotion()">RoutingM</button>
         <button ion-button (click)="testRouting()">TRout</button>
         <button ion-button (click)="testGS()">GoogleS</button>        
     </ion-buttons>
@@ -31,7 +30,7 @@
   </div>  
   <div ion-fixed class="listView" [@listViewInOut]="listViewState">
     <ion-list>
-      <ion-item *ngFor="let room of allrooms" no-lines (click)="selectRoom(room)">
+      <ion-item *ngFor="let room of roomsListView" no-lines (click)="selectRoom(room)">
         <b>{{ room.name }}</b> {{ room.desc }}
       </ion-item>
     </ion-list>

@@ -5,6 +5,8 @@ import { Observable } from 'rxjs/Observable';
 import * as math from 'mathjs';
 import * as earcut from 'earcut';
 
+import * as mapdata from './assets/data/mapdata.json';
+
 declare let google;
 
 enum Roomcolor {
@@ -50,6 +52,24 @@ export class MapService {
         this.wgs84e2 = math.pow(this.wgs84e, 2);
         this.wgs84ep = math.sqrt(math.divide(math.subtract(this.wgs84a2, this.wgs84b2), this.wgs84b2));
     }     
+
+    /**
+     * Returns options for google map
+     */
+    public getMapOptions() {
+        return {
+            //center: latlng,
+            center: {lat: 52.545165, lng: 13.355360},
+            zoom: 18,
+            mapTypeControl: false,
+            fullscreenControl: false,
+            streetViewControl: false,
+            zoomControl: false,
+            styles: mapdata.styles,
+            mapTypeId: google.maps.MapTypeId.ROADMAP
+            //mapTypeId: google.maps.MapTypeId.SATELLITE
+        }
+    }
 
     public getIconForCustomMarker(type: String, paths: any) {
         let roomCentroid = this.getPolygonCentroid(paths);
@@ -115,6 +135,7 @@ export class MapService {
         let routeMarker = new google.maps.Marker({
             animation: google.maps.Animation.DROP,
             position: position,
+            zIndex: 1000,
             icon: icon
         });
         return routeMarker;
@@ -664,10 +685,6 @@ export class MapService {
     public testEarcut(data) {
         return earcut(data);
     }    
-
-
-
-    
 
     /**
      * Converts from Path String to LatLng Object

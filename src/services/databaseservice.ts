@@ -10,19 +10,11 @@ enum BuildingLevels {
 @Injectable()
 export class DatabaseService {  
 
-    private options = { name: "beuth.db", location: 'default', createFromLocation: 1 };
-    public tables: any[] = [];
-    private query = "SELECT * FROM allrooms";
-    public buildings: any[] = [];
-    public allrooms: any[] = [];
-    public rooms: any[] = [];
-
-    public selectedRoom: String[] = [];
-
-    public selectedRoomName: any;
-    public selectedRoomCoordinates: any;
-
+    private options = { name: "beuth.db", location: 'default', createFromLocation: 1 };    
     public database;
+
+    public tables: any[] = [];
+    public buildings: any[] = [];
 
     constructor(private sqlite: SQLite) {
         this.buildings = [{shapeid: 0, name: "BeuthA", lat: 52.545189, lng: 13.351602},
@@ -63,7 +55,6 @@ export class DatabaseService {
      * @param level 
      */
     public getTablesByBuildingLevel(building: any, level: any) {
-        this.allrooms = [];
         return Observable.create(observer => {
             let query = "SELECT * FROM layers WHERE building LIKE '%" + building + "%' AND level LIKE '%" + level + "%'";
             this.sqlite.create(this.options).then((db: SQLiteObject) => {  
@@ -102,8 +93,8 @@ export class DatabaseService {
     /**
      * Returns room attributes for ListView
     */
-    public getRoomList() {
-        this.allrooms = [];
+    public getRoomsListView() {
+        let roomsListView: any[] = [];
         return Observable.create(observer => {
             for (let x in this.tables) {
                 let query = "SELECT * FROM " + this.tables[x].attr;
@@ -111,21 +102,18 @@ export class DatabaseService {
                     db.executeSql(query, {}).then((data) => { 
                         let rows = data.rows;
                         for (let i = 0; i < rows.length; i++) {
-                            //if (rows.item(i).type == "lab" || "lecture" || "office" || "service" || "wc") {
-                            if (rows.item(i).type == "lab" || "lecture" || "office" || "service") {
-                                this.allrooms.push({shapeid: rows.item(i).shapeid,
+                            if (rows.item(i).type == "lab" || "lecture" || "office" || "mensa" || "lib" || "cafe") {
+                                roomsListView.push({shapeid: rows.item(i).shapeid,
                                                     name: rows.item(i).name,
                                                     desc: rows.item(i).desc,
                                                     building: this.tables[x].building,
                                                     level: this.tables[x].level}).toString;
-                                //console.log("this.allrooms: " + rows.item(i).name + ", " + this.tables[x].attr);
                             }
                         }
                     })
                 });
             }            
-            observer.next(this.allrooms);
-            console.log("Number of loaded rooms in viewList: " + this.allrooms.length);
+            observer.next(roomsListView);
             observer.complete();
         })
     }
@@ -348,28 +336,5 @@ export class DatabaseService {
                 })
             })
         })
-    }
-
-    public getSelectedRoom() {
-        return this.selectedRoom;
-    } 
-
-    public getSelectedRoomName() {
-        return this.selectedRoomName;
-    }
-
-    public setSelectedRoomName(name: String) {
-        this.selectedRoomName = name;
-        console.log("SET ROOMNAME: " + this.selectedRoomName)
-    }
-
-    public getSelectedRoomCoordinates() {
-        //return this.selectedRoomCoordinates;
-        return "";
-    }
-
-    public setSelectedRoomCoordinates(coordinates: String) {
-        this.selectedRoomCoordinates = coordinates;
-        console.log("SET ROOMCOORDINATES: " + this.selectedRoomCoordinates)
     }
 }
