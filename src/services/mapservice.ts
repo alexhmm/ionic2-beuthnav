@@ -9,18 +9,19 @@ declare let google;
 
 enum Roomcolor {
     blank = <any>"#FFFFFF",
+    cafe = <any>"#BEE2E2",
     floor = <any>"#FFFFFF",
     lab = <any>"#0098A1",
+    lib = <any>"#BEE2E2",
     lecture = <any>"#39B7BC",
     lift = <any>"#FFFFFF",
+    mensa = <any>"#BEE2E2",
     office = <any>"#BBBBBB",
     service = <any>"#BEE2E2",
     staircase = <any>"#FFFFFF",
     wc = <any>"#BEE2E2",
     wcPrivate = <any>"#BBBBBB"
 }
-
-
 
 @Injectable()
 export class MapService {  
@@ -50,11 +51,56 @@ export class MapService {
         this.wgs84ep = math.sqrt(math.divide(math.subtract(this.wgs84a2, this.wgs84b2), this.wgs84b2));
     }     
 
+    public getIconForCustomMarker(type: String, paths: any) {
+        let roomCentroid = this.getPolygonCentroid(paths);
+        let position = new google.maps.LatLng(parseFloat(roomCentroid.lat), parseFloat(roomCentroid.lng));      
+        switch(type) { 
+            case "wc":                                          
+                let pathWc = "./assets/icon/wc.png";
+                return this.createCustomMarker(position, pathWc, 16);
+            case "staircase":                                          
+                let pathStaircase = "./assets/icon/staircase.png";
+                return this.createCustomMarker(position, pathStaircase, 16);
+            case "lift":                                          
+                let pathLift = "./assets/icon/lift.png";
+                return this.createCustomMarker(position, pathLift, 16);
+            case "cafe":                            
+                let pathCafe = "./assets/icon/cafe.png";
+                return this.createCustomMarker(position, pathCafe, 16);
+            case "lib":
+                let pathLib = "./assets/icon/lib.png";
+                return this.createCustomMarker(position, pathLib, 16);               
+            /* case "mensa":                                          
+                let pathMensa = "./assets/icon/mensa.png";
+                return this.mapService.createCustomMarker(position, pathMensa, 16);  */
+            default:
+                return;                            
+        }
+    }
+
     // POSITION
     public changeCurrentLevel(currentLevel: any, buildingLevels: any, direction: any) {
         let newLevel = currentLevel + direction;
         if (newLevel > buildingLevels[0] - 1 && newLevel < buildingLevels[1] + 1 ) return newLevel;
         else return currentLevel;
+    }
+
+    public getCustomMarkerIcon(path: any, size: any) {
+        let icon = {
+            url: path,
+            scaledSize: new google.maps.Size(size, size),
+            anchor: new google.maps.Point(size / 2, size / 2)
+        }
+        return icon;
+    }
+
+    public createCustomMarker(position: any, path: any, size: any) {        
+        let icon = this.getCustomMarkerIcon(path, size);
+        let customMarker = new google.maps.Marker({
+            position: position,
+            icon: icon
+        });
+        return customMarker
     }
 
     public createPolygonBuildingOptions(paths: any) {
@@ -238,6 +284,20 @@ export class MapService {
                 return 3 / (Math.pow(2, Math.abs(zoomDiff)));
             default:
                 return 3;
+        }     
+    }
+
+    public getMarkerSize(zoom: any) {
+        let zoomDiff = 18 - zoom;
+        switch(true) {
+            case (zoomDiff > 0):
+                return 16 - (zoomDiff * 4);
+                //return 16 / (Math.pow(2, Math.abs(zoomDiff)));                
+            case (zoomDiff < 0):
+                return 16 + (zoomDiff / 4);                
+                //return 16 * (Math.pow(2, zoomDiff));
+            default:
+                return 16;
         }     
     }
 

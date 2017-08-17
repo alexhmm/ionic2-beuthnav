@@ -84,6 +84,9 @@ export class HomePage {
 
     public trianglePolygons: any[] = [];
 
+    // map elements
+    public customMarkers: any[] = [];
+
     // interval check
     public checkLog;
 
@@ -227,11 +230,11 @@ export class HomePage {
 
         // Zoom changed listener
         google.maps.event.addListener(this.map, 'zoom_changed', () => {
-            //console.log("Zoom changed: " + this.getMapZoom());
             if (this.circle != null) {  
-                let radius = this.mapService.getCircleRadius(this.getMapZoom());
-                //console.log("Circle radius: " + radius);
-                this.circle.setRadius(radius);
+                this.circle.setRadius(this.mapService.getCircleRadius(this.getMapZoom()));
+                for (let x in this.customMarkers) {                    
+                    this.customMarkers[x].setIcon(this.mapService.getCustomMarkerIcon(this.customMarkers[x].getIcon().url, this.mapService.getMarkerSize(this.getMapZoom())));
+                }
             }            
         });
 
@@ -246,15 +249,20 @@ export class HomePage {
      */
     public loadMap(building: any, level: any) { 
         console.log("Interval: loadMap()");
-        this.loadMapStyles();    
+        this.loadMapStyles();  
+
+        // reset map elements
         if (this.polygons != null) {
             for (let x in this.polygons) this.polygons[x].setMap(null);
             this.polygons = [];
         }
-
         if (this.polygonsRouting != null) {
             for (let x in this.polygonsRouting) this.polygonsRouting[x].polygon.setMap(null);
             this.polygonsRouting = [];
+        }
+        if (this.customMarkers != null) {
+            for (let x in this.customMarkers) this.customMarkers[x].setMap(null);
+            this.customMarkers = [];
         }
 
         if (this.currentAttr != null && this.currentLevel != null) {   
@@ -268,6 +276,8 @@ export class HomePage {
                     let paths: any[] = [];
 
                     room = data[x];
+
+                    console.log("Room type: " + room.type);
 
                     let allCoordinates = room.coordinates;
                     let coordinates: String[] = allCoordinates.split("; ");
@@ -283,7 +293,7 @@ export class HomePage {
 
                     if (room.routing == "true") this.polygonsRouting.push({shapeid: room.shapeid, name: room.name, polygon: polygon})
 
-                    if (room.type == "lab" || room.type == "lecture" || room.type == "office" || room.type == "service" || room.type == "wc") {
+                    if (room.type == "lab" || room.type == "lecture" || room.type == "office" || room.type == "service" || room.type == "wc" || room.type == "cafe" || room.type == "mensa") {
                         //console.log("TYPE: " + room.type);
                         google.maps.event.addListener(polygon, 'click', (event) => {
                             //console.log("CLICK: " + event.latLng + ", shapeid: " + room.shapeid);
@@ -292,8 +302,16 @@ export class HomePage {
                             this.openInfoView(event, attributes);
                         })
                     }
+
+                    if (room.type == "wc" || room.type == "staircase" || room.type == "lift" || room.type == "cafe" || room.type == "lib") {
+                        let roomCentroid = this.mapService.getPolygonCentroid(paths);
+                        let position = new google.maps.LatLng(parseFloat(roomCentroid.lat), parseFloat(roomCentroid.lng));   
+                        let customMarker = this.mapService.getIconForCustomMarker(room.type, paths);
+                        customMarker.setMap(this.map);
+                        this.customMarkers.push(customMarker);   
+                    }                    
                 }   
-                console.log("Polygons loaded: " + this.polygons.length);
+                console.log("Polygons loaded: " + this.polygons.length + ", Custom markers: " + this.customMarkers.length);
             })  
 
             this.dbService.getAllBuildingsAttrCoords(this.currentBuilding).subscribe(data => {
