@@ -170,8 +170,6 @@ export class HomePage {
         });
     }
 
-
-
     // UI
     public toggleListView() {
         this.listViewState = (this.listViewState == 'out') ? 'in' : 'out';
@@ -196,28 +194,6 @@ export class HomePage {
             console.log("ListView loaded: " + this.roomsListViewBackup.length);
         });
         
-    }
-
-    /**
-     * 
-     */
-    public loadMapStyles() { 
-        console.log("Load map styles.");
-
-        this.map = new google.maps.Map(this.mapelement.nativeElement, this.mapService.getMapOptions());
-
-        // Zoom changed listener
-        google.maps.event.addListener(this.map, 'zoom_changed', () => {
-            if (this.circle != null) this.circle.setRadius(this.mapService.getCircleRadius(this.getMapZoom()));      
-            if (this.marker != null) this.marker.setIcon(this.mapService.getCustomMarkerIcon(this.marker.getIcon().url, this.mapService.getRouteMarkerSize(this.getMapZoom())));
-            for (let x in this.customMarkers) {                    
-                this.customMarkers[x].setIcon(this.mapService.getCustomMarkerIcon(this.customMarkers[x].getIcon().url, this.mapService.getCustomMarkerSize(this.getMapZoom())));
-            }
-        });
-
-        google.maps.event.addListener(this.map, 'click', (event) => {
-            console.log("Click on map: " + event.latLng);
-        })
     }
 
     /**

@@ -5,7 +5,7 @@ import { Observable } from 'rxjs/Observable';
 import * as math from 'mathjs';
 import * as earcut from 'earcut';
 
-import * as mapdata from './assets/data/mapdata.json';
+import * as mapdata from '../assets/data/mapdata.json';
 
 declare let google;
 
