@@ -48,6 +48,104 @@ export class RoutingService {
         return google.maps.geometry.spherical.computeDistanceBetween (pointA, pointB);
     }
 
+    /**
+     * Returns start position in routing polygon
+     * @param currentPosition 
+     * @param routingPolygons 
+     * @param routingPoints 
+     */
+    public getRouteStart(currentPosition: any, routingPolygons: any, routingPoints) {
+        let currentPositionLatLng = new google.maps.LatLng(currentPosition.lat, currentPosition.lng);
+        let rStartSBSL;
+        let rPaths; // paths for routing polyline
+
+        // check if currentPosition is inside current routing polygons
+        for (let x in routingPolygons) {
+            if (this.containsLocation(currentPositionLatLng, routingPolygons[x].polygon)) {
+                rStartSBSL = currentPosition;
+                break;
+            } else {
+                let currentStartDistances = this.sortByDistance(routingPoints, currentPositionLatLng);                                    
+                // nearest route point = start
+                rStartSBSL = {lat: parseFloat(currentStartDistances[0].lat), lng: parseFloat(currentStartDistances[0].lng)};
+            }
+        }   
+        return rStartSBSL;
+    }
+
+    /**
+     * Returns route point coordinates m name
+     * @param routingPoints 
+     * @param name 
+     */
+    /* public getRoutePointByName(routingPoints: any, name: String) {
+        for (let x in routingPoints) if (routingPoints[x].name.includes(name)) return {lat: parseFloat(routingPoints[x].lat), lng: parseFloat(routingPoints[x].lng)};
+    }
+    */
+    public getRoutePointByName(routingPoints: any, name: String) {
+        let searchName = name.toUpperCase();
+        for (let x in routingPoints) {
+            let pointName = routingPoints[x].name.toUpperCase();
+            if (pointName.includes(searchName)) return {lat: parseFloat(routingPoints[x].lat), lng: parseFloat(routingPoints[x].lng)};
+        } 
+    }
+
+    /* let searchName = name.toUpperCase;
+    for (let x in routingPoints) {
+        let pointName = routingPoints[x].name.toUpperCase;
+        if (pointName.includes(searchName)) return {lat: parseFloat(routingPoints[x].lat), lng: parseFloat(routingPoints[x].lng)};
+    }  */
+
+    /**
+     * Returns nearby route point coordinates if equals type
+     * @param routingPoints 
+     * @param type 
+     */
+    public getRoutePointByType(routingPoints: any, type: String, positionLatLng: any) {
+        let routingPointsType: any[] = [];
+        for (let x in routingPoints) {
+            if (routingPoints[x].type == type) {
+                routingPointsType.push(routingPoints[x]);
+            }                
+        }
+        let routingPointsTypeDistances = this.sortByDistance(routingPointsType, positionLatLng);
+        return {lat: routingPointsTypeDistances[0].lat, lng: routingPointsTypeDistances[0].lng, routing: routingPointsTypeDistances[0].routing};
+    }
+
+    public getRoutePointByRouteId(routingPoints: any, routeId: String) {
+        for (let x in routingPoints) {
+            if (routingPoints[x].routing == routeId) return {lat: parseFloat(routingPoints[x].lat), lng: parseFloat(routingPoints[x].lng)};
+        }
+    }
+
+    public getRoutePointByExit(routingPoints: any, positionLatLng) {
+        let routingPointsExit: any[] = [];
+        for (let x in routingPoints) {
+            if (routingPoints[x].type == "exit") {
+                routingPointsExit.push({shapeid: routingPoints[x].shapeid,
+                                        name: routingPoints[x].name,
+                                        lat: routingPoints[x].lat,
+                                        lng: routingPoints[x].lng,
+                                        routing: routingPoints[x].routing})
+            }
+        }
+        let routingPointsExitDistances = this.sortByDistance(routingPointsExit, positionLatLng);
+        return {lat: routingPointsExitDistances[0].lat, lng: routingPointsExitDistances[0].lng};
+    }
+
+    public getRoutePolygonsLatLngCoordinates(routingPolygonsRaw: any) {
+        let routingPolygons: any[] = [];
+        for (let x in routingPolygonsRaw) {
+            let allCoordinates = routingPolygonsRaw[x].coordinates;
+            let coordinates: String[] = allCoordinates.split("; ");
+            // split all coordinates to LatLng paths
+            let paths = this.mapService.splitCoordinatesToLatLng(coordinates);    
+            let polygon = this.mapService.createRoutingPolygon(paths);
+            routingPolygons.push({name: routingPolygonsRaw[x].name, polygon: polygon});  
+        }
+        return routingPolygons;
+    }
+
 
     /**
      * Returns level paths for routing polyline using multiple routing polygons
@@ -78,7 +176,7 @@ export class RoutingService {
                 break;
             }
         }
-            
+
         let routingEndLatLng = new google.maps.LatLng(parseFloat(endPosition.lat), parseFloat(endPosition.lng));
 
         // set end routing polygon index and name
@@ -94,7 +192,6 @@ export class RoutingService {
         // check if start and end position is in same routing polygon  
         if (currentRoutingPolygonIndex != endRoutingPolygonIndex) {
             let connectors: any[] = [];
-            console.log("Connectors:");
             for (let x in routingPoints) {
                 if (routingPoints[x].type == "connect") {
                     connectors.push(routingPoints[x]);
@@ -103,15 +200,15 @@ export class RoutingService {
             while (currentRoutingPolygonIndex != endRoutingPolygonIndex) {
                 // get current routingPolygon by polygonIndex
                 currentRoutingPolygon = routingPolygons[currentRoutingPolygonIndex].polygon;
-                console.log("Current polygon index: " + currentRoutingPolygonIndex + ", End: " + endRoutingPolygonIndex);
+                console.log("Current polygon name: " + currentRoutingPolygonName + ", Start: " +  currentRoutingPolygonIndex + ", End: " + endRoutingPolygonIndex);
 
                 // get connector name from polygon, calculate shortest distance to endPoint
                 let currentConnectors: any[] = [];
                 for (let x in routingPoints) {
                     if (routingPoints[x].name == currentRoutingPolygonName && routingPoints[x].type == "connect") currentConnectors.push(routingPoints[x]);
                 }      
-                let currentCNDistances = this.sortByDistance(currentConnectors, routingEndLatLng);
-                                
+                let currentCNDistances = this.sortByDistance(currentConnectors, routingEndLatLng); 
+
                 // nearest connection point = temporary end
                 let currentPolygonEnd = {lat: parseFloat(currentCNDistances[0].lat), lng: parseFloat(currentCNDistances[0].lng)};
                 let currentPolygonPaths = this.createRouteInPolygon(currentPolygonStart, currentPolygonEnd, currentRoutingPolygon);
@@ -136,7 +233,7 @@ export class RoutingService {
                     }
                 }
                 if (currentRoutingPolygonIndex == endRoutingPolygonIndex) {
-                    console.log("Finish while loop.");
+                    //console.log("Finish while loop.");
                     let endPolygon = routingPolygons[currentRoutingPolygonIndex].polygon;
                     let endPolygonPaths = this.createRouteInPolygon(currentPolygonStart, endPosition, endPolygon);
                     for (let x in endPolygonPaths) rPaths.push(endPolygonPaths[x]);
@@ -187,14 +284,14 @@ export class RoutingService {
             let pLatLng = routingPolygon.getPath().getAt(i).toUrlValue(7).split(",");
             pPathsRaw.push({lat: pLatLng[0], lng: pLatLng[1]});
         }             
-        console.log("Raw pPaths length: " + pPathsRaw.length);
+        //console.log("Raw pPaths length: " + pPathsRaw.length);
         
         // Remove Laeuferpunkte from input polygon
         this.pPaths = [];
         this.pPaths = this.removeLaeuferpunkte(pPathsRaw);
 
         // Create invisible background true polygon for intersection check
-        console.log("Clean pPaths length: " + this.pPaths.length);
+        //console.log("Clean pPaths length: " + this.pPaths.length);
         this.routingPolygon = new google.maps.Polygon();
         this.routingPolygon.setOptions(this.mapService.createPolygonBuildingOptions(this.pPaths));  
         
@@ -207,8 +304,8 @@ export class RoutingService {
             tPointsECEF.push(ePoint[0]);
             tPointsECEF.push(ePoint[1]);
         }
-        console.log("ePoints length: " + ePoints.length);
-        console.log("tPointsECEF length: " + tPointsECEF.length);
+        //console.log("ePoints length: " + ePoints.length);
+        //console.log("tPointsECEF length: " + tPointsECEF.length);
 
         // Get indices for earcut triangulation
         
@@ -218,19 +315,19 @@ export class RoutingService {
         // Create triangle points array through indices iteration
         let tPoints: any[] = [];
         for (let x in indices) tPoints.push(this.mapService.ECEFtoLLA(ePoints[indices[x]][0], ePoints[indices[x]][1], ePoints[indices[x]][2]));
-        console.log("tPoints length: " + tPoints.length);
+        //console.log("tPoints length: " + tPoints.length);
 
         // Iterate through all triangle points and create triangle polygons
         this.triangles = this.createTriangles(tPoints);
 
-        console.log("Triangles length: " + this.triangles.length);  
+        //console.log("Triangles length: " + this.triangles.length);  
 
         // Determine startPointTriangle and endPointTriangle for startPosition and endPosition
         let routingIndices = this.getRoutingIndices(rStart, rEnd);
         let rStartIndex, rEndIndex, tEndIndex;
         rStartIndex = routingIndices[0];
         tEndIndex = routingIndices[1];
-        console.log("triangleEndIndex: " + tEndIndex);
+        //console.log("triangleEndIndex: " + tEndIndex);
 
         // Push starting location to routingPath and intersectPath arrays
         this.rPathsC.push({lat: rStart.lat(), lng: rStart.lng()});
@@ -241,13 +338,13 @@ export class RoutingService {
         // Set startIndex for both directions
         let indexC = rStartIndex;
         let indexCC = rStartIndex;
-        console.log("indexC: " + indexC + ", CC: " + indexCC);
+        //console.log("indexC: " + indexC + ", CC: " + indexCC);
 
         // Push first triangle point into iPaths
         /* this.iPathsC.push({lat: parseFloat(pPaths[indexC].lat), lng: parseFloat(pPaths[indexC].lng)});
         this.iPathsCC.push({lat: parseFloat(pPaths[indexCC].lat), lng: parseFloat(pPaths[indexCC].lng)}); */
 
-        console.log("#######################################");
+        //console.log("#######################################");
         // Iterate through all routingPolygon vertices (Funnel algorithm)
         let pLength = this.pPaths.length;
         for (let i = 1; i < pLength; i++) {  
@@ -291,14 +388,14 @@ export class RoutingService {
             let pEndCC = new google.maps.LatLng(parseFloat(this.iPathsCC[this.iPathsCC.length - 1].lat), parseFloat(this.iPathsCC[this.iPathsCC.length - 1].lng));
             
             if (google.maps.geometry.poly.containsLocation(pEndC, this.triangles[tEndIndex])) {
-                console.log("Finish C: " + google.maps.geometry.poly.containsLocation(pEndC, this.triangles[tEndIndex]) + ", " + tEndIndex);
+                //console.log("Finish C: " + google.maps.geometry.poly.containsLocation(pEndC, this.triangles[tEndIndex]) + ", " + tEndIndex);
 
                 let continueVertex = null;
                 // 1st check
                 let next1 = {lat: parseFloat(this.pPaths[indexC].lat), lng: parseFloat(this.pPaths[indexC].lng)};
                 let intersectC1 = this.getNextRoutingPath(this.pPaths, this.iPathsC, prevVertexC, currVertexC, next1, continueVertex);
                 if (intersectC1 != null) {
-                    console.log("Intersection at IndexC: " + indexC);
+                    //console.log("Intersection at IndexC: " + indexC);
                     this.rPathsC.push(intersectC1);
                 }       
                 // 2nd check
@@ -315,25 +412,25 @@ export class RoutingService {
                 this.iPathsC.push({lat: rEnd.lat(), lng: rEnd.lng()});
                 let intersectC2 = this.getNextRoutingPath(this.pPaths, this.iPathsC, fPrev, fCurr, fNext, continueVertex);
                 if (intersectC2 != null) {
-                    console.log("Intersection at IndexC: " + indexC);
+                    //console.log("Intersection at IndexC: " + indexC);
                     this.rPathsC.push(intersectC2);
                 }                
                 this.rPathsC.push({lat: rEnd.lat(), lng: rEnd.lng()});
-                for (let x in this.rPathsC) console.log(this.rPathsC[x]); 
+                //for (let x in this.rPathsC) console.log(this.rPathsC[x]); 
 
                 if (this.rPathsC.length > 2) return this.cleanFinalRoute(this.rPathsC);
 
                 return this.rPathsC;
             }
             if (google.maps.geometry.poly.containsLocation(pEndCC, this.triangles[tEndIndex])) {
-                console.log("Finish CC: " + google.maps.geometry.poly.containsLocation(pEndCC, this.triangles[tEndIndex]) + ", " + tEndIndex);
+                //console.log("Finish CC: " + google.maps.geometry.poly.containsLocation(pEndCC, this.triangles[tEndIndex]) + ", " + tEndIndex);
 
                 let continueVertex = null;
                 // 1st check
                 let next1 = {lat: parseFloat(this.pPaths[indexCC].lat), lng: parseFloat(this.pPaths[indexCC].lng)};
                 let intersectCC1 = this.getNextRoutingPath(this.pPaths, this.iPathsCC, prevVertexCC, currVertexCC, next1, continueVertex);
                 if (intersectCC1 != null) {
-                    console.log("Intersection at IndexCC: " + indexCC);
+                    //console.log("Intersection at IndexCC: " + indexCC);
                     this.rPathsCC.push(intersectCC1);
                 }       
                 // 2nd check
@@ -350,11 +447,11 @@ export class RoutingService {
                 this.iPathsCC.push({lat: rEnd.lat(), lng: rEnd.lng()});
                 let intersectCC2 = this.getNextRoutingPath(this.pPaths, this.iPathsCC, fPrev, fCurr, fNext, continueVertex);
                 if (intersectCC2 != null) {
-                    console.log("Intersection at IndexCC: " + indexCC);
+                    //console.log("Intersection at IndexCC: " + indexCC);
                     this.rPathsCC.push(intersectCC2);
                 }                
                 this.rPathsCC.push({lat: rEnd.lat(), lng: rEnd.lng()});
-                for (let x in this.rPathsCC) console.log(this.rPathsCC[x]);
+                //for (let x in this.rPathsCC) console.log(this.rPathsCC[x]);
                   
                 if (this.rPathsCC.length > 2) return this.cleanFinalRoute(this.rPathsCC);
                 return this.rPathsCC;
@@ -370,7 +467,7 @@ export class RoutingService {
                 // ##########
                 let intersectC = this.getNextRoutingPath(this.pPaths, this.iPathsC, prevVertexC, currVertexC, this.iPathsC[1], continueVertex);
                 if (intersectC != null) {
-                    console.log("Intersection at IndexC: " + indexC);
+                    //console.log("Intersection at IndexC: " + indexC);
                     this.rPathsC.push(intersectC);
                     this.iPathsC = [];
                     this.iPathsC.push(intersectC);
@@ -385,7 +482,7 @@ export class RoutingService {
                 // ##########
                 let intersectCC = this.getNextRoutingPath(this.pPaths, this.iPathsCC, prevVertexCC, currVertexCC, this.iPathsCC[1], continueVertex);
                 if (intersectCC != null) {
-                    console.log("Intersection at IndexCC: " + indexCC);
+                    //console.log("Intersection at IndexCC: " + indexCC);
                     this.rPathsCC.push(intersectCC);
                     this.iPathsCC = [];
                     this.iPathsCC.push(intersectCC);
@@ -616,15 +713,15 @@ export class RoutingService {
         // ### TODO: change startIndex and endIndex to near neighbor?
         for (let x in this.triangles) {
             if (google.maps.geometry.poly.containsLocation(rStart, this.triangles[x]) == true) {
-                console.log("TriangleStart: " + x);
+                //console.log("TriangleStart: " + x);
                 let tLatLng = this.triangles[x].getPath().getAt(0).toUrlValue(7).split(",");
                 tStartPP = {lat: parseFloat(tLatLng[0]), lng: parseFloat(tLatLng[1])};
-                console.log(tStartPP);
+                //console.log(tStartPP);
                 for (let y in this.pPaths) {
                     let vertex = {lat: this.pPaths[y].lat, lng: this.pPaths[y].lng};
                     //console.log(cleanPoint);
                     if (vertex.lat == tStartPP.lat && vertex.lng == tStartPP.lng) {
-                        console.log("IndexStart: " + y);
+                        //console.log("IndexStart: " + y);
                         rStartIndex = y;
                         break;
                     }
@@ -632,7 +729,7 @@ export class RoutingService {
             }
 
             if (google.maps.geometry.poly.containsLocation(rEnd, this.triangles[x]) == true) {
-                console.log("TriangleEnd: " + x);
+                //console.log("TriangleEnd: " + x);
                 tEndIndex = x;
                 let tLatLng = this.triangles[x].getPath().getAt(0).toUrlValue(7).split(",");
                 /* tEndPP = {lat: parseFloat(tLatLng[0]), lng: parseFloat(tLatLng[1])};                
@@ -665,6 +762,7 @@ export class RoutingService {
                             name: points[i].name,
                             lat: points[i].lat,
                             lng: points[i].lng,
+                            routing: points[i].routing,                            
                             // calculate distance between starting point and connection points of startRoutingPolygon
                             distance: this.computeDistance(connector, point)});            
         }

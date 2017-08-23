@@ -71,6 +71,11 @@ export class MapService {
         }
     }
 
+    /**
+     * Returns custom maker with icon
+     * @param type 
+     * @param paths 
+     */
     public getIconForCustomMarker(type: String, paths: any) {
         let roomCentroid = this.getPolygonCentroid(paths);
         let position = new google.maps.LatLng(parseFloat(roomCentroid.lat), parseFloat(roomCentroid.lng));      
@@ -98,7 +103,12 @@ export class MapService {
         }
     }
 
-    // POSITION
+    /**
+     * Changes the current level of map data if not out of bounds
+     * @param currentLevel 
+     * @param buildingLevels 
+     * @param direction 
+     */
     public changeCurrentLevel(currentLevel: any, buildingLevels: any, direction: any) {
         let newLevel = currentLevel + direction;
         if (newLevel > buildingLevels[0] - 1 && newLevel < buildingLevels[1] + 1 ) return newLevel;
@@ -111,7 +121,42 @@ export class MapService {
             position: position,
             icon: icon
         });
+    }    
+
+    public createCustomMarker(position: any, url: any, size: any) {        
+        let icon = this.getCustomMarkerIcon(url, size);
+        let customMarker = new google.maps.Marker({
+            position: position,
+            zIndex: 900,
+            icon: icon
+        });
+        return customMarker;
     }
+
+    public createRouteMarker(position: any, url: any, size: any) {        
+        let icon = this.getRouteMarkerIcon(url, size);
+        let routeMarker = new google.maps.Marker({
+            animation: google.maps.Animation.DROP,
+            position: position,
+            zIndex: 1000,
+            icon: icon
+        });
+        return routeMarker;
+    }
+
+    public createRouteMarkerRemain(position: any, url: any, size: any) {        
+        let icon = this.getRouteMarkerIcon(url, size);
+        let routeMarker = new google.maps.Marker({
+            animation: google.maps.Animation.DROP,
+            position: position,
+            zIndex: 950,
+            opacity: 0.50,
+            icon: icon
+        });
+        return routeMarker;
+    }
+
+    // createRouteLevelSwitchMarker
 
     public getCustomMarkerIcon(url: any, size: any) {
         let icon = {
@@ -128,35 +173,24 @@ export class MapService {
             scaledSize: new google.maps.Size(size, size)
         }
         return icon;
-    }
+    }    
 
-    public createRouteMarker(position: any, url: any, size: any) {        
-        let icon = this.getRouteMarkerIcon(url, size);
-        let routeMarker = new google.maps.Marker({
-            animation: google.maps.Animation.DROP,
-            position: position,
-            zIndex: 1000,
-            icon: icon
+    public createRoutingPolygon(paths: any) {
+        let routingPolygon = new google.maps.Polygon({
+            paths: paths,
+            strokeOpacity: 0,
+            fillOpacity: 0
         });
-        return routeMarker;
-    }
-
-    public createCustomMarker(position: any, url: any, size: any) {        
-        let icon = this.getCustomMarkerIcon(url, size);
-        let customMarker = new google.maps.Marker({
-            position: position,
-            icon: icon
-        });
-        return customMarker;
+        return routingPolygon;
     }
 
     public createPolygonBuildingOptions(paths: any) {
         let PolygonOptions: any = {
             paths: paths,
             strokeColor: '#000000',
-            strokeOpacity: 0.5,
+            strokeOpacity: 1,
             strokeWeight: 1,
-            fillColor: '#FF0000',
+            fillColor: '#0098a1',
             fillOpacity: 0.5
         }  
         return PolygonOptions;
@@ -212,11 +246,11 @@ export class MapService {
      * Creates routing polyline for Google map
      * @param points
      */
-    public createPolyline(points: any) {
+    public createRoutePolyline(points: any) {
         let polylineOptions: any = {
           path: points,
           geodesic: true,
-          strokeColor: '#FF0000',
+          strokeColor: '#EE342E',
           strokeOpacity: 1.0,
           strokeWeight: 3
         }
@@ -225,16 +259,16 @@ export class MapService {
         return polyline;
     }
 
-       /**
+    /**
      * Creates remaining routing polyline for Google map
      * @param points
      */
-    public createPolylineRemaining(points: any) {
+    public createRoutePolylineRemain(points: any) {
         let polylineOptions: any = {
           path: points,
           geodesic: true,
-          strokeColor: '#FF0000',
-          strokeOpacity: 0.5,
+          strokeColor: '#EE342E',
+          strokeOpacity: 0.50,
           strokeWeight: 3
         }
         let polyline = new google.maps.Polyline();

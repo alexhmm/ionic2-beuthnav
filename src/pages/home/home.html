@@ -9,12 +9,7 @@
         <ion-icon name="add"></ion-icon>Add Marker
       </button>
     </ion-buttons>-->
-    <ion-searchbar (ionInput)="getRoomListView($event)" placeholder="Suche"></ion-searchbar>    
-    <ion-buttons>        
-        <button ion-button (click)="toggleMapView()">ToggleMapView</button>
-        <button ion-button (click)="testRouting()">TRout</button>
-        <button ion-button (click)="testGS()">GoogleS</button>        
-    </ion-buttons>
+    <ion-searchbar (ionInput)="getRoomListView($event)" placeholder="Suche"></ion-searchbar>   
   </ion-navbar>
 </ion-header>
 
@@ -45,7 +40,7 @@
           {{ attributes.desc }}
         </ion-col>
         <ion-col id="navigate" col-2>
-          <button ion-button icon-only>
+          <button ion-button icon-only (click)="startRouting(attributes.name, attributes.building, attributes.level, attributes.position)">
             <ion-icon name="navigate"></ion-icon>
           </button>
         </ion-col>

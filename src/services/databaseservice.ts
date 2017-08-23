@@ -4,6 +4,8 @@ import { Observable } from 'rxjs/Observable';
 
 enum BuildingLevels {
     BeuthA = <any>[0, 1],
+    GaussB = <any>[0, 1],
+    GrashofC = <any>[0, 0],
     BauwesenD = <any>[0, 1]    
 }
 
@@ -18,10 +20,15 @@ export class DatabaseService {
 
     constructor(private sqlite: SQLite) {
         this.buildings = [{shapeid: 0, name: "BeuthA", lat: 52.545189, lng: 13.351602},
-                          {shapeid: 1, name: "GaußB", lat: 52.543267, lng: 13.350684},
+                          {shapeid: 1, name: "GaussB", lat: 52.543267, lng: 13.350684},
                           {shapeid: 2, name: "GrashofC", lat: 52.544383, lng: 13.352583},   
                           {shapeid: 3, name : "BauwesenD", lat: 52.545246, lng: 13.355341}];                          
-        this.tables = [{building: "BauwesenD", level: 0, attr: "d00Attr", coords: "d00Coords", points: "d00Points"},
+        this.tables = [{building: "BeuthA", level: 0, attr: "a00Attr", coords: "a00Coords", points: "a00Points"},
+                       {building: "BeuthA", level: 1, attr: "a01Attr", coords: "a01Coords", points: "a01Points"},
+                       {building: "GaussB", level: 0, attr: "b00Attr", coords: "b00Coords", points: "b00Points"},
+                       {building: "GaussB", level: 1, attr: "b01Attr", coords: "b01Coords", points: "b01Points"},
+                       {building: "GrashofC", level: 0, attr: "c00Attr", coords: "c00Coords", points: "c00Points"},
+                       {building: "BauwesenD", level: 0, attr: "d00Attr", coords: "d00Coords", points: "d00Points"},
                        {building: "BauwesenD", level: 1, attr: "d01Attr", coords: "d01Coords", points: "d01Points"}];
         this.database = new SQLite();
             this.database.create(this.options).then(() => {
@@ -39,59 +46,8 @@ export class DatabaseService {
         return BuildingLevels[building];
     }
 
-    public getCurrentBuildingTables(building: any, level: any) {
-        for (let x in this.tables) {
-            if (building == this.tables[x].building && level == this.tables[x].level) {
-                console.log("getCurrentBuildingTables: " + this.tables[x].attr);
-                return {attr: this.tables[x].attr, coords: this.tables[x].coords, points: this.tables[x].points}
-            }
-        }
-        return {attr: "d00Attr", coords: "d00Coords", points: "d00Points"};
-    }
-
     /**
-     * 
-     * @param building 
-     * @param level 
-     */
-    public getTablesByBuildingLevel(building: any, level: any) {
-        return Observable.create(observer => {
-            let query = "SELECT * FROM layers WHERE building LIKE '%" + building + "%' AND level LIKE '%" + level + "%'";
-            this.sqlite.create(this.options).then((db: SQLiteObject) => {  
-                db.executeSql(query, {}).then((data) => {  
-                    observer.next({attr: data.rows.item(0).attr, coords: data.rows.item(0).coords, points: data.rows.item(0).points});
-                    console.log("Selected tables: " + data.rows.item(0).attr + ", " + data.rows.item(0).coords + ", " + data.rows.item(0).points);
-                    observer.complete();     
-                })                           
-            }); 
-        })
-    }
-
-    /**
-     * Returns room attributes by shapeid
-     * @param tableAttr 
-     * @param shapeid 
-     */
-    public getRoutingPolygons(tableAttr: String) {
-        let queryAttr = "SELECT * FROM " + tableAttr + " WHERE routing LIKE '%true%'";
-        return Observable.create(observer => {
-            this.sqlite.create(this.options).then((db: SQLiteObject) => {  
-                db.executeSql(queryAttr, {}).then((data) => {  
-                    let rows = data.rows;
-                    let routingPolygons: any[] = [];
-                    for (let i = 0; i < rows.length; i++) {
-                        routingPolygons.push({shapeid: rows.item(i).shapeid, name: rows.item(i).name}).toString;
-                    }                    
-                    observer.next(routingPolygons);
-                    console.log("OBSERVER: " + data.rows.item(0).name);
-                    observer.complete();     
-                })                           
-            });
-        })
-    }
-
-    /**
-     * Returns room attributes for ListView
+     * Returns room attributes for Search ListView
     */
     public getRoomsListView() {
         let roomsListView: any[] = [];
@@ -102,7 +58,7 @@ export class DatabaseService {
                     db.executeSql(query, {}).then((data) => { 
                         let rows = data.rows;
                         for (let i = 0; i < rows.length; i++) {
-                            if (rows.item(i).type == "lab" || "lecture" || "office" || "mensa" || "lib" || "cafe") {
+                            if (rows.item(i).type == "lab" || "lecture" || "office" || "cafe" || "mensa" || "lib") {
                                 roomsListView.push({shapeid: rows.item(i).shapeid,
                                                     name: rows.item(i).name,
                                                     desc: rows.item(i).desc,
@@ -117,6 +73,109 @@ export class DatabaseService {
             observer.complete();
         })
     }
+
+    public getCurrentBuildingTables(building: any, level: any) {
+        for (let x in this.tables) {
+            if (building == this.tables[x].building && level == this.tables[x].level) {
+                console.log("getCurrentBuildingTables: " + this.tables[x].attr);
+                return {attr: this.tables[x].attr, coords: this.tables[x].coords, points: this.tables[x].points}
+            }
+        }
+        return {attr: "d00Attr", coords: "d00Coords", points: "d00Points"};
+    }
+
+    public getLevelTables(building: any, level: any) {
+        let tableAttr, tableCoords, tablePoints;
+        for (let x in this.tables) {
+            if (building == this.tables[x].building && level == this.tables[x].level) {
+                tableAttr = this.tables[x].attr;
+                tableCoords = this.tables[x].coords;
+                tablePoints = this.tables[x].points;
+                return [tableAttr, tableCoords, tablePoints];
+            }
+        }
+    }
+
+    public getRoutingPolygonsAttr(data: any) {
+        let routingPolygons: any[] = [];
+        let rows = data.rows;                            
+        for (let i = 0; i < rows.length; i++) {
+            routingPolygons.push({shapeid: rows.item(i).shapeid,
+                                  name: rows.item(i).name,
+                                  coordinates: "".toString});
+        }      
+        return routingPolygons;
+    }
+
+    public getRoutingPolygonsCoords(data: any, routingPolygons: any) {
+        for (let i = 0; i < routingPolygons.length; i++) {
+            let coordinates = [];
+            let coordinatesStr = "";
+            for (let j = 0; j < data.rows.length; j++) {
+                let rows = data.rows;
+                if (rows.item(j).shapeid === routingPolygons[i].shapeid) {
+                    coordinates.push(rows.item(j).y + ", " + rows.item(j).x + "; ");
+                }
+            }
+            // splice end coordinate (duplicate from start coordinate)
+            coordinates.splice(coordinates.length - 1, 1);
+            for (let x in coordinates) {
+                coordinatesStr += coordinates[x];
+            }
+            coordinatesStr = coordinatesStr.substring(0, coordinatesStr.length - 2);
+            routingPolygons[i].coordinates = coordinatesStr;        
+        }
+        return routingPolygons;
+    }
+
+    public getRoutingPoints(data: any) {
+        let routingPoints: any[] = [];
+        for (let i = 0; i < data.rows.length; i++) {
+            let rows = data.rows;
+            routingPoints.push({lat: parseFloat(rows.item(i).y),
+                                lng: parseFloat(rows.item(i).x),
+                                type: rows.item(i).type,
+                                name: rows.item(i).name,
+                                routing: rows.item(i).routing});
+        }  
+        return routingPoints;                 
+    }
+
+    /**
+     * Returns routing polygons and points from specific building level
+     * @param building 
+     * @param level 
+     * @param rPointType 
+     * @param rPointEndName 
+     */
+    public getRoutingPolygonsPoints(building: String, level: any) {   
+        let routingPolygons: any[] = [];
+        let routingPoints: any[] = [];
+
+        let tables = this.getLevelTables(building, level);        
+        let queryAttr = "SELECT * FROM " + tables[0] + " WHERE routing LIKE '%true%'";
+        let queryCoords = "SELECT * FROM " + tables[1];
+        let queryPoints = "SELECT * FROM " + tables[2];
+
+        return Observable.create(observer => {
+            this.sqlite.create(this.options).then((db: SQLiteObject) => {  
+                db.executeSql(queryAttr, {}).then((data) => {  
+                    console.log("Get routing polygons attributes.");
+                    routingPolygons = this.getRoutingPolygonsAttr(data);                    
+                })          
+                db.executeSql(queryCoords, []).then((data) => {   
+                    console.log("Get routing polygons coordinates.");
+                    routingPolygons = this.getRoutingPolygonsCoords(data, routingPolygons);                    
+                }) 
+                db.executeSql(queryPoints, []).then((data) => {
+                    console.log("Get routing points.");
+                    routingPoints = this.getRoutingPoints(data);
+                    observer.next([routingPolygons, routingPoints]);
+                    observer.complete();   
+                })                    
+            });                  
+        })
+    }    
 
     /**
      * Returns room attributes by shapeid
@@ -153,24 +212,6 @@ export class DatabaseService {
         })
     }
 
-     /**
-     * Returns
-     * @param tableAttr 
-     * @param point 
-     */
-    public getTablePointsByTableAttr(tableAttr: any) {
-        let queryAttr = "SELECT * FROM layers WHERE attr LIKE '%" + tableAttr + "%'";
-        return Observable.create(observer => {
-            this.sqlite.create(this.options).then((db: SQLiteObject) => {  
-                db.executeSql(queryAttr, {}).then((data) => {  
-                    observer.next(data.rows.item(0));
-                    console.log("OBSERVER POINTS: " + data.rows.item(0).points);
-                    observer.complete();     
-                })                           
-            });
-        })
-    }
-
     /**
      * Returns point coordinates from room
      * @param tablePoints
@@ -194,7 +235,7 @@ export class DatabaseService {
      * @param table 
      * @param exclude 
      */
-    getAllBuildingsAttrCoords(skip: String) {
+    public getAllBuildingsAttrCoords(skip: String) {
         let buildingsSkip: any[] = [];
         let query = "SELECT * FROM buildings WHERE name NOT LIKE '%" + skip + "%'";
         return Observable.create(observer => {
@@ -221,7 +262,15 @@ export class DatabaseService {
         console.log("Select room attributes.");
         let queryAttr = "SELECT * FROM " + tableAttr;
         let queryCoords = "SELECT * FROM " + tableCoords;
-        let queryPoints = "SELECT points FROM layers WHERE attr LIKE '%" + tableAttr + "%'";
+        let points;
+
+        for (let x in this.tables) {
+            if (tableAttr == this.tables[x].attr) {
+                points = this.tables[x].points;
+                break;
+            }
+        }        
+
         return Observable.create(observer => {
             this.sqlite.create(this.options).then((db: SQLiteObject) => {
                 db.executeSql(queryAttr, []).then((data) => {
@@ -255,13 +304,10 @@ export class DatabaseService {
                         coordinatesStr = coordinatesStr.substring(0, coordinatesStr.length - 2);
                         rooms[i].coordinates = coordinatesStr;         
                         //console.log("NEW: " + this.rooms[i].name + " || " + this.rooms[i].coordinates);                                                
-                    }                        
-                })   
-                db.executeSql(queryPoints, []).then((data) => { 
-                    let tablePoints = data.rows.item(0).points;                    
-                    for (let i = 0; i < rooms.length; i++) rooms[i].points = tablePoints;
+                    }     
+                    for (let i = 0; i < rooms.length; i++) rooms[i].points = points;
                     observer.next(rooms);                
-                    observer.complete();
+                    observer.complete();    
                 });             
             })
         })
@@ -292,7 +338,7 @@ export class DatabaseService {
         })
     }
 
-    public getRoomCoordinates(shapeid: any, building: any, level: any) {
+    public getRoomCoordinates(shapeid: number, building: String, level: number) {
         let tableCoords;
         for (let x in this.tables) {
             if (building == this.tables[x].building && level == this.tables[x].level) {
