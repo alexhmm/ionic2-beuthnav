@@ -56,9 +56,9 @@ export class MotionPage {
 
             let prevSteps = this.steps;     
             this.steps = this.motion.stepDetection(this.accValueLowPass);  
-            if (prevSteps < this.steps) {
+            /* if (prevSteps < this.steps) {
                 this.currentPosition = this.mapService.getCurrentPositionCompass(this.currentPosition, 10, this.direction);
-            }
+            } */
         });
         /*this.motion.startWatchingOrientation().subscribe(data => {
             this.magnDegree = data.magneticHeading;

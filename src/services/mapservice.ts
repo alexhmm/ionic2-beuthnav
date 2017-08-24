@@ -3,8 +3,6 @@ import { Geolocation } from '@ionic-native/geolocation';
 import { Observable } from 'rxjs/Observable';
 
 import * as math from 'mathjs';
-import * as earcut from 'earcut';
-
 import * as mapdata from '../assets/data/mapdata.json';
 
 declare let google;
@@ -27,30 +25,9 @@ enum Roomcolor {
 
 @Injectable()
 export class MapService {  
-
-    public tLatPoints: any[] = [];
-
-    public ePoints: any[] = [];
-    public tAngPoints: any[] = [];
-
-    public wgs84a = 6378137;           // WGS-84 Earth semimajor axis (m)
-    public wgs84b = 6356752.3142;      // WGS-84 Earth semiminor axis (m)
-    public wgs84f;
-    public wgs84a2;
-    public wgs84b2;
-    public wgs84e;
-    public wgs84e2;
-    public wgs84ep;
-
     public googleKey = "AIzaSyCtPKTmtL83e8StfuawkBhXH74kgLcbNF0";
 
     constructor(private geolocation: Geolocation) {
-        this.wgs84f = math.divide(math.subtract(this.wgs84a, this.wgs84b), this.wgs84a); 
-        this.wgs84a2 = math.multiply(this.wgs84a, this.wgs84a);
-        this.wgs84b2 = math.multiply(this.wgs84b, this.wgs84b);
-        this.wgs84e = math.sqrt(math.divide(math.subtract(this.wgs84a2, this.wgs84b2), this.wgs84a2));
-        this.wgs84e2 = math.pow(this.wgs84e, 2);
-        this.wgs84ep = math.sqrt(math.divide(math.subtract(this.wgs84a2, this.wgs84b2), this.wgs84b2));
     }     
 
     /**
@@ -114,14 +91,6 @@ export class MapService {
         if (newLevel > buildingLevels[0] - 1 && newLevel < buildingLevels[1] + 1 ) return newLevel;
         else return currentLevel;
     }
-
-    public createMarker(position: any, path: any, size: any) {
-        let icon = this.getCustomMarkerIcon(path, size);
-        let customMarker = new google.maps.Marker({
-            position: position,
-            icon: icon
-        });
-    }    
 
     public createCustomMarker(position: any, url: any, size: any) {        
         let icon = this.getCustomMarkerIcon(url, size);
@@ -455,40 +424,6 @@ export class MapService {
         return paths;
     }   
 
-    getRadians(degrees) {
-        return degrees * (Math.PI / 180);
-    }
-
-    getDegrees(radians) {
-        return radians * (180 / Math.PI);
-    }
-
-    /**
-     * Calculates earth radius at specific latitude
-     * @param latitudeRadians
-     */
-    getEarthR(latitude) {
-        // http://en.wikipedia.org/wiki/Earth_radius
-        var a = 6378137;
-        var b = 6356752.3142;
-        var cosLat = math.cos(latitude);
-        var sinLat = math.sin(latitude);
-        let earthR = math.sqrt(math.divide(
-                                math.pow((math.pow(a, 2) * cosLat), 2) + math.pow((math.pow(b, 2) * sinLat), 2),
-                                math.pow((a * cosLat), 2) + math.pow((b * sinLat), 2)));
-        return earthR;
-    }
-
-    /**
-     * Returns the radius of curvature at specific position
-     * @param latitude
-     */
-    getN(latitude) {
-        let latSin = math.sin(latitude);
-        let N = math.divide(this.wgs84a, math.sqrt(1 - this.wgs84e2 * latSin * latSin))
-        return N;
-    }
-
     getCurrentPositionGPS() {
         return Observable.create(observer => {
             this.geolocation.getCurrentPosition({enableHighAccuracy:true}).then((position) => {
@@ -503,196 +438,6 @@ export class MapService {
             });
         });        
     }
-
-    /**
-     * Calculates new position from measured compass azimuth and step length
-     * http://cosinekitty.com/compass.html
-     * @param currentPosition 
-     * @param direction 
-     */
-    getCurrentPositionCompass(currentPosition, dist, direction) {  
-        let split = currentPosition.split(",");
-        let lat = parseFloat(split[0]);
-        let lng = parseFloat(split[1]);
-        let distance = dist;
-        let azimuth = direction;
-
-        console.log("OLD - LAT: " + lat + ", " + lng);
-        //console.log("AZIMUTH: " + direction);
-
-        let radians = math.PI / 180.0;
-        let degrees = 180.0 / math.PI;
-        let latRadians = radians * lat;
-        let azRadians = radians * azimuth;
-        let earthRad = this.getEarthR(latRadians);
-        let cosLat = math.cos(latRadians);
-        let cosAz = math.cos(azRadians);
-        let sinAz = math.sin(azRadians);
-        let ratio = distance / earthRad;
-        let targetLat = lat + (degrees * cosAz * ratio);
-        let targetLon = lng + (degrees * (sinAz / cosLat) * ratio);
-        console.log("NEW - LAT: " + targetLat + ", " + targetLon);
-        return targetLat + ", " + targetLon;
-    } 
-
-    /**
-     * Returns new LatLng calculated by distance and direction
-     * @param position
-     * @param distance 
-     * @param direction 
-     */
-    public getLatLngByAzimuthDistance(position, distance, direction) {
-        //console.log("Old: " + position.lat + ", " + position.lng);
-
-        let radians = math.PI / 180.0;
-        let degrees = 180.0 / math.PI;
-        let latRadians = radians * position.lat;
-        let azRadians = radians * direction;
-        let earthRad = this.getEarthR(latRadians);
-        let cosLat = math.cos(latRadians);
-        let cosAz = math.cos(azRadians);
-        let sinAz = math.sin(azRadians);
-        let ratio = distance / earthRad;
-
-        let positionNew = {lat: position.lat + (degrees * cosAz * ratio), lng: position.lng + (degrees * (sinAz / cosLat) * ratio)};
-        //console.log("New: " + positionNew.lat + ", " + positionNew.lng);
-
-        return positionNew;
-    }
-
-    /**
-     * Transformes a point from LLA coordinates to ECEF coordinates
-     * @param latitude
-     * @param longitude 
-     * @param altitude 
-     */
-    public LLAtoECEF(latitude, longitude, altitude) {
-        let lat = this.getRadians(latitude);
-        let lng = this.getRadians(longitude);
-
-        let latSin = math.sin(lat);
-        let latCos = math.cos(lat)
-        let lngSin = math.sin(lng);
-        let lngCos = math.cos(lng);
-
-        let N = this.getN(lat);
-
-        let ePoint = [(N + altitude) * latCos * lngCos,
-                      (N + altitude) * latCos * lngSin,
-                      (math.divide(this.wgs84b2, this.wgs84a2) * N + altitude) * latSin];
-        //console.log("ECEF POINT: " + ePoint);
-        return ePoint;
-    }
-
-    /**
-     * Transformes a point from ECEF coordinates to LLA coordinates
-     * @param x 
-     * @param y 
-     * @param z 
-     */
-    ECEFtoLLA(x, y, z) {
-        //Auxiliary values first
-        let p = math.sqrt(x * x + y * y);
-        let theta = math.atan(math.divide(math.multiply(z, this.wgs84a), math.multiply(p, this.wgs84b)));
-
-        let sinTheta = math.sin(theta);
-        let cosTheta = math.cos(theta);
-
-        let num = z + (this.wgs84ep * this.wgs84ep * this.wgs84b * sinTheta * sinTheta * sinTheta);
-        let denom = p - (this.wgs84e * this.wgs84e * this.wgs84a * cosTheta * cosTheta * cosTheta);
-
-        //Now calculate LLA
-        let latitude  = math.atan(num / denom);
-        let longitude = math.atan(y / x);
-        let N = this.getN(latitude);
-        let altitude  = (p / math.cos(latitude)) - N;
-
-        if (x < 0 && y < 0) {
-            longitude = longitude - math.PI;
-        }
-
-        if (x < 0 && y > 0) {
-            longitude = longitude + math.PI;
-        }
-
-        latitude = this.getDegrees(latitude);
-        longitude = this.getDegrees(longitude);
-
-        let latlng = latitude + ", " + longitude;
-
-        return {lat: latitude, lng: longitude};
-    }
-
-    /**
-     * Returns the trilateraion ECEF coordinate of three input ECEF coordinates
-     * @param points
-     */
-    public trilaterate(points: any[]) {
-        let ePoints: any[] = [];
-
-        // transform LLA points to ECEF points
-        for (let x in points) {
-            //console.log("LLA: " + points[x].lat + ", " + points[x].lng + ", " + points[x].height);
-            let ePoint = this.LLAtoECEF(+points[x].lat, +points[x].lng, +points[x].elevation);            
-            ePoints.push(ePoint);
-        }
-
-        /*#from wikipedia
-        #transform to get circle 1 at origin
-        #transform to get circle 2 on x axis*/
-        let ex = math.divide(math.subtract(ePoints[1], ePoints[0]), math.norm(math.subtract(ePoints[1], ePoints[0])));
-        let i = math.dot(ex, math.subtract(ePoints[2], ePoints[0]));
-        let ey = math.divide(
-                    math.subtract(math.subtract(ePoints[2], ePoints[0]), math.multiply(i, ex)),
-                    math.norm(math.subtract(math.subtract(ePoints[2], ePoints[0]), math.multiply(i, ex))));
-        let ez = math.cross(ex, ey);
-        let d = math.norm(math.subtract(ePoints[1], ePoints[0]));
-        let j = math.dot(ey, math.subtract(ePoints[2], ePoints[0]));
-
-        /*#from wikipedia
-        #plug and chug using above values*/
-        let x = (math.pow(points[0].distance, 2) - math.pow(points[1].distance, 2) + math.pow(d, 2)) / (2 * d);
-        let y = ((math.pow(points[0].distance, 2) - math.pow(points[2].distance, 2) + math.pow(i, 2) + math.pow(j, 2)) / (2 * j))
-                - ((i / j) * x);   
-
-        // only one case shown here
-        let z = math.sqrt(math.abs((math.pow(points[0].distance, 2) - math.pow(x, 2) - math.pow(y, 2))));
-
-        // creates ECEF Array
-        let triPt = math.add(math.add(math.add(ePoints[0], math.multiply(x, ex)), math.multiply(y, ey)), math.multiply(z, ez));
-
-        let triLatLng = this.ECEFtoLLA(triPt[0], triPt[1], triPt[2]);
-        //console.log("Calculated TriPt: " + triLatLng);
-        return triLatLng;
-    }   
-
-
-    // ############### //
-    // ### ROUTING ### //
-    // ############### //
-
-    /**
-     * Returns triangulation array with all triangle points
-     * @param polygonPaths
-     */
-    public getTriangles(polygonPaths: any) {        
-        this.tAngPoints = [];
-        for (let x in polygonPaths) {
-            // push seperate x and y axis into array for earcut
-            this.tAngPoints.push(polygonPaths[x][0]);
-            this.tAngPoints.push(polygonPaths[x][1]);
-        }
-        console.log(this.tAngPoints);
-        //console.log(earcut(this.tAngPoints));
-        // x-y axis array of all triangle points
-        let trianglePoints: any[] = [];
-        let triangleIndices = earcut(this.tAngPoints); // 3, 2, 0, 3, 2, 1
-        console.log(triangleIndices);        
-        for (let i = 0; i < triangleIndices.length; i++) {
-            trianglePoints.push(polygonPaths[triangleIndices[i]]);
-        }      
-        return trianglePoints;
-    }  
 
     public createTriangleOptions(paths: any,) {
         let PolygonOptions: any = {
@@ -715,10 +460,6 @@ export class MapService {
         }  
         return PolygonOptions;
     }
-
-    public testEarcut(data) {
-        return earcut(data);
-    }    
 
     /**
      * Converts from Path String to LatLng Object

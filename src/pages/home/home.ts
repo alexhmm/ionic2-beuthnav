@@ -3,7 +3,6 @@ import { NavController, Platform } from 'ionic-angular';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { trigger, state, transition, style, animate } from '@angular/animations';
 import { Geolocation } from '@ionic-native/geolocation';
-import { Http } from '@angular/http';
 
 import { BeaconService } from '../../services/beaconservice';
 import { DatabaseService } from '../../services/databaseservice';
@@ -130,7 +129,6 @@ export class HomePage {
                 public geolocation: Geolocation,
                 public beaconService: BeaconService,                
                 public dbService: DatabaseService,
-                public intersectService: IntersectService,
                 public mapService: MapService,
                 public motionService: MotionService,
                 public routingService: RoutingService) {    
@@ -230,6 +228,7 @@ export class HomePage {
 
         google.maps.event.addListener(this.map, 'click', (event) => {
             console.log("Click on map: " + event.latLng);
+            if (this.infoViewState = "in") this.toggleInfoView();
         })
 
         // reset map elements
@@ -279,8 +278,6 @@ export class HomePage {
                     }
 
                     if (room.type == "wc" || room.type == "staircase" || room.type == "lift" || room.type == "cafe" || room.type == "lib") {
-                        let roomCentroid = this.mapService.getPolygonCentroid(paths);
-                        let position = new google.maps.LatLng(parseFloat(roomCentroid.lat), parseFloat(roomCentroid.lng));   
                         let customMarker = this.mapService.getIconForCustomMarker(room.type, paths);
                         customMarker.setMap(this.map);
                         this.customMarkers.push(customMarker); 
@@ -311,28 +308,12 @@ export class HomePage {
                     let allCoordinates = building.coordinates;
                     let coordinates: String[] = allCoordinates.split(";");
 
-                    paths = this.mapService.splitCoordinatesToLatLng(coordinates);
-                    
+                    paths = this.mapService.splitCoordinatesToLatLng(coordinates);                    
 
                     let polygon = new google.maps.Polygon();
                     polygon.setOptions(this.mapService.createPolygonBuildingOptions(paths));
                     polygon.setMap(this.map);
-
-                    /* google.maps.event.addListener(polygon, 'click', (event) => {
-
-                    }) */
-
-                    let centroid = this.mapService.getPolygonCentroid(paths);
-                    /* let infoWindow = this.mapService.createInfoWindow(centroid, building.name);
-                    infoWindow.setMap(this.map);
-                    infoWindow.open;
-                    this.infoWindows.push(infoWindow);   */
                 }
-
-                // replace with centroid of currentBuilding
-                /* let center = this.map.getCenter();
-                center = new google.maps.LatLng(52.545165, 13.355360);
-                this.map.panTo(center); */
             })
         }
     }   
@@ -539,96 +520,17 @@ export class HomePage {
      * Sets current position from beacons
      */
     public getCurrentPositionBeacons() {
-        //console.log("CURRENT Positon Beacons.")
         this.tricons = [];
         this.triconsACC = [];        
         for (let i = 0; i < 3; i++) {
-            let elevation;
-            //console.log("B - " + i + ": " + beacons[i].identifier + "; " + beacons[i].coordinates + "; " + beacons[i].accCK);
             let latLngAlt = this.beacons[i].coordinates.split(", ");                
             this.tricons.push({lat: latLngAlt[0], lng: latLngAlt[1], distance: this.beacons[i].accCK, elevation: latLngAlt[2]});
-            this.triconsACC.push({lat: latLngAlt[0], lng: latLngAlt[1], distance: this.beacons[i].acc, elevation: latLngAlt[2]});
-            //console.log("T - " + i + ": " + this.tricons[i].lat + ", " + this.tricons[i].lng + ", " + this.tricons[i].distance + ", " + this.tricons[i].height);                
+            this.triconsACC.push({lat: latLngAlt[0], lng: latLngAlt[1], distance: this.beacons[i].acc, elevation: latLngAlt[2]});             
         }    
-        let triPoint: any = this.mapService.trilaterate(this.tricons);
-        //console.log("Beacon Tri Position: " + triStr);
-        //let triStrACC: any = this.mapService.trilaterate(this.triconsACC);
-        //console.log("Beacon Tri Position ACC: " + triStrACC);
+        let triPoint: any = this.routingService.trilaterate(this.tricons);
         this.checkLog += "Beacons: " + triPoint.lat + ", " + triPoint.lng;
-        //let splitTriPt = triPoint.split(", ");
         return {lat: triPoint.lat, lng: triPoint.lng};        
     }
-
-    // ################ //
-    // #### MOTION #### //
-    // ################ //
-    public routingMotion() {
-        this.toggleMapView();
-        console.log("Start motion routing.");
-        let startPosition;
-        this.mapService.getCurrentPositionGPS().subscribe(data => {
-            startPosition = data;
-            console.log("Start Position: " + startPosition.lat + ", " + startPosition.lng);
-            this.startRoutingMotion(startPosition);
-        });    
-    }
-
-    public startRoutingMotion(startPosition) {
-        if (this.infoViewState == 'in') this.toggleInfoView();
-        this.compassPts = [];
-        this.currentPosition = startPosition.lat + ", " + startPosition.lng;
-        this.compassPts.push(this.currentPosition);
-
-        if (this.motionStatus === 0) {
-            this.motionStatus = 1;
-            this.motionService.startWatchingAcceleration().subscribe(data => {    
-                this.x = data.x;
-                this.y = data.y;
-                this.z = data.z;
-                this.accValueLowPass = this.motionService.accelerationLowPass(this.x, this.y, this.z);      
-                let prevSteps = this.steps;     
-                this.steps = this.motionService.stepDetection(this.accValueLowPass);  
-                if (prevSteps < this.steps) {
-                    this.currentPosition = this.mapService.getCurrentPositionCompass(this.currentPosition, 0.63, this.direction);
-                    let currentPt = this.currentPosition.split(", ");
-                    this.centroidPts.push({lat: currentPt[0], lng: currentPt[1]});
-                    console.log("STEPS: " + this.steps);
-                    // add centroid point of last 5 measured points to polyline, reset array
-                    if (this.polylineIndex > 5) {
-                        let centroidPt = this.mapService.getPolygonCentroid(this.centroidPts);
-                        this.compassPts.push(this.currentPosition);
-                        this.polylineIndex = 0;
-                        this.centroidPts = [];
-                    }
-                    console.log("CompassPts Length: " + this.compassPts.length);
-                    this.paintRoute(this.compassPts);
-                    this.polylineIndex++;
-                }
-            });
-        } else {
-            this.motionService.stopWatchingAcceleration();
-            this.motionStatus = 0;
-        }
-    }
-
-    public paintRoute(points: any) {
-        if (this.polygon != null) {
-            this.polygon.setMap(null);
-        }  
-        if (this.mapViewState == 'on') {
-            this.toggleMapView();
-        }
-        let latLngPts = this.mapService.splitCoordinatesToLatLng(points);
-        this.polygon = new google.maps.Polyline();
-        this.polygon.setOptions(this.mapService.createPolylineOptions(latLngPts));
-        this.polygon.setMap(this.map);
-        let center = new google.maps.LatLng(latLngPts[latLngPts.length-1].lat, latLngPts[latLngPts.length-1].lng);
-        this.map.panTo(center);
-
-        let lengthInMeters = google.maps.geometry.spherical.computeLength(this.polygon.getPath());
-        console.log("Polyline length: " + lengthInMeters);
-    }
-
 
     // ######################### \\
     // ######## ROUTING ######## \\
@@ -642,7 +544,7 @@ export class HomePage {
         //let currentPosition = {lng: 13.35417, lat: 52.54486};  // unten links 1. og
         let rPaths; // paths for routing polyline
 
-        // ####### NEW
+        // clean map
         if (this.routingPolygons != null) this.routingPolygons = this.cleanPolygons(this.routingPolygons);
         if (this.routingPaths != null) this.routingPaths.setMap(null);
         if (this.routingPathsRemain1 != null) this.routingPathsRemain1.setMap(null);
@@ -656,12 +558,6 @@ export class HomePage {
         if (this.markerExit1 != null) this.markerExit1.setMap(null);
         if (this.markerExit2 != null) this.markerExit2.setMap(null);
         if (this.markerExitRemain != null) this.markerExitRemain.setMap(null);
-
-        // ###### temporary
-        // let endName = "D 110";
-        
-        let tempName;
-        // ################
 
         // Routing through multiple levels
         // 0    EndBuilding == CurrentBuilding && EndLevel == CurrentLevel
@@ -729,17 +625,11 @@ export class HomePage {
                     this.markerRemain.setMap(this.map);
                 });
             });
-
             // if tempEnd distance to currentPosition is < 1m getCurrentBuilding(currentBuilding, endLevel);
-
-
-
         // 2    EndBuilding != CurrentBuilding
         } else if (endBuilding != this.currentBuilding) {
             console.log("2: endBuilding: " + endBuilding + " != this.currentBuilding: ");   
-
-            if (this.currentLevel == 0) {
-                
+            if (this.currentLevel == 0) {                
                 // start building, level 0
                 console.log("2: start building, start level.");
                 this.dbService.getRoutingPolygonsPoints(this.currentBuilding, 0).subscribe(dataSBSL => {        
@@ -840,11 +730,7 @@ export class HomePage {
                             });   
                         });
                     }
-                });
-
-
-
-                
+                });                
             } else {
                 // start building, start level
                 console.log("2: start building, start level.");
@@ -974,9 +860,5 @@ export class HomePage {
                 // route to exit in same level
             }   
         }             
-    }
-
-    public testGS() {
-
     }
 }

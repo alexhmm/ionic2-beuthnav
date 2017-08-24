@@ -54,9 +54,6 @@ export class BeaconService {
                     try { indexData = this.beacondataStr.map(function(e) { return e.identifier; }).indexOf(region.identifier); }
                     catch(e) { console.log("Error: " + e); }
 
-                    let kalmanFilter = new KalmanService();
-                    //let kalmanRSSI = kalmanFilter.filter(beacon[0].rssi, 2, 5, 1, 0, 1);
-
                     // own accuracy calc -- still testing
                     let accuracyCalc = (Math.pow(10, (beacon[0].tx - beacon[0].rssi) / (10 * 3.5))).toFixed(2);
 

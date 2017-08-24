@@ -123,4 +123,108 @@ export class MotionService {
     getMedian(values) {
         return math.median(values);
     }
+
+
+    // ################ //
+    // #### MOTION #### //
+    // ################ //
+    // google maps test
+
+    /* public routingMotion() {
+        this.toggleMapView();
+        console.log("Start motion routing.");
+        let startPosition;
+        this.mapService.getCurrentPositionGPS().subscribe(data => {
+            startPosition = data;
+            console.log("Start Position: " + startPosition.lat + ", " + startPosition.lng);
+            this.startRoutingMotion(startPosition);
+        });    
+    }
+
+    public startRoutingMotion(startPosition) {
+        if (this.infoViewState == 'in') this.toggleInfoView();
+        this.compassPts = [];
+        this.currentPosition = startPosition.lat + ", " + startPosition.lng;
+        this.compassPts.push(this.currentPosition);
+
+        if (this.motionStatus === 0) {
+            this.motionStatus = 1;
+            this.motionService.startWatchingAcceleration().subscribe(data => {    
+                this.x = data.x;
+                this.y = data.y;
+                this.z = data.z;
+                this.accValueLowPass = this.motionService.accelerationLowPass(this.x, this.y, this.z);      
+                let prevSteps = this.steps;     
+                this.steps = this.motionService.stepDetection(this.accValueLowPass);  
+                if (prevSteps < this.steps) {
+                    this.currentPosition = this.mapService.getCurrentPositionCompass(this.currentPosition, 0.63, this.direction);
+                    let currentPt = this.currentPosition.split(", ");
+                    this.centroidPts.push({lat: currentPt[0], lng: currentPt[1]});
+                    console.log("STEPS: " + this.steps);
+                    // add centroid point of last 5 measured points to polyline, reset array
+                    if (this.polylineIndex > 5) {
+                        let centroidPt = this.mapService.getPolygonCentroid(this.centroidPts);
+                        this.compassPts.push(this.currentPosition);
+                        this.polylineIndex = 0;
+                        this.centroidPts = [];
+                    }
+                    console.log("CompassPts Length: " + this.compassPts.length);
+                    this.paintRoute(this.compassPts);
+                    this.polylineIndex++;
+                }
+            });
+        } else {
+            this.motionService.stopWatchingAcceleration();
+            this.motionStatus = 0;
+        }
+    }
+
+    public paintRoute(points: any) {
+        if (this.polygon != null) {
+            this.polygon.setMap(null);
+        }  
+        if (this.mapViewState == 'on') {
+            this.toggleMapView();
+        }
+        let latLngPts = this.mapService.splitCoordinatesToLatLng(points);
+        this.polygon = new google.maps.Polyline();
+        this.polygon.setOptions(this.mapService.createPolylineOptions(latLngPts));
+        this.polygon.setMap(this.map);
+        let center = new google.maps.LatLng(latLngPts[latLngPts.length-1].lat, latLngPts[latLngPts.length-1].lng);
+        this.map.panTo(center);
+
+        let lengthInMeters = google.maps.geometry.spherical.computeLength(this.polygon.getPath());
+        console.log("Polyline length: " + lengthInMeters);
+    }  */
+
+    /**
+     * Calculates new position from measured compass azimuth and step length
+     * http://cosinekitty.com/compass.html
+     * @param currentPosition 
+     * @param direction 
+     */
+    /* getCurrentPositionCompass(currentPosition, dist, direction) {  
+        let split = currentPosition.split(",");
+        let lat = parseFloat(split[0]);
+        let lng = parseFloat(split[1]);
+        let distance = dist;
+        let azimuth = direction;
+
+        console.log("OLD - LAT: " + lat + ", " + lng);
+        //console.log("AZIMUTH: " + direction);
+
+        let radians = math.PI / 180.0;
+        let degrees = 180.0 / math.PI;
+        let latRadians = radians * lat;
+        let azRadians = radians * azimuth;
+        let earthRad = this.getEarthR(latRadians);
+        let cosLat = math.cos(latRadians);
+        let cosAz = math.cos(azRadians);
+        let sinAz = math.sin(azRadians);
+        let ratio = distance / earthRad;
+        let targetLat = lat + (degrees * cosAz * ratio);
+        let targetLon = lng + (degrees * (sinAz / cosLat) * ratio);
+        console.log("NEW - LAT: " + targetLat + ", " + targetLon);
+        return targetLat + ", " + targetLon;
+    }  */
 }

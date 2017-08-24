@@ -370,8 +370,7 @@ export class DatabaseService {
      * @param name 
      */
     public getRoutePointByName(tablePoints: any, name: any) {
-        let queryName = "SELECT * FROM " + tablePoints + " WHERE name LIKE '%" + name + "%'";       
-        let selectedRoom: String[] = [];
+        let queryName = "SELECT * FROM " + tablePoints + " WHERE name LIKE '%" + name + "%'";   
         return Observable.create(observer => {     
             this.sqlite.create(this.options).then((db: SQLiteObject) => {
                 db.executeSql(queryName, []).then((data) => {  

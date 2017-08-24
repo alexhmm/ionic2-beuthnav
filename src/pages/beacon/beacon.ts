@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { NavController, NavParams } from 'ionic-angular';
 
 import { BeaconService } from '../../services/beaconservice';
-import { MapService } from '../../services/mapservice';
+import { RoutingService } from '../../services/routingservice';
 
 import * as beacondata from '../../assets/data/beacondata.json';
 
@@ -16,7 +16,7 @@ export class BeaconPage {
     public rssis: any[] = [];
     public tricons: any[] = [];
 
-    constructor(public beaconService: BeaconService, public mapService: MapService) {
+    constructor(public beaconService: BeaconService, public routingService: RoutingService) {
         
     }
 
@@ -64,6 +64,6 @@ export class BeaconPage {
         beacons.push({lat: 52.543938, lng: 13.352514, distance: 38.16, height: 37});
         beacons.push({lat: 52.543799, lng: 13.351237, distance: 51.96, height: 36});
         beacons.push({lat: 52.543671, lng: 13.351655, distance: 26.99, height: 36});
-        let triPt = this.mapService.trilaterate(beacons);
+        let triPt = this.routingService.trilaterate(beacons);
     }
 }
