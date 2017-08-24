@@ -252,7 +252,6 @@ export class RoutingService {
                     }
                 }
                 if (currentRoutingPolygonIndex == endRoutingPolygonIndex) {
-                    //console.log("Finish while loop.");
                     let endPolygon = routingPolygons[currentRoutingPolygonIndex].polygon;
                     let endPolygonPaths = this.createRouteInPolygon(currentPolygonStart, endPosition, endPolygon);
                     for (let x in endPolygonPaths) rPaths.push(endPolygonPaths[x]);

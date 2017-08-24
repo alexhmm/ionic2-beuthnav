@@ -33,10 +33,11 @@ export class MapService {
     /**
      * Returns options for google map
      */
-    public getMapOptions() {
+    public getMapOptions(position: any) {
+        if (position == null) position = {lat: 52.545165, lng: 13.355360};
         return {
             //center: latlng,
-            center: {lat: 52.545165, lng: 13.355360},
+            center: position,
             zoom: 18,
             mapTypeControl: false,
             fullscreenControl: false,
@@ -92,6 +93,71 @@ export class MapService {
         else return currentLevel;
     }
 
+    // ######## POLYGONS
+    
+    /**
+     * Creates room polygon for current level
+     * @param paths 
+     * @param type 
+     */
+    public createPolygonRoomOptions(paths: any, type: any) {
+        let polygon = new google.maps.Polygon({
+            paths: paths,
+            strokeColor: '#000000',
+            strokeOpacity: 0.5,
+            strokeWeight: 1,
+            fillColor: Roomcolor[type],
+            fillOpacity: 0.5,
+            zIndex: 500
+        })
+        return polygon;
+    }
+
+    /**
+     * Creates polygon for skipped buildings
+     * @param paths 
+     */
+    public createPolygonBuildingOptions(paths: any) {
+        let polygon = new google.maps.Polygon({
+            paths: paths,
+            strokeColor: '#000000',
+            strokeOpacity: 1,
+            strokeWeight: 1,
+            fillColor: '#0098a1',
+            fillOpacity: 0.5
+        })
+        return polygon;
+    }
+    
+    /**
+     * Creates invisible routing polygon for triangulation
+     * @param paths 
+     */
+    public createRoutingPolygon(paths: any) {
+        let routingPolygon = new google.maps.Polygon({
+            paths: paths,
+            strokeOpacity: 0,
+            fillOpacity: 0
+        });
+        return routingPolygon;
+    }
+    
+    /**
+     * Returns polygon options for triangulation
+     * @param paths 
+     */
+    public createTriangleOptions(paths: any,) {
+        let PolygonOptions: any = {
+            paths: paths,
+            strokeColor: '#ffffff',
+            strokeOpacity: 0.0,
+            fillOpacity: 0
+        }  
+        return PolygonOptions;
+    }
+
+    // ######## MARKERS
+
     public createCustomMarker(position: any, url: any, size: any) {        
         let icon = this.getCustomMarkerIcon(url, size);
         let customMarker = new google.maps.Marker({
@@ -125,8 +191,6 @@ export class MapService {
         return routeMarker;
     }
 
-    // createRouteLevelSwitchMarker
-
     public getCustomMarkerIcon(url: any, size: any) {
         let icon = {
             url: url,
@@ -144,87 +208,51 @@ export class MapService {
         return icon;
     }    
 
-    public createRoutingPolygon(paths: any) {
-        let routingPolygon = new google.maps.Polygon({
-            paths: paths,
-            strokeOpacity: 0,
-            fillOpacity: 0
-        });
-        return routingPolygon;
+    /**
+     * Returns router marker size on specific zoom level
+     * @param zoom 
+     */
+    public getRouteMarkerSize(zoom: any) {
+        let zoomDiff = 18 - zoom;
+        switch(true) {
+            case (zoomDiff > 0): return 48 - (zoomDiff * 4);              
+            case (zoomDiff < 0): return 48 + (zoomDiff / 4);    
+            default: return 48;
+        }     
     }
 
-    public createPolygonBuildingOptions(paths: any) {
-        let PolygonOptions: any = {
-            paths: paths,
-            strokeColor: '#000000',
-            strokeOpacity: 1,
-            strokeWeight: 1,
-            fillColor: '#0098a1',
-            fillOpacity: 0.5
-        }  
-        return PolygonOptions;
-    }
+    /**
+     * Returns custom marker size on specific zoom level
+     * @param zoom 
+     */
+    public getCustomMarkerSize(zoom: any) {
+        let zoomDiff = 18 - zoom;
+        switch(true) {
+            case (zoomDiff > 0):
+                return 16 - (zoomDiff * 4);
+                //return 16 / (Math.pow(2, Math.abs(zoomDiff)));                
+            case (zoomDiff < 0):
+                return 16 + (zoomDiff / 4);                
+                //return 16 * (Math.pow(2, zoomDiff));
+            default:
+                return 16;
+        }     
+    } 
 
-    public createPolygonRoomOptions(paths: any, type: any) {
-        let PolygonOptions: any = {
-            paths: paths,
-            strokeColor: '#000000',
-            strokeOpacity: 0.5,
-            strokeWeight: 1,
-            fillColor: Roomcolor[type],
-            fillOpacity: 0.5
-        }  
-        return PolygonOptions;
-    }
-
-    public createPolygonTestOptions(paths: any) {
-        let PolygonOptions: any = {
-            paths: paths,
-            strokeColor: '#000000',
-            strokeOpacity: 0.5,
-            strokeWeight: 1,
-            fillColor: '#000000',
-            fillOpacity: 1
-        }  
-        return PolygonOptions;
-    }
-
-    public createPolylineOptions(points: any) {
-        let PolylineOptions: any = {
-          path: points,
-          geodesic: true,
-          strokeColor: '#FF0000',
-          strokeOpacity: 1.0,
-          strokeWeight: 2
-        }
-        return PolylineOptions;
-    }
-
-    public createPolylineRouteOptions(points: any) {
-        let PolylineOptions: any = {
-          path: points,
-          geodesic: true,
-          strokeColor: '#FF0000',
-          strokeOpacity: 1.0,
-          strokeWeight: 3
-        }
-        return PolylineOptions;
-    }
+    // ######## POLYLINES
 
     /**
      * Creates routing polyline for Google map
      * @param points
      */
     public createRoutePolyline(points: any) {
-        let polylineOptions: any = {
+        let polyline = new google.maps.Polyline({
           path: points,
           geodesic: true,
           strokeColor: '#EE342E',
           strokeOpacity: 1.0,
           strokeWeight: 3
-        }
-        let polyline = new google.maps.Polyline();
-        polyline.setOptions(polylineOptions);
+        })
         return polyline;
     }
 
@@ -233,72 +261,51 @@ export class MapService {
      * @param points
      */
     public createRoutePolylineRemain(points: any) {
-        let polylineOptions: any = {
+        let polyline = new google.maps.Polyline({
           path: points,
           geodesic: true,
           strokeColor: '#EE342E',
           strokeOpacity: 0.50,
           strokeWeight: 3
-        }
-        let polyline = new google.maps.Polyline();
-        polyline.setOptions(polylineOptions);
+        })
         return polyline;
     }
 
-        /**
-     * Creates routing polyline for Google map
-     * @param points
-     */
-    public createPolylineDebug(points: any, color: any) {
-        let polylineOptions: any = {
-          path: points,
-          geodesic: true,
-          strokeColor: color,
-          strokeOpacity: 1,
-          strokeWeight: 3
-        }
-        let polyline = new google.maps.Polyline();
-        polyline.setOptions(polylineOptions);
-        return polyline;
-    }
+    // ######## CIRCLE
 
     /**
-     * Creates routing polyline for Google map
-     * @param points
+     * Creates circle at current position
+     * @param position
+     * @param radius 
      */
-    public createPolylineRoute(points: any) {
-        let polylineOptions: any = {
-          path: points,
-          geodesic: true,
-          strokeColor: '#0000FF',
-          strokeOpacity: 1.0,
-          strokeWeight: 3
-        }
-        let polyline = new google.maps.Polyline();
-        polyline.setOptions(polylineOptions);
-        return polyline;
-    }
-
-    public createCircleOptions(position: any, radius: any) {
-        let circleOptions: any = {
+    public createCircle(position: any, radius: any) {
+        let circle = new google.maps.Circle({
             center: {lat: parseFloat(position.lat), lng: parseFloat(position.lng)},
             strokeWeight: 0,
             fillColor: '#0000FF',
-            radius: parseFloat(radius)
-        }
-        return circleOptions;
+            radius: parseFloat(radius),
+            zIndex: 1100
+        })
+        return circle;
+    }
+    
+    /**
+     * 
+     * @param zoom Returns circle radius on current zoom level
+     */
+    public getCircleRadius(zoom: any) {
+        let zoomDiff = 18 - zoom;
+        switch(true) {
+            case (zoomDiff > 0):
+                return 3 * (Math.pow(2, zoomDiff));
+            case (zoomDiff < 0):
+                return 3 / (Math.pow(2, Math.abs(zoomDiff)));
+            default:
+                return 3;
+        }     
     }
 
-    public createCircleOptions2(position: any, radius: any) {
-        console.log("CircleOptions: " + position.lat + ", " + position.lng);
-        let circleOptions: any = {
-            center: {lat: parseFloat(position.lat), lng: parseFloat(position.lng)},
-            strokeWeight: 0,
-            fillColor: '#0000FF',
-            radius: parseFloat(radius)
-        }
-        return circleOptions;
-    }
+    // ######## INFO WINDOW
 
     public createInfoWindow(position: any, text: String) {
         return new google.maps.InfoWindow({
@@ -321,44 +328,7 @@ export class MapService {
         return mapLabel;
     } */
 
-    /**
-     * 
-     * @param zoom Returns circle radius on current zoom level
-     */
-    public getCircleRadius(zoom: any) {
-        let zoomDiff = 18 - zoom;
-        switch(true) {
-            case (zoomDiff > 0):
-                return 3 * (Math.pow(2, zoomDiff));
-            case (zoomDiff < 0):
-                return 3 / (Math.pow(2, Math.abs(zoomDiff)));
-            default:
-                return 3;
-        }     
-    }
-
-    public getRouteMarkerSize(zoom: any) {
-        let zoomDiff = 18 - zoom;
-        switch(true) {
-            case (zoomDiff > 0): return 48 - (zoomDiff * 4);              
-            case (zoomDiff < 0): return 48 + (zoomDiff / 4);    
-            default: return 48;
-        }     
-    }
-
-    public getCustomMarkerSize(zoom: any) {
-        let zoomDiff = 18 - zoom;
-        switch(true) {
-            case (zoomDiff > 0):
-                return 16 - (zoomDiff * 4);
-                //return 16 / (Math.pow(2, Math.abs(zoomDiff)));                
-            case (zoomDiff < 0):
-                return 16 + (zoomDiff / 4);                
-                //return 16 * (Math.pow(2, zoomDiff));
-            default:
-                return 16;
-        }     
-    }
+    // ######## OTHER FUNCTIONS
 
     /**
      * Returns the altitude at specific position
@@ -380,22 +350,10 @@ export class MapService {
     }
 
     /**
-     * Calculates the croid of a straight polyline
-     * @param point1 
-     * @param point2 
-     */
-    getPolylineCentroid(point1, point2) {
-        let centroid: any = {lat: 0, lng: 0};
-        centroid.lat = (point1.lat + point2.lat) / 2;
-        centroid.lng = (point1.lng + point2.lng) / 2;
-        return centroid;
-    }
-
-    /**
      * Calculates the centroid of a polygon
      * @param points 
      */
-    getPolygonCentroid(points: any[]) {
+    public getPolygonCentroid(points: any[]) {
         let centroid: any = {lat: 0, lng: 0};
         for (let x in points) {
             centroid.lat += points[x].lat;
@@ -411,7 +369,7 @@ export class MapService {
      * Splits full set of string polygon point coordinates to single point coordinates in array
      * @param points 
      */
-    splitCoordinatesToLatLng(points: any[]) {
+    public splitCoordinatesToLatLng(points: any[]) {
         let paths: any[] = [];
         for (let x in points) {
             let latlngStr: any[] = points[x].split(", ");
@@ -424,7 +382,10 @@ export class MapService {
         return paths;
     }   
 
-    getCurrentPositionGPS() {
+    /**
+     * Returns users position using gps
+     */
+    public getCurrentPositionGPS() {
         return Observable.create(observer => {
             this.geolocation.getCurrentPosition({enableHighAccuracy:true}).then((position) => {
                 console.log("GPS POSITION: " + position.coords.latitude + ", " + position.coords.longitude);
@@ -437,28 +398,6 @@ export class MapService {
                 console.log("" + error);
             });
         });        
-    }
-
-    public createTriangleOptions(paths: any,) {
-        let PolygonOptions: any = {
-            paths: paths,
-            strokeColor: '#000000',
-            strokeOpacity: 0.33,
-            strokeWeight: 0.5,
-            fillOpacity: 0
-        }  
-        return PolygonOptions;
-    }
-
-    public createControlOptions(paths: any,) {
-        let PolygonOptions: any = {
-            paths: paths,
-            strokeColor: '#00FF00',
-            strokeOpacity: 1,
-            strokeWeight: 5,
-            fillOpacity: 3
-        }  
-        return PolygonOptions;
     }
 
     /**

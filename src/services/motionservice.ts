@@ -17,6 +17,19 @@ export class MotionService {
     public steps = 0;
     public status = 1;
     public mili = 0;
+    
+    // step detection test
+    public motionStatus = 0;
+    public x = 0;
+    public y = 0;
+    public z = 0;
+    public accValueLowPass;
+    //public steps = 0;
+    public direction;
+    public directionValues: any[] = [];
+    public compassPts: any[] = [];
+    public centroidPts: any[] = [];
+    public polylineIndex = 6;   
 
     constructor(private deviceMotion: DeviceMotion, private deviceOrientation: DeviceOrientation) { 
         this.gravity = [0, 0, 0];
