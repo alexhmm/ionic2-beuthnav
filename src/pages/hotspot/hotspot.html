@@ -11,10 +11,12 @@
 </ion-header>
 
 <ion-content>
+  <ion-item><ion-input type="text" value="Messung" [(ngModel)]="inputText"></ion-input></ion-item>  
+  <p><button ion-button (click)="toggleSingle()">QIsB</button>Index: {{ index }} / Single: {{ stateSingle }}
   <ion-list>
       <ion-item *ngFor="let network of networks">
-        <b>{{ network.SSID }}</b><br>
-        {{ network.BSSID }}, <b>RSSI:</b> {{ network.level }}<br>
+        <b>{{ network.SSID }}</b> {{ network.BSSID }}<br>
+        <b>RSSI:</b> {{ network.level }}, <b>RSSI-K:</b> {{ network.rssiK }}, <b>AccK:</b> {{ network.accK}}
         <!--<b>Protokoll:</b> {{ network.frequency }}, {{ network.capabilities }}-->
       </ion-item>
     </ion-list>

@@ -19,7 +19,7 @@ export class MyApp {
   @ViewChild(Nav) nav: Nav;
 
   //rootPage: any = HomePage;
-  rootPage: any = HotSpotPage;
+  rootPage: any = MotionPage;
 
   pages: Array<{title: string, component: any}>;
 

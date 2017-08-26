@@ -11,17 +11,19 @@
   </ion-navbar>
 </ion-header>
 <ion-content>
-    <p>x: {{ x }}</p>
+    <ion-item><ion-input type="text" value="Messung" [(ngModel)]="inputText"></ion-input></ion-item>  
+    <p><button ion-button (click)="toggleCompass()">Compass</button>Index: {{ index }} / Compass: {{ stateCompass }}
+    <!--<p>x: {{ x }}</p>
     <p>y: {{ y }}</p>
     <p>z: {{ z }}</p>
     <p>Acc: {{ accValue }}</p>
     <p>AccLP: {{ accValueLowPass }}</p>
-    <p>AccLPTime: {{ accValueLowPassTime }}</p>
+    <p>AccLPTime: {{ accValueLowPassTime }}</p>-->
     <p>Steps: {{ steps }}</p>
     <!--<p>Kompass:</p>
     <p>magnetisch: {{ magnDegree }}</p>
     <p>korrekt: {{ trueDegree }}</p>
     <p>Abweichung: {{ accDegree }}</p>-->
-    <p>HTML5-Komass: {{ direction }}</p>
-    <p>Current: {{ currentPostion }}</p>
+    <p>HTML5-Kompass: {{ direction }}</p>
+    <p>HTML5-KompassK: {{ directionK }}</p>
 </ion-content>

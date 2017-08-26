@@ -103,17 +103,17 @@ export class BeaconPage {
 
     public logBeaconDataQIsB() {        
         this.dataX += this.index + ", "
-        let outOfRange = 0;
+        // let outOfRange = 0;
         for (let x in this.beacons) {
             if (this.beacons[x].identifier == "QIsB") {
                 this.dataQIsBy += this.beacons[x].rssi + ", ";
                 // this.dataQIsBy += this.beacons[x].accCK + ", ";
                 this.dataQIsBz += this.beacons[x].rssiK + ", ";
-                outOfRange = 1;
+                // outOfRange = 1;
                 break;
             }
         }   
-        if (outOfRange == 0) this.dataQIsBy += 0 + ", ";
+        // if (outOfRange == 0) this.dataQIsBy += 0 + ", ";
         console.log("Index X: " + this.dataX);
         console.log("dataQIsBy: " + this.dataQIsBy);        
         console.log("dataQIsBz: " + this.dataQIsBz);           
