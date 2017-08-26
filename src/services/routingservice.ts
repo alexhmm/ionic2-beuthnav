@@ -76,19 +76,20 @@ export class RoutingService {
      */
     public getRouteStart(currentPosition: any, routingPolygons: any, routingPoints) {
         let currentPositionLatLng = new google.maps.LatLng(currentPosition.lat, currentPosition.lng);
-        let rStartSBSL;
+        let rStartSBSL = null;
 
         // check if currentPosition is inside current routing polygons
         for (let x in routingPolygons) {
             if (this.containsLocation(currentPositionLatLng, routingPolygons[x].polygon)) {
                 rStartSBSL = currentPosition;
                 break;
-            } else {
-                let currentStartDistances = this.sortByDistance(routingPoints, currentPositionLatLng);                                    
-                // nearest route point = start
-                rStartSBSL = {lat: parseFloat(currentStartDistances[0].lat), lng: parseFloat(currentStartDistances[0].lng)};
-            }
+            }            
         }   
+        if (rStartSBSL == null) {
+            let currentStartDistances = this.sortByDistance(routingPoints, currentPositionLatLng);                                    
+            // nearest route point = start
+            rStartSBSL = {lat: parseFloat(currentStartDistances[0].lat), lng: parseFloat(currentStartDistances[0].lng)};
+        }
         return rStartSBSL;
     }
 
@@ -475,14 +476,13 @@ export class RoutingService {
      * @param pPaths 
      * @param iPaths 
      * @param prevVertex 
-     * @param currVertex 
+     * @param cVertex 
      * @param nextVertex 
      * @param continueVertex 
      */
-    public getNextRoutingPath(pPaths: any, iPaths: any, prevVertex: any, currVertex: any, nextVertex: any, continueVertex: any) {          
+    public getNextRoutingPath(pPaths: any, iPaths: any, prevVertex: any, cVertex: any, nextVertex: any, continueVertex: any) {          
         // intersect check: new potential route path, iPaths length always = 3 / 2
-        let i1 = {lat: parseFloat(iPaths[0].lat), lng: parseFloat(iPaths[0].lng)};
-        //let i2 = {lat: parseFloat(iPaths[2].lat), lng: parseFloat(iPaths[2].lng)};        
+        let i1 = {lat: parseFloat(iPaths[0].lat), lng: parseFloat(iPaths[0].lng)};    
         let i2 = {lat: parseFloat(iPaths[1].lat), lng: parseFloat(iPaths[1].lng)};     
 
         for (let i = 0; i < pPaths.length - 1; i++) {    
@@ -493,41 +493,21 @@ export class RoutingService {
             if (this.getLineIntersection(p1.lat, p1.lng, p2.lat, p2.lng, i1.lat, i1.lng, i2.lat, i2.lng)) {               
                 let direction1;
                 let direction2;
-                let heading1 = this.calcBearing(currVertex, prevVertex);
-                let heading2 = this.calcBearing(currVertex, nextVertex);
+                let heading1 = this.calcBearing(cVertex, prevVertex);
+                let heading2 = this.calcBearing(cVertex, nextVertex);
 
                 direction1 = Math.abs((heading1 + heading2) / 2);
-                if (direction1 > 180) {
-                    direction2 = Math.abs(direction1 - 180);
-                } else {
-                    direction2 = direction1 + 180;
-                }
+                if (direction1 > 180) direction2 = Math.abs(direction1 - 180);
+                else direction2 = direction1 + 180;
         
-                let nP1 = this.getLatLngByAzimuthDistance(currVertex, 1, Math.abs(direction1));
-                let nP2 = this.getLatLngByAzimuthDistance(currVertex, 1, Math.abs(direction2));
+                let nP1 = this.getLatLngByAzimuthDistance(cVertex, 1, Math.abs(direction1));
+                let nP2 = this.getLatLngByAzimuthDistance(cVertex, 1, Math.abs(direction2));
                 let nP1LLA = new google.maps.LatLng(parseFloat(nP1.lat), parseFloat(nP1.lng));
                 let nP2LLA = new google.maps.LatLng(parseFloat(nP2.lat), parseFloat(nP2.lng));
 
-                if (google.maps.geometry.poly.containsLocation(nP1LLA, this.routingPolygon)) {
-                    let newVertex = nP1; 
-
-                    let testPath: any[] = [];
-                    testPath.push(currVertex);
-                    testPath.push(nP1);
-
-                    return newVertex;         
-                }
-
-                if (google.maps.geometry.poly.containsLocation(nP2LLA, this.routingPolygon)) {
-                    let newVertex = nP2; 
-                    let testPath: any[] = [];
-                    testPath.push(currVertex);
-                    testPath.push(nP2);
-                    
-                    return newVertex;
-                } else {
-                    return currVertex;
-                }
+                if (google.maps.geometry.poly.containsLocation(nP1LLA, this.routingPolygon)) return nP1; 
+                if (google.maps.geometry.poly.containsLocation(nP2LLA, this.routingPolygon)) return nP2; 
+                else return cVertex;
             }            
         }     
         return null;   
@@ -569,7 +549,7 @@ export class RoutingService {
                 rPaths = tPaths;
                 lengthAfter = rPaths.length; 
 
-                if (lengthAfter === lengthBefore)return rPaths;  
+                if (lengthAfter === lengthBefore) return rPaths;  
             }
         }
         return routePaths;
@@ -624,11 +604,8 @@ export class RoutingService {
         let dPhi = math.log(math.tan(p2Lat / 2.0 + math.pi / 4.0) / math.tan(p1Lat / 2.0 + math.pi / 4.0));
 
         if (math.abs(dLong) > math.pi) {
-            if (dLong > 0.0) {
-                dLong = -(2.0 * math.pi - dLong)
-            } else {
-                dLong = (2.0 * math.pi + dLong)
-            }
+            if (dLong > 0.0) dLong = -(2.0 * math.pi - dLong);
+            else dLong = (2.0 * math.pi + dLong);
         }
 
         let bearing = (this.getDegrees(math.atan2(dLong, dPhi)) + 360.0) % 360.0;
@@ -641,14 +618,9 @@ export class RoutingService {
      * @param index 
      */
     public checkBearingDifference(diff) {
-        if (Math.abs(diff) > 180) {
-            diff = 360 - Math.abs(diff);
-        } else {
-             diff = Math.abs(diff);
-        }
-        if (diff > 10) {
-            return true;                   
-        }
+        if (Math.abs(diff) > 180) diff = 360 - Math.abs(diff);
+        else diff = Math.abs(diff);
+        if (diff > 5) return true;  
         return false;
     }    
 

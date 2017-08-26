@@ -18,7 +18,8 @@ import { TestPage } from '../pages/test/test';
 export class MyApp {
   @ViewChild(Nav) nav: Nav;
 
-  rootPage: any = HomePage;
+  //rootPage: any = HomePage;
+  rootPage: any = HotSpotPage;
 
   pages: Array<{title: string, component: any}>;
 

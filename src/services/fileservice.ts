@@ -7,13 +7,13 @@ export class FileService {
 
     }
 
-    public createFile() {
+    public createFile(fileName: String, data: string) {
         let date = new Date();
         let time = date.getHours() + "-" + date.getMinutes() + "-" + date.getSeconds();
-        let name = "xx" + time;
+        let name = fileName + "--" + time;
         this.file.createFile(this.file.cacheDirectory, name, true).then(data => console.log('Created Cache file.')).catch(err => console.log(err));
-        let text = 'Beacons-Test \n Zeile 2 \n' + time;
-        this.file.writeExistingFile(this.file.cacheDirectory, name, text).then(data => console.log('Text wrote.')).catch(err => console.log(err));
+        //let text = 'Beacons-Test \n Zeile 2 \n' + time;
+        this.file.writeExistingFile(this.file.cacheDirectory, name, data).then(data => console.log('Text wrote.')).catch(err => console.log(err));
     }
 
     public readFile(event, file) {

@@ -42,7 +42,7 @@ export class TestPage {
     }
 
     public createFile() {
-        this.fileService.createFile();
+        this.fileService.createFile("Test", "Text");
         this.createFileList();
     }
 

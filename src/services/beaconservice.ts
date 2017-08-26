@@ -47,12 +47,12 @@ export class BeaconService {
                     try {
                         let index = this.beacons.map(function(e) { return e.identifier; }).indexOf(region.identifier);
                         if (index != -1) this.beacons.splice(index, 1);
-                    } catch(e) { console.log("Error: " + e); }
+                    } catch(e) { console.error("Error: " + e); }
 
                     // get coordinates of identified beacon
                     let indexData;
                     try { indexData = this.beacondataStr.map(function(e) { return e.identifier; }).indexOf(region.identifier); }
-                    catch(e) { console.log("Error: " + e); }
+                    catch(e) { console.error("Error: " + e); }
 
                     // own accuracy calc -- still testing
                     let accuracyCalc = (Math.pow(10, (beacon[0].tx - beacon[0].rssi) / (10 * 3.5))).toFixed(2);
@@ -68,7 +68,7 @@ export class BeaconService {
                     if (this.rssis.length > 0) {
                         let kalman = new KalmanService();
                         let dataConstantKalman = this.rssis.map(function(v) {
-                            return kalman.filter(v, 2, 5, 1, 0, 1);
+                            return kalman.filter(v, 2, 10, 1, 0, 1);
                         });
                         let index = dataConstantKalman.length - 1;
                         //console.log("Constant Kalman[length]: " + dataConstantKalman.length + ", " + dataConstantKalman[index]);

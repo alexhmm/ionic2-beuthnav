@@ -17,20 +17,19 @@
 
 
 <ion-content padding>
-    <button ion-button (click)="calcKalman()">Filter</button>
-    <ion-list>
-        <ion-item *ngFor="let rssi of rssis">
-            {{rssi.original}}, {{rssi.kalman}}
-        </ion-item>
-    </ion-list>
-    <ion-list>
-        <ion-item *ngFor="let beacon of beacons">
-          <!--<ion-avatar item-left>
-            <img src="assets/images/beacons/{{beacon.key}}.png">
-          </ion-avatar>-->
-          <p><b>Beacon #{{beacon.identifier}}</b>: TX: {{beacon.tx}}, R: {{beacon.rssi}}, R-K: {{beacon.rssiK}}</p>
-          <!--<p style="float: right; color: #aaa;">{{beacon.timestamp | date:'h:mm:ss a'}}</p>-->
-          <p> Acc: {{beacon.acc}}, AccC: {{beacon.accC}}, AccCK: {{beacon.accCK}}</p>
-        </ion-item>
-    </ion-list>
+  <ion-item><ion-input type="text" value="Name Messung" [(ngModel)]="inputText"></ion-input></ion-item>
+  <button ion-button (click)="toggleQIsB()">QIsB</button><button ion-button (click)="togglePosition()">Position</button>
+  <p>Index: {{ index }} / QIsB: {{ stateQIsB }} / Position: {{ statePos }}</p>
+  <ion-list>
+      <ion-item *ngFor="let beacon of beacons">
+        <!--<ion-avatar item-left>
+          <img src="assets/images/beacons/{{beacon.key}}.png">
+        </ion-avatar>-->
+        <p><b>Beacon #{{beacon.identifier}}</b>: TX: {{beacon.tx}}, R: {{beacon.rssi}}, R-K: {{beacon.rssiK}}</p>
+        <!--<p style="float: right; color: #aaa;">{{beacon.timestamp | date:'h:mm:ss a'}}</p>-->
+        <p> Acc: {{beacon.acc}}, AccC: {{beacon.accC}}, AccCK: {{beacon.accCK}}</p>
+      </ion-item>
+  </ion-list>
+  <p>P-Bea: {{ posBeacons }}</p>
+  <p>P-GPS: {{ posGPS }}</p>
 </ion-content>

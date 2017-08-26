@@ -3,7 +3,6 @@ import { AlertController } from 'ionic-angular';
 import { NavController, Platform } from 'ionic-angular';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { trigger, state, transition, style, animate } from '@angular/animations';
-import { Geolocation } from '@ionic-native/geolocation';
 
 import { BeaconService } from '../../services/beaconservice';
 import { DatabaseService } from '../../services/databaseservice';
@@ -133,7 +132,6 @@ export class HomePage {
     constructor(public alertCtrl: AlertController,
                 public navCtrl: NavController,
                 public platform: Platform,
-                public geolocation: Geolocation,
                 public beaconService: BeaconService,                
                 public dbService: DatabaseService,
                 public mapService: MapService,
@@ -342,20 +340,6 @@ export class HomePage {
             });            
         } */
     }
-
-    /**
-     * Sets current position from gps
-     */
-    public getCurrentPositionGPS() {
-        this.checkLog += "GPS: "
-        this.geolocation.getCurrentPosition({timeout: 5000, enableHighAccuracy:true}).then((position) => {    
-            this.checkLog += position.coords.latitude + ", " + position.coords.longitude;
-            return {lat: position.coords.latitude, lng: position.coords.longitude};
-        }, (error) => {
-            console.log(error);
-            this.checkLog += "ERROR: " + error;
-        });
-    }     
     
     /**
      * Updates display of current user position

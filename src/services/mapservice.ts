@@ -387,15 +387,11 @@ export class MapService {
      */
     public getCurrentPositionGPS() {
         return Observable.create(observer => {
-            this.geolocation.getCurrentPosition({enableHighAccuracy:true}).then((position) => {
-                console.log("GPS POSITION: " + position.coords.latitude + ", " + position.coords.longitude);
-                let lat = position.coords.latitude;
-                let lng = position.coords.longitude;
-                //console.log([lat, lng]);
-                observer.next({lat: lat, lng: lng});
+            let lat, lng;
+            this.geolocation.getCurrentPosition({enableHighAccuracy:true}).then((position) => {observer.next({lat: position.coords.latitude, lng: position.coords.longitude});
                 observer.complete();
             }, (error) => {
-                console.log("" + error);
+                console.error("ERROR: " + error);
             });
         });        
     }
