@@ -1,5 +1,27 @@
 // http://ionicframework.com/docs/v2/theming/
+$beuthColor: #0098a1;
+$toolbar-background: #0098a1;
+$searchnbar-md-input-background-color: rgba(0, 152, 161, 1);
 
+$colors: (
+    primary:    #0098a1,
+    secondary:  #ffffff,
+    danger:     #f53d3d,
+    light:      #f4f4f4,
+    dark:       #222,
+    favorite:   #69BB7B,
+    mycolour:    #8B008B  //Dark Magenta
+);
+
+.menuHeader {
+    background-color: #0098a1;
+    color: white;
+}
+
+.menuList {
+    background-color: white;
+    color: black;
+}
 
 // App Global Sass
 // --------------------------------------------------

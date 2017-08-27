@@ -1,14 +1,8 @@
-<ion-header>
+<ion-header class="menu" no-border>
   <ion-navbar>
     <button ion-button menuToggle>
       <ion-icon name="menu"></ion-icon>
     </button>
-    <!--<ion-title>Google Maps Test</ion-title>
-    <ion-buttons end>
-      <button ion-button (click)="addMarker()">
-        <ion-icon name="add"></ion-icon>Add Marker
-      </button>
-    </ion-buttons>-->
     <ion-searchbar (ionInput)="getRoomListView($event)" placeholder="Suche"></ion-searchbar>   
   </ion-navbar>
 </ion-header>
@@ -16,11 +10,11 @@
 <ion-content>  
   <div #map id="map"></div>  
   <div ion-fixed class="levelView"><!-- [@levelViewInOut]="levelViewState">-->
-    <button ion-button id="levelUp" (click)="changeCurrentLevel(currentBuilding, 1)">
-        <ion-icon name="add"></ion-icon>
+    <button ion-button class="beuthButton" (click)="changeCurrentLevel(currentBuilding, 1)" no-border>
+        <ion-icon name="add" secondary></ion-icon>
       </button>
-      <button ion-button id="levelDown" (click)="changeCurrentLevel(currentBuilding, -1)">
-        <ion-icon name="remove"></ion-icon>
+      <button ion-button class="beuthButton" (click)="changeCurrentLevel(currentBuilding, -1)" no-border>
+        <ion-icon name="remove" secondary></ion-icon>
       </button>
   </div>  
   <div ion-fixed class="listView" [@listViewInOut]="listViewState">
@@ -40,7 +34,7 @@
           {{ attributes.desc }}
         </ion-col>
         <ion-col id="navigate" col-2>
-          <button ion-button icon-only (click)="startRouting(attributes.name, attributes.building, attributes.level, attributes.position)">
+          <button ion-button class="beuthButton" icon-only (click)="startRouting(attributes.name, attributes.building, attributes.level, attributes.position)">
             <ion-icon name="navigate"></ion-icon>
           </button>
         </ion-col>

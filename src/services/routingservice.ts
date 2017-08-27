@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core'; 
 import { MapService } from './mapservice';
-import { DatabaseService } from './databaseservice';
 
 import * as earcut from 'earcut';
 import * as math from 'mathjs';
@@ -39,8 +38,7 @@ export class RoutingService {
     public iPathsC: any[] = [];
     public iPathsCC: any[] = [];
 
-    constructor(private dbService: DatabaseService,
-                private mapService: MapService) {                    
+    constructor(private mapService: MapService) {                    
         this.wgs84f = math.divide(math.subtract(this.wgs84a, this.wgs84b), this.wgs84a); 
         this.wgs84a2 = math.multiply(this.wgs84a, this.wgs84a);
         this.wgs84b2 = math.multiply(this.wgs84b, this.wgs84b);

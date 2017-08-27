@@ -6,8 +6,6 @@ import { trigger, state, transition, style, animate } from '@angular/animations'
 
 import { BeaconService } from '../../services/beaconservice';
 import { DatabaseService } from '../../services/databaseservice';
-import { IntersectService } from '../../services/intersectservice';
-import { KalmanService } from '../../services/kalmanservice';
 import { MapService } from '../../services/mapservice';
 import { MotionService } from '../../services/motionservice';
 import { RoutingService } from '../../services/routingservice';
@@ -153,38 +151,7 @@ export class HomePage {
                 this.checkBeacons();
                 if (this.mapViewState == 'on') this.getCurrentPosition();
                 if (this.routeState == 'on') this.updateRoute();
-             }, 3000);
-
-            // Initialize DeviceOrientation
-            if ((<any>window).DeviceOrientationEvent) {
-                console.log("DeviceOrientationevent available");
-                window.addEventListener('deviceorientation', (eventData) => {
-                    //var dir = eventData.alpha
-                    //deviceOrientationHandler(dir);
-                    //this.direction = 360 - Math.ceil(dir);
-                    let dir = 360 - Math.ceil(eventData.alpha);
-                    if (this.directionValues.length < 11) {
-                        this.directionValues.push(dir);
-                        //this.direction = this.motionService.getMedian(this.directionValues);
-                    } else {
-                        this.directionValues.splice(0, 1);
-                        this.directionValues.push(dir);
-                        //this.direction = this.motionService.getMedian(this.directionValues);
-                    }        
-                    if (this.directionValues.length > 0)             {
-                        let kalman = new KalmanService();
-                        let dataConstantKalman = this.directionValues.map(function(v) {
-                            return kalman.filter(v, 4, 10, 1, 0, 1);
-                        });
-                        let index = dataConstantKalman.length - 1;
-                        //console.log("Constant Kalman[length]: " + dataConstantKalman.length + ", " + dataConstantKalman[index]);
-                        this.direction = dataConstantKalman[index];
-                    }
-                    //console.log("Dir: " + this.direction);
-                }, false);
-            } else {
-                console.log("No DeviceOrientationEvent available");
-            };            
+             }, 3000);            
         });
     }
 

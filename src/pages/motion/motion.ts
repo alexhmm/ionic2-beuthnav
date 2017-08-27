@@ -45,9 +45,9 @@ export class MotionPage {
             if ((<any>window).DeviceOrientationEvent) {
                 console.log("DeviceOrientationevent available");
                 window.addEventListener('deviceorientation', (eventData) => {
-                    var dir = eventData.alpha
+                    var dir = eventData.alpha; // eventData.alpha.toFixed(2);
                     //deviceOrientationHandler(dir);
-                    this.direction = dir.toFixed(2); //360 - Math.ceil(dir);
+                    this.direction = 360 - dir; //360 - Math.ceil(dir);
                     //console.log("Dir: " + this.direction);
                 }, false);
             } else {
