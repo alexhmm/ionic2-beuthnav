@@ -314,11 +314,15 @@ export class HomePage {
     public displayCurrentPosition() {
         if (this.map != null) {
             let center = new google.maps.LatLng(this.currentPosition.lat, this.currentPosition.lng);
+            let circle;
             if (this.circle != null) {
+                circle = this.circle;
+                circle.setMap(this.map);
                 this.circle.setMap(null);
             }  
             this.circle = this.mapService.createCircle(this.currentPosition, (this.mapService.getCircleRadius(this.getMapZoom()).toFixed(4)));
             this.circle.setMap(this.map);
+            if (circle != null) circle.setMap(null);
             // if viewStates not on
             //this.map.panTo(center); ####### ENABLE IN SCHOOL // BUGGED?
         }

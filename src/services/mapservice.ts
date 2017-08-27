@@ -282,7 +282,8 @@ export class MapService {
         let circle = new google.maps.Circle({
             center: {lat: parseFloat(position.lat), lng: parseFloat(position.lng)},
             strokeWeight: 0,
-            fillColor: '#0000FF',
+            fillColor: '#EE342E',
+            fillOpacity: 1,
             radius: parseFloat(radius),
             zIndex: 1100
         })
