@@ -16,20 +16,33 @@ export class BeaconPage {
 
     public beacons: any[] = [];
     public tricons: any[] = [];
+    public QIsB = {
+        identifier: 0,
+        tx: 0,
+        rssi: 0,
+        rssiK: 0,
+        acc: 0,
+        accCK: 0,
+        coordinates: ""
+    }
     
+    public checkState = 'all';
     public inputText;
     public index = 0;
+    public failureIndex = 0;
 
-    public stateQIsB = 'off';  
+    public stateQIsB = 'off';
     public dataX;
-    public dataQIsBy;
-    public dataQIsBz;
+    public dataQIsB_RSSI;
+    public dataQIsB_RSSIK;
+    public dataQIsB_AccK;
 
     public statePos = 'off';
     public posBeacons;
     public posGPS;
     public dataPosBeacons;
-    public dataPosGPS;
+    public dataPosGPS;    
+    public failure;
 
 
     constructor(private geolocation: Geolocation,
@@ -42,7 +55,12 @@ export class BeaconPage {
     ionViewDidLoad() {
         console.log('ionViewDidLoad IBeacon');    
         this.beaconService.setupBeacons();
-        this.beaconService.startRangingBeacons();
+        if (this.checkState == 'all') {
+            this.beaconService.startRangingBeacons();
+        }
+        else {
+            this.beaconService.startRangingBeacon();
+        }
         //this.beaconService.startRangingBeacons(); 
         //setInterval(() => { this.checkBeacons(); }, 3000);
         setInterval(() => { 
@@ -56,7 +74,7 @@ export class BeaconPage {
             let posBeacons = this.getCurrentPositionBeacons();
             this.posBeacons = posBeacons.lat + ", " + posBeacons.lng;
             this.getCurrentPositionGPS();
-        }, 1000); 
+        }, 950); 
         setInterval(() => { 
             console.log("Beacons: " + this.posBeacons);
             console.log("GPS: " + this.posGPS);
@@ -64,8 +82,14 @@ export class BeaconPage {
     }    
 
     public checkBeacons() {
-        try {
+        try {            
             this.beacons = this.beaconService.getBeacons();
+            for (let x in this.beacons) {
+                if (this.beacons[x].identifier == "QIsB") {
+                    this.QIsB = this.beacons[x]; 
+                    break;
+                }
+            }
         } catch(e) {
             console.log("BEACON ERROR: " + e);
         }
@@ -88,39 +112,55 @@ export class BeaconPage {
         if (this.stateQIsB == 'off') {
             this.stateQIsB = 'on';
             this.index = 0;
+            this.failureIndex = 0;
             this.dataX = "x: [";
-            this.dataQIsBy = "y-R: [";
-            this.dataQIsBz = "z-RK: ["
+            this.dataQIsB_RSSI = "RSSI: [";
+            this.dataQIsB_RSSIK = "RSSI-K: [";
+            this.dataQIsB_AccK = "Acc-K: [";            
+            this.failure = "No signal: ";
+            this.beaconService.resetRSSIS();
         } else {
             this.stateQIsB = 'off';
-            console.log("THIS.STATEQIsB = " + this.stateQIsB);
-            let data = this.dataX + "] \n" + this.dataQIsBy + "] \n" + this.dataQIsBz + "]";
+            let data = this.dataX + "] \n" + this.dataQIsB_RSSI + "] \n" + this.dataQIsB_RSSIK + "] \n"
+                        + this.dataQIsB_AccK;
             console.log(data); 
             this.index = 0;
+            this.failureIndex = 0;
+            console.log("Data saved: " + this.inputText + "\n ##########################");
             this.fileService.createFile(this.inputText, data);
         }            
     }
 
-    public logBeaconDataQIsB() {        
-        this.dataX += this.index + ", "
-        // let outOfRange = 0;
-        for (let x in this.beacons) {
-            if (this.beacons[x].identifier == "QIsB") {
-                this.dataQIsBy += this.beacons[x].rssi + ", ";
-                // this.dataQIsBy += this.beacons[x].accCK + ", ";
-                this.dataQIsBz += this.beacons[x].rssiK + ", ";
-                // outOfRange = 1;
-                break;
+    public logBeaconDataQIsB() {    
+        try {    
+            this.dataX += this.index + ", ";
+            // let outOfRange = 0;
+            this.dataQIsB_RSSI += this.QIsB.rssi + ", ";
+            this.dataQIsB_RSSIK += this.QIsB.rssiK + ", ";
+            this.dataQIsB_AccK += this.QIsB.accCK + ", ";
+        } catch(e) {
+            console.log("Out of range: " + e);
+            this.dataX += this.index + ", ";
+            this.QIsB = {
+                identifier: 0,
+                tx: 0,
+                rssi: 0,
+                rssiK: 0,
+                acc: 0,
+                accCK: 0,
+                coordinates: ""
             }
-        }   
-        // if (outOfRange == 0) this.dataQIsBy += 0 + ", ";
-        console.log("Index X: " + this.dataX);
-        console.log("dataQIsBy: " + this.dataQIsBy);        
-        console.log("dataQIsBz: " + this.dataQIsBz);           
+            this.dataX += this.index + ", ";
+            this.dataQIsB_RSSI += 0 + ", ";
+            this.dataQIsB_RSSIK += 0 + ", ";
+            this.dataQIsB_AccK += 0 + ", ";
+            if (this.stateQIsB == 'on') {
+                this.failure += this.index + ", ";   
+                this.failureIndex++;
+            }
+        }
         this.index++;
     }
-
-
 
     public getCurrentPositionBeacons() {
         try {
@@ -136,11 +176,12 @@ export class BeaconPage {
 
     public getCurrentPositionGPS() {
         let lat, lng;
-        this.geolocation.getCurrentPosition({enableHighAccuracy:true, timeout: 1000}).then((position) => {
+        this.geolocation.getCurrentPosition({enableHighAccuracy:true, timeout: 3000}).then((position) => {
             lat = position.coords.latitude;
             lng = position.coords.longitude;
             this.posGPS = lat + ", " + lng;
-        }, (error) => {
+        }, (e) => {
+            // console.error(e);
             lat = 0;
             lng = 0;
             this.posGPS = lat + ", " + lng;
@@ -151,6 +192,7 @@ export class BeaconPage {
         if (this.statePos == 'off') {
             this.statePos = 'on';
             this.index = 0;
+            this.failureIndex = 0;
             this.dataX = "x: [";
             this.dataPosBeacons = "y-B: [";
             this.dataPosGPS = "y-G: [";

@@ -4,7 +4,6 @@
       <ion-icon name="menu"></ion-icon>
     </button>
     <ion-title>Test</ion-title>
-    <button ion-button (click)="createFile()">File</button>
   </ion-navbar>
 </ion-header>
 
@@ -12,7 +11,7 @@
   <ion-list>   
     <ion-item *ngFor="let file of files">      
       <ion-icon name="book"></ion-icon><button (click)="readFile($event, file)">{{file.name}}</button>
-      <button (click)="deleteFile($event, file)"><ion-icon name="trash"></ion-icon></button>
+      <button ion-button (click)="deleteFile($event, file)"><ion-icon name="trash"></ion-icon></button>
     </ion-item>
     <!--<button ion-item *ngFor="let file of files" (click)="fileRead($event, file)"><ion-icon name="book"></ion-icon>{{file.name}}</button>-->
   </ion-list>

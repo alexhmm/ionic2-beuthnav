@@ -336,6 +336,7 @@ export class MapService {
      * @param lat 
      * @param lng 
      */
+    // https://maps.googleapis.com/maps/api/elevation/json?locations=52.5453461718,13.3554072734&key=AIzaSyCtPKTmtL83e8StfuawkBhXH74kgLcbNF0
     public getElevation(lat, lng) {
         return Observable.create(observer => {
             let url = 'https://maps.googleapis.com/maps/api/elevation/json?locations=' + lat + ',' + lng + '&key=' + this.googleKey;

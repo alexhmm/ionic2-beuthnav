@@ -62,6 +62,7 @@ export class HomePage {
     public levelViewState = 'in';
     public mapViewState = 'on';
     public testState = 'off';
+    public positionState = 'off';
 
     // room data
     public roomsListView: any[] = [];
@@ -112,7 +113,6 @@ export class HomePage {
     // location variables
     public previousBuilding;
     public previousLevel;
-    //public currentPosition = null;
     public currentPosition = null;
     public currentBuilding = "";    
     public currentLevel = 0;
@@ -292,7 +292,7 @@ export class HomePage {
         this.checkLog += "Position-"   
         this.displayCurrentPosition();     
         if (this.currentPosition != null) this.getCurrentBuilding();
-        /* if (this.beacons.length > 2) {
+        if (this.beacons.length > 2) {
             this.currentPosition = this.getCurrentPositionBeacons(); 
             this.displayCurrentPosition();
             if (this.currentPosition != null) this.getCurrentBuilding();    
@@ -305,7 +305,7 @@ export class HomePage {
                 if (this.currentPosition != null) this.getCurrentBuilding();
                 console.log(this.checkLog);
             });            
-        } */
+        }
     }
     
     /**

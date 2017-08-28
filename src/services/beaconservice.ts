@@ -3,7 +3,7 @@ import { IBeacon } from '@ionic-native/ibeacon';
 import { KalmanService } from './kalmanservice';
 import { Observable } from 'rxjs/Observable';
 
-import * as beacondata from '../assets/data/beacondataL.json';
+import * as beacondata from '../assets/data/beacondataD133.json';
 
 @Injectable()
 export class BeaconService {  
@@ -41,7 +41,8 @@ export class BeaconService {
         .subscribe(
             data => {
                 let region = data.region;
-                let beacon = data.beacons;                  
+                let beacon = data.beacons; 
+                // if (region.identifier == "QIsB") for (let x in beacon) console.log(beacon[x]);                 
                 // Checks for current Beacons Array
                 if (typeof beacon[0] !== 'undefined') {
                     try {
@@ -55,46 +56,40 @@ export class BeaconService {
                     catch(e) { console.error("Error: " + e); }
 
                     // own accuracy calc -- still testing
-                    let accuracyCalc = (Math.pow(10, (beacon[0].tx - beacon[0].rssi) / (10 * 3.5))).toFixed(2);
+                    // let accuracyCalc = (Math.pow(10, (beacon[0].tx - beacon[0].rssi) / (10 * 3.5))).toFixed(2);
 
-                    // kalman filtering
-                    if (this.rssis.length < 10) {
-                        this.rssis.push(beacon[0].rssi);
-                    } else {
-                        this.rssis.splice(0, 1);
-                        this.rssis.push(beacon[0].rssi);
+                    for (let x in this.rssis) {
+                        let rssiKalman = 0;
+                        let accuracyKalman = "";
+                        if (this.rssis[x].id == region.identifier) {
+                            if (this.rssis[x].rssis.length < 20) {
+                                this.rssis[x].rssis.push(beacon[0].rssi);
+                            }
+                            else {
+                                this.rssis[x].rssis.splice(0, 1);
+                                this.rssis[x].rssis.push(beacon[0].rssi);
+                            }
+                            if (this.rssis[x].rssis.length > 0) {
+                                let kalman = new KalmanService();
+                                let dataConstantKalman = this.rssis[x].rssis.map(function(v) {
+                                    return kalman.filter(v, 2, 10, 1, 0, 1);
+                                });
+                                let index = dataConstantKalman.length - 1;
+                                //console.log("Constant Kalman[length]: " + dataConstantKalman.length + ", " + dataConstantKalman[index]);
+                                rssiKalman = dataConstantKalman[index].toFixed(2);
+                                accuracyKalman = (Math.pow(10, (beacon[0].tx - rssiKalman) / (10 * 2.5))).toFixed(2);
+                            }   
+                            
+                            this.beacons.push({identifier: region.identifier,
+                                tx: beacon[0].tx,
+                                rssi: beacon[0].rssi,
+                                rssiK: rssiKalman,
+                                acc: beacon[0].accuracy,
+                                accCK: accuracyKalman,
+                                coordinates: this.beacondataStr[indexData].coordinates});
+                            break;
+                        }
                     }
-
-                    if (this.rssis.length > 0) {
-                        let kalman = new KalmanService();
-                        let dataConstantKalman = this.rssis.map(function(v) {
-                            return kalman.filter(v, 2, 10, 1, 0, 1);
-                        });
-                        let index = dataConstantKalman.length - 1;
-                        //console.log("Constant Kalman[length]: " + dataConstantKalman.length + ", " + dataConstantKalman[index]);
-                        this.currentRSSI = dataConstantKalman[index].toFixed(2);
-                    }
-
-                    let accuracyCalcKalman = (Math.pow(10, (beacon[0].tx - this.currentRSSI) / (10 * 3.5))).toFixed(2);
-
-                    /*console.log("Id: " + region.identifier
-                     + ", Acc: " + beacon[0].accuracy
-                     + ", AccuC: " + accuracyCalc
-                     + ", AccuCK: " + accuracyCalcKalman
-                     + ", TX: " + beacon[0].tx
-                     + ", RSSI: " + beacon[0].rssi
-                     + ", RSSI-K: " + this.currentRSSI
-                     + ", Prox: " + beacon[0].proximity);    */
-                    this.beacons.push({identifier: region.identifier,
-                         tx: beacon[0].tx,
-                         rssi: beacon[0].rssi,
-                         rssiK: this.currentRSSI,
-                         acc: beacon[0].accuracy,
-                         accC: accuracyCalc,
-                         accCK: accuracyCalcKalman,
-                         coordinates: this.beacondataStr[indexData].coordinates});
-                } else {
-                    //console.log("Region Identifier: " + region.identifier + ", No signal received.")
                 }
             },
             error => console.error()
@@ -105,6 +100,7 @@ export class BeaconService {
 
     startRangingBeacons() {
         console.log("Started ranging beacons.");
+        //this.rssis = [];
         for (let i = 0; i < beacondata.beacons.length; i++) {
             let beaconRegion = this.iBeacon.BeaconRegion(
               beacondata.beacons[i].identifier,
@@ -116,26 +112,30 @@ export class BeaconService {
                 () => console.log('Native layer recieved the request to monitoring: ' + beacondata.beacons[i].identifier),
                 error => console.error('Native layer failed to begin monitoring: ', error)
             );
-        }
+            this.rssis.push({id: beacondata.beacons[i].identifier, rssis: []});
+            console.log("Setup beacon: " + beacondata.beacons[i].identifier);
+        }    
     }
 
     startRangingBeacon() {
         console.log("Started ranging single beacon.");
         let beaconRegion = this.iBeacon.BeaconRegion(
-              beacondata.beacons[0].identifier,
-              beacondata.beacons[0].uuid,
-              beacondata.beacons[0].major,
-              beacondata.beacons[0].minor);
+              beacondata.beacons[1].identifier,
+              beacondata.beacons[1].uuid,
+              beacondata.beacons[1].major,
+              beacondata.beacons[1].minor);
 
         this.iBeacon.startRangingBeaconsInRegion(beaconRegion)
         .then(
                 () => console.log('Native layer recieved the request to monitoring'),
                 error => console.error('Native layer failed to begin monitoring: ', error)
         );
+        
     }
 
     stopRangingBeacons() {
         console.log("Stopped ranging beacons.");
+        
         for (let i = 0; i < beacondata.beacons.length; i++) {
             let beaconRegion = this.iBeacon.BeaconRegion(
               beacondata.beacons[i].identifier,
@@ -147,22 +147,12 @@ export class BeaconService {
                 () => console.log('Native layer recieved the request to monitoring'),
                 error => console.error('Native layer failed to begin monitoring: ', error)
             );
+            
         }
     }
 
     getBeacons() {
         return this.beacons;
-    }
-
-    getBeaconsO() {
-        console.log(this.beacons);
-        return Observable.create(observer => {
-            observer.next(this.beacons);
-            observer.complete();
-        })
-    }
-    public getBeaconsC() {
-        console.log("C");
     }
 
     calcKalmanTest() {
@@ -183,6 +173,12 @@ export class BeaconService {
         });
         for (let x in dataConstantKalman) {
             console.log("Data:" + splitted[x] + ", " + dataConstantKalman[x]);
+        }
+    }
+
+    public resetRSSIS() {
+        for (let x in this.rssis) {
+            this.rssis[x].rssis = [];
         }
     }
 }

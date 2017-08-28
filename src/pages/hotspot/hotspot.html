@@ -4,19 +4,17 @@
       <ion-icon name="menu" class="menu"></ion-icon>
     </button>
     <ion-title>Wifi</ion-title>
-    <button ion-button (click)="getScanResults()">
-      Results
-    </button>
   </ion-navbar>
 </ion-header>
 
 <ion-content>
   <ion-item><ion-input type="text" value="Messung" [(ngModel)]="inputText"></ion-input></ion-item>  
-  <p><button ion-button (click)="toggleSingle()">QIsB</button>Index: {{ index }} / Single: {{ stateSingle }}
+  <p><button ion-button (click)="toggleSingle()">WiFi</button>Single: {{ stateSingle }} / Index: {{ index }} / Failure: {{ failureIndex}}
   <ion-list>
       <ion-item *ngFor="let network of networks">
         <b>{{ network.SSID }}</b> {{ network.BSSID }}<br>
-        <b>RSSI:</b> {{ network.level }}, <b>RSSI-K:</b> {{ network.rssiK }}, <b>AccK:</b> {{ network.accK}}
+        <b>RSSI:</b> {{ network.level }}, <b>RSSI-K:</b> {{ network.rssiK }}, <b>AccK:</b> {{ network.accK}}<br>
+        <b>Frequenz:</b> {{ network.frequency }}, <b>Protokoll:</b> {{ network.capabilities }}
         <!--<b>Protokoll:</b> {{ network.frequency }}, {{ network.capabilities }}-->
       </ion-item>
     </ion-list>
