@@ -171,7 +171,10 @@ export class BeaconPage {
             }    
             let triPoint: any = this.routingService.trilaterate(this.tricons);
             return {lat: triPoint.lat, lng: triPoint.lng};        
-        } catch(e) { console.log("ERROR: " + e)};        
+        } catch(e) { 
+            console.error("BEACON POSITION ERROR:");
+            console.log(e);
+        };        
     }
 
     public getCurrentPositionGPS() {
@@ -181,6 +184,8 @@ export class BeaconPage {
             lng = position.coords.longitude;
             this.posGPS = lat + ", " + lng;
         }, (e) => {
+            console.error("GPS POSITION ERROR");
+            console.log(e);
             // console.error(e);
             lat = 0;
             lng = 0;

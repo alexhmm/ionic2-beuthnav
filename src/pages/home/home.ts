@@ -62,7 +62,7 @@ export class HomePage {
     public levelViewState = 'in';
     public mapViewState = 'on';
     public testState = 'off';
-    public positionState = 'off';
+    public positionState = 'on';
 
     // room data
     public roomsListView: any[] = [];
@@ -73,7 +73,7 @@ export class HomePage {
     // map elements
     public marker;
     public polygon;
-    public circle; 
+    public positionMarker; 
 
     public polygons: any[] = [];
     public routingPolygons: any[] = [];
@@ -140,7 +140,7 @@ export class HomePage {
 
     ionViewDidLoad() {
         this.platform.ready().then(() => {   
-            this.currentPosition = {lng: 13.35620, lat: 52.54542};
+            this.currentPosition = {lng: 13.35536653536712, lat: 52.54527924438224};
 
             this.beaconService.setupBeacons();
             this.beaconService.startRangingBeacons();
@@ -192,7 +192,7 @@ export class HomePage {
 
         // Zoom changed listener
         google.maps.event.addListener(this.map, 'zoom_changed', () => {
-            if (this.circle != null) this.circle.setRadius(this.mapService.getCircleRadius(this.getMapZoom()));      
+            if (this.positionMarker != null) this.positionMarker.setIcon(this.positionMarker.getIcon().url, this.mapService.getCustomMarkerSize(this.getMapZoom()));
             if (this.marker != null) this.marker.setIcon(this.mapService.getCustomMarkerIcon(this.marker.getIcon().url, this.mapService.getRouteMarkerSize(this.getMapZoom())));
             for (let x in this.roomMarkers) {                    
                 this.roomMarkers[x].setIcon(this.mapService.getCustomMarkerIcon(this.roomMarkers[x].getIcon().url, this.mapService.getCustomMarkerSize(this.getMapZoom())));
@@ -290,21 +290,23 @@ export class HomePage {
      */
     public getCurrentPosition() {        
         this.checkLog += "Position-"   
-        this.displayCurrentPosition();     
+        this.displayCurrentPosition();    
         if (this.currentPosition != null) this.getCurrentBuilding();
-        if (this.beacons.length > 2) {
-            this.currentPosition = this.getCurrentPositionBeacons(); 
-            this.displayCurrentPosition();
-            if (this.currentPosition != null) this.getCurrentBuilding();    
-            console.log(this.checkLog);              
-        } else {
-            this.mapService.getCurrentPositionGPS().subscribe(data => {
-                this.currentPosition = data;
-                this.checkLog += "GPS: " + this.currentPosition.lat + ", " + this.currentPosition.lng;
+        if (this.positionState == 'on') {
+            if (this.beacons.length > 2) {
+                this.currentPosition = this.getCurrentPositionBeacons(); 
                 this.displayCurrentPosition();
-                if (this.currentPosition != null) this.getCurrentBuilding();
-                console.log(this.checkLog);
-            });            
+                if (this.currentPosition != null) this.getCurrentBuilding();    
+                console.log(this.checkLog);              
+            } else {
+                this.mapService.getCurrentPositionGPS().subscribe(data => {
+                    this.currentPosition = data;
+                    this.checkLog += "GPS: " + this.currentPosition.lat + ", " + this.currentPosition.lng;
+                    this.displayCurrentPosition();
+                    if (this.currentPosition != null) this.getCurrentBuilding();
+                    console.log(this.checkLog);
+                });            
+            }
         }
     }
     
@@ -314,15 +316,9 @@ export class HomePage {
     public displayCurrentPosition() {
         if (this.map != null) {
             let center = new google.maps.LatLng(this.currentPosition.lat, this.currentPosition.lng);
-            let circle;
-            if (this.circle != null) {
-                circle = this.circle;
-                circle.setMap(this.map);
-                this.circle.setMap(null);
-            }  
-            this.circle = this.mapService.createCircle(this.currentPosition, (this.mapService.getCircleRadius(this.getMapZoom()).toFixed(4)));
-            this.circle.setMap(this.map);
-            if (circle != null) circle.setMap(null);
+            if (this.positionMarker != null) this.positionMarker.setMap(null);  
+            this.positionMarker = this.mapService.createCustomMarker(this.currentPosition, "./assets/icon/position.png", 16);            
+            this.positionMarker.setMap(this.map);
             // if viewStates not on
             //this.map.panTo(center); ####### ENABLE IN SCHOOL // BUGGED?
         }
@@ -1063,5 +1059,9 @@ export class HomePage {
         this.routingPathsLevel = [];
         this.routingPathsLevelPosition = [];
         this.routingPathsRemain = [];
+    }
+
+    public togglePosition() {
+        this.positionState = (this.positionState == 'off') ? 'on' : 'off';
     }
 }

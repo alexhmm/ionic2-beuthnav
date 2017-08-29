@@ -45,7 +45,15 @@ $searchbar-ios-input-search-icon-color:	rgba(255, 255, 255, 1);
 $searchbar-ios-input-placeholder-color: rgba(255, 255, 255, .5);
 $searchbar-ios-input-text-color: #ffffff;
 $searchbar-ios-input-background-color: rgba(255, 255, 255, .05);
+$searchbar-ios-input-clear-icon-color: white;
 $searchbar-ios-background-color: $beuth-color; //	rgba(0, 152, 161, 1);
+$searchbar-ios-input-box-shadow:  0 0px 0px 0 rgba(0, 0, 0, .0), 0 0px 0px -0px rgba(0, 0, 0, .0), 0 0px 0px 0 rgba(0, 0, 0, .0) !default;
+
+$button-ios-box-shadow: 0 0px 0px 0 rgba(0, 0, 0, .0), 0 0px 0px -0px rgba(0, 0, 0, .0), 0 0px 0px 0 rgba(0, 0, 0, .0) !default;
+$button-ios-transition-duration: 0ms;
+$button-ios-background-color: $beuth-color;
+$button-ios-background-color-hover: $beuth-color;
+$button-ios-background-color-activated: $beuth-color;
 
 // App Material Design Variables
 // --------------------------------------------------

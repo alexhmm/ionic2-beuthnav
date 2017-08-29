@@ -14,11 +14,11 @@ enum Roomcolor {
     lab = <any>"#0098A1",
     lib = <any>"#BEE2E2",
     lecture = <any>"#39B7BC",
-    lift = <any>"#FFFFFF",
+    lift = <any>"#BEE2E2",
     mensa = <any>"#BEE2E2",
     office = <any>"#BBBBBB",
     service = <any>"#BEE2E2",
-    staircase = <any>"#FFFFFF",
+    staircase = <any>"#BEE2E2",
     wc = <any>"#BEE2E2",
     wcPrivate = <any>"#BBBBBB"
 }
@@ -158,11 +158,21 @@ export class MapService {
 
     // ######## MARKERS
 
+    public createPositionMarker(position: any, url: any, size: any) {        
+        let icon = this.getCustomMarkerIcon(url, size);
+        let customMarker = new google.maps.Marker({
+            position: position,
+            zIndex: 1100,
+            icon: icon
+        });
+        return customMarker;
+    }
+
     public createCustomMarker(position: any, url: any, size: any) {        
         let icon = this.getCustomMarkerIcon(url, size);
         let customMarker = new google.maps.Marker({
             position: position,
-            zIndex: 900,
+            zIndex: 800,
             icon: icon
         });
         return customMarker;
@@ -251,7 +261,8 @@ export class MapService {
           geodesic: true,
           strokeColor: '#EE342E',
           strokeOpacity: 1.0,
-          strokeWeight: 3
+          strokeWeight: 3,
+          zIndex: 900
         })
         return polyline;
     }
@@ -266,7 +277,8 @@ export class MapService {
           geodesic: true,
           strokeColor: '#EE342E',
           strokeOpacity: 0.50,
-          strokeWeight: 3
+          strokeWeight: 3,
+          zIndex: 850
         })
         return polyline;
     }
