@@ -8,7 +8,7 @@ import * as mapdata from '../assets/data/mapdata.json';
 declare let google;
 
 enum Roomcolor {
-    blank = <any>"#FFFFFF",
+    blank = <any>"#777777",
     cafe = <any>"#BEE2E2",
     floor = <any>"#FFFFFF",
     lab = <any>"#0098A1",

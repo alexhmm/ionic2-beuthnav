@@ -320,7 +320,7 @@ export class HomePage {
             this.positionMarker = this.mapService.createCustomMarker(this.currentPosition, "./assets/icon/position.png", 16);            
             this.positionMarker.setMap(this.map);
             // if viewStates not on
-            //this.map.panTo(center); ####### ENABLE IN SCHOOL // BUGGED?
+            //this.map.panTo(center); // ####### ENABLE IN SCHOOL // BUGGED?
         }
     }
 
@@ -446,7 +446,7 @@ export class HomePage {
             this.marker = this.mapService.createRouteMarker(position, "./assets/icon/marker.png", 48);
             this.marker.setMap(this.map);
 
-            // this.map.panTo(position); // BUG: Uncaught RangeError: Maximum call stack size exceeded
+            this.map.panTo(position); // BUG: Uncaught RangeError: Maximum call stack size exceeded
             
             if (this.listViewState == 'in') this.toggleListView();
             if (this.infoViewState == 'out') this.toggleInfoView();

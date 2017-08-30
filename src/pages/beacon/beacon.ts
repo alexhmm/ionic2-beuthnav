@@ -73,7 +73,7 @@ export class BeaconPage {
             }
             let posBeacons = this.getCurrentPositionBeacons();
             this.posBeacons = posBeacons.lat + ", " + posBeacons.lng;
-            this.getCurrentPositionGPS();
+            //this.getCurrentPositionGPS();
         }, 950); 
         setInterval(() => { 
             console.log("Beacons: " + this.posBeacons);
@@ -208,6 +208,7 @@ export class BeaconPage {
             console.log(data); 
             this.index = 0;
             this.fileService.createFile(this.inputText, data);
+            console.log("Dava saved: " + this.inputText + "\n ###########################");
         }         
     }
 
@@ -215,9 +216,9 @@ export class BeaconPage {
         this.dataX += this.index + ", "
         this.dataPosBeacons += this.posBeacons + "; "
         this.dataPosGPS += this.posGPS + "; "
-        console.log("dataX: " + this.dataX);
+        /* console.log("dataX: " + this.dataX);
         console.log("dataPosBeacons: " + this.dataPosBeacons);
-        console.log("dataPosGPS: " + this.dataPosGPS);
+        console.log("dataPosGPS: " + this.dataPosGPS); */
         this.index++;
     }
 }

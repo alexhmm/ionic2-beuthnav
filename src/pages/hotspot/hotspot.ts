@@ -15,8 +15,9 @@ declare let WifiWizard: any;
 export class HotSpotPage {  
 
     public networks: any[] = [];
-    public checkNetwork = 'single';
-    public tx = -31;
+    public networksRaw: any[] = [];
+    public checkNetwork = 'all';
+    public tx = -53;
     public rssis: any[] = [];
     
     public inputText;
@@ -39,7 +40,7 @@ export class HotSpotPage {
             this.startScan();
             setInterval(() => { 
                  this.startScan();
-            }, 1000); 
+            }, 5000); 
         });
     }
 
@@ -59,18 +60,20 @@ export class HotSpotPage {
         }
 
         let listHandler = (a: any) => {
+            this.networksRaw = [];
             this.networks = [];
             if (this.checkNetwork == 'all') {
                 for (let x = 0; x < a.length; x++) {                    
                     //if (x > 4) break;
-                    console.log(a[x].SSID + ", " + a[x].BSSID + ", " + a[x].level);  
-                    this.networks.push({
+                    // console.log(a[x].SSID + ", " + a[x].BSSID + ", " + a[x].level);  
+                    this.networksRaw.push({
                         SSID: a[x].SSID,
                         BSSID: a[x].BSSID,
                         level: a[x].level,
                         frequency: a[x].frequency,
                         capabilities: a[x].capabilities});                
-                }  
+                } 
+                this.networks = this.sortNetworks();
             } else {
                 this.networks = [];
                 for (let x in a) {                    
@@ -156,5 +159,10 @@ export class HotSpotPage {
         console.log("dataSingleRSSI: " + this.dataSingleR);
         console.log("dataSingleRSSI-K: " + this.dataSingleRK); */
         this.index++;
+    }
+
+    public sortNetworks() {
+        //return this.networksRaw.sort(function(a,b) {return (a.level > b.level) ? 1 : ((b.level > a.level) ? -1 : 0);} ); 
+        return this.networksRaw.sort(function(a,b) {return (a.level < b.level) ? 1 : ((b.level < a.level) ? -1 : 0);} ); 
     }
 }
