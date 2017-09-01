@@ -1,8 +1,8 @@
 <?xml version='1.0' encoding='utf-8'?>
 <widget id="com.ionicframework.ionic2beuthnav270832" version="0.3.7" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
-    <name>ionic2-beuthnav</name>
-    <description>An awesome Ionic/Cordova app.</description>
-    <author email="hi@ionicframework" href="http://ionicframework.com/">Ionic Framework Team</author>
+    <name>BeuthNav</name>
+    <description>Innenraum-Navigationssystem für die Beuth Hochschule für Technik Berlin.</description>
+    <author email="s53854@beuth-hochschule.de" href="http://www.beuth-hochschule.de/">Alexander Pieschel</author>
     <content src="index.html" />
     <access origin="*" />
     <allow-navigation href="http://ionic.local/*" />

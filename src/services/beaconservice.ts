@@ -77,7 +77,7 @@ export class BeaconService {
                                 let index = dataConstantKalman.length - 1;
                                 //console.log("Constant Kalman[length]: " + dataConstantKalman.length + ", " + dataConstantKalman[index]);
                                 rssiKalman = dataConstantKalman[index].toFixed(2);
-                                accuracyKalman = (Math.pow(10, (beacon[0].tx - rssiKalman) / (10 * 2.5))).toFixed(2);
+                                accuracyKalman = (Math.pow(10, (beacon[0].tx - rssiKalman) / (10 * 3))).toFixed(2);
                             }   
                             
                             this.beacons.push({identifier: region.identifier,

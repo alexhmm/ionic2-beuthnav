@@ -5,6 +5,7 @@ import { Observable } from 'rxjs/Observable';
 import { FileService } from '../../services/fileservice';
 import { KalmanService } from '../../services/kalmanservice';
 
+declare let google;
 
 declare let WifiWizard: any;
 
@@ -16,8 +17,8 @@ export class HotSpotPage {
 
     public networks: any[] = [];
     public networksRaw: any[] = [];
-    public checkNetwork = 'all';
-    public tx = -53;
+    public checkNetwork = 'single';
+    public tx = -43;
     public rssis: any[] = [];
     
     public inputText;
@@ -40,7 +41,7 @@ export class HotSpotPage {
             this.startScan();
             setInterval(() => { 
                  this.startScan();
-            }, 5000); 
+            }, 1000); 
         });
     }
 
@@ -77,8 +78,8 @@ export class HotSpotPage {
             } else {
                 this.networks = [];
                 for (let x in a) {                    
-                    // if (a[x].BSSID == "34:81:c4:3e:b0:8e") { // HOME
-                    if (a[x].BSSID == "18:d6:c7:86:90:d6") {
+                    if (a[x].BSSID == "34:81:c4:3e:b0:8e") { // HOME
+                    // if (a[x].BSSID == "18:d6:c7:86:90:d6") { // SCHOOL
                         this.networks.push({
                             SSID: a[x].SSID,
                             BSSID: a[x].BSSID,
@@ -101,12 +102,12 @@ export class HotSpotPage {
                     if (this.rssis.length > 0) {
                         let kalman = new KalmanService();
                         let dataConstantKalman = this.rssis.map(function(v) {
-                            return kalman.filter(v, 2, 10, 1, 0, 1);
+                            return kalman.filter(v, 2, 5, 1, 0, 1);
                         });
                         let index = dataConstantKalman.length - 1;
                         //console.log("Constant Kalman[length]: " + dataConstantKalman.length + ", " + dataConstantKalman[index]);
                         this.networks[0].rssiK = dataConstantKalman[index].toFixed(2);
-                        this.networks[0].accK = (Math.pow(10, (this.tx - this.networks[0].rssiK) / (10 * 2.5))).toFixed(2);
+                        this.networks[0].accK = (Math.pow(10, (this.tx - this.networks[0].rssiK) / (10 * 2))).toFixed(2);
                     }
                 }  catch(e) {
                     if (this.stateSingle == 'on') {

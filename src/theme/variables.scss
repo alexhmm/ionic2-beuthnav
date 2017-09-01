@@ -55,6 +55,16 @@ $button-ios-background-color: $beuth-color;
 $button-ios-background-color-hover: $beuth-color;
 $button-ios-background-color-activated: $beuth-color;
 
+$loading-ios-text-color: white;
+$loading-ios-background: $beuth-color;
+$loading-ios-box-shadow: 0 0px 0px rgba(0, 0, 0, .0);
+$loading-ios-spinner-color: white;
+
+$alert-ios-message-text-color: white;
+$alert-ios-button-text-color: white;
+$alert-ios-background-color: $beuth-color;
+$alert-ios-box-shadow: 0 0px 0px rgba(0, 0, 0, .0);
+
 // App Material Design Variables
 // --------------------------------------------------
 // Material Design only Sass variables can go here
@@ -73,6 +83,15 @@ $button-md-background-color: $beuth-color;
 $button-md-background-color-hover: $beuth-color;
 $button-md-background-color-activated: $beuth-color;
 
+$loading-md-text-color: white;
+$loading-md-background: $beuth-color;
+$loading-md-box-shadow: 0 0px 0px rgba(0, 0, 0, .0);
+$loading-md-spinner-color: white;
+
+$alert-md-message-text-color: white;
+$alert-md-button-text-color: white;
+$alert-md-background-color: $beuth-color;
+$alert-md-box-shadow: 0 0px 0px rgba(0, 0, 0, .0);
 
 // App Windows Variables
 // --------------------------------------------------

@@ -19,6 +19,7 @@
 <ion-content padding>
   <ion-item><ion-input type="text" value="Messung" [(ngModel)]="inputText"></ion-input></ion-item>
   <button ion-button (click)="toggleQIsB()">QIsB</button><button ion-button (click)="togglePosition()">Position</button>
+  <button ion-button (click)="calcKalman()">Kalman</button>
   <p>Index: {{ index }} / Failure: {{ failureIndex }} / QIsB: {{ stateQIsB }} / Position: {{ statePos }}</p> 
   <p><b>Beacon #{{QIsB.identifier}}</b>: TX: {{QIsB.tx}}, R: {{QIsB.rssi}}, R-K: {{QIsB.rssiK}}</p>
   <p> Acc: {{QIsB.acc}}, AccCK: {{QIsB.accCK}}</p>  

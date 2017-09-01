@@ -63,7 +63,7 @@ export class RoutingService {
      * @param pointB 
      */
     public computeDistance(pointA: any, pointB: any) {
-        return google.maps.geometry.spherical.computeDistanceBetween (pointA, pointB);
+        return google.maps.geometry.spherical.computeDistanceBetween(pointA, pointB);
     }
 
     /**
@@ -611,6 +611,23 @@ export class RoutingService {
     }
 
     /**
+     * https://stackoverflow.com/questions/27928/calculate-distance-between-two-latitude-longitude-points-haversine-formula
+     * @param pointA 
+     * @param pointB 
+     */
+    public calcDistance(pointA: any, pointB: any) {
+        let R = 6371; // Radius of the earth in km
+        let dLat = this.getRadians(pointB.lat - pointA.lat);  // deg2rad below
+        let dLon = this.getRadians(pointB.lng - pointA.lat); 
+        let a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+              + Math.cos(this.getRadians(pointA.lat)) * Math.cos(this.getRadians(pointB.lat))
+              * Math.sin(dLon / 2) * Math.sin(dLon / 2); 
+        let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+        let d = (R * c) / 1000; // Distance in m
+        return d;
+    }
+
+    /**
      * 
      * @param diff 
      * @param index 
@@ -642,9 +659,7 @@ export class RoutingService {
         let positionNew = {lat: position.lat + (degrees * cosAz * ratio), lng: position.lng + (degrees * (sinAz / cosLat) * ratio)};
 
         return positionNew;
-    }
-
-    
+    }    
 
     getRadians(degrees) {
         return degrees * (Math.PI / 180);
@@ -862,13 +877,21 @@ export class RoutingService {
         let distances: any[] = [];
         for (let i = 0; i < points.length; i++) {  
             let connector = new google.maps.LatLng(points[i].lat, points[i].lng);
+            let distance;
+            try {
+                distance = this.computeDistance(connector, point);      
+            } catch(e) {
+                console.log(e);
+                let pointA = {lat: point.lat(), lng: point.lng()};
+                distance = this.calcDistance(pointA, points[i]);
+            }
             distances.push({shapeid: points[i].shapeid,
                             name: points[i].name,
                             lat: points[i].lat,
                             lng: points[i].lng,
                             routing: points[i].routing,                            
                             // calculate distance between starting point and connection points of startRoutingPolygon
-                            distance: this.computeDistance(connector, point)});            
+                            distance: distance});            
         }
         // sort distances
         return distances.sort(function(a,b) {return (a.distance > b.distance) ? 1 : ((b.distance > a.distance) ? -1 : 0);} ); 
