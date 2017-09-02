@@ -13,49 +13,22 @@ import { Injectable } from '@angular/core';
 @Injectable()
 export class KalmanService {
 
-    public R;
-    public Q;
-    public A;
-    public B;
-    public C;
+    public R; // process noise
+    public Q; // measurement noise
+    public A; // state vector
+    public B; // control vector
+    public C; // measurement vector
     public cov;
     public x;
 
-    /**
-    * Create 1-dimensional kalman filter
-    * @param  {Number} options.R Process noise
-    * @param  {Number} options.Q Measurement noise
-    * @param  {Number} options.A State vector
-    * @param  {Number} options.B Control vector
-    * @param  {Number} options.C Measurement vector
-    * @return {KalmanFilter}
-    */
-    /*constructor({R = 1, Q = 1, A = 1, B = 0, C = 1} = {}) {
-
-        console.log("R: " + R + ", Q: " + Q);
-
-        this.R = R; // noise power desirable
-        this.Q = Q; // noise power estimated
-
-        this.A = A;
-        this.C = C;
-        this.B = B;
-        this.cov = NaN;
-        this.x = NaN; // estimated signal without noise
-    }*/
     constructor() {
 
     }
 
     /**
-    * Filter a new value
-    * @param  {Number} z Measurement
-    * @param  {Number} u Control
-    * @return {Number}
-    */
-    //filter(z, u = 0) {
-    // R = 1, Q = 1, A = 1, B = 0, C = 1
-    filter(z, r, q, a, b, c, u = 0) {
+     * Filter a new value
+     */
+    public filter(z: any, r: number, q: number, a: number, b: number, c: number, u = 0) {
 
         this.R = r;
         this.Q = q;
@@ -88,7 +61,7 @@ export class KalmanService {
     * Return the last filtered measurement
     * @return {Number}
     */
-    lastMeasurement() {
+    public lastMeasurement() {
        return this.x;
     }
 
@@ -96,7 +69,7 @@ export class KalmanService {
     * Set measurement noise Q
     * @param {Number} noise
     */
-    setMeasurementNoise(noise) {
+    public setMeasurementNoise(noise: any) {
         this.Q = noise;
     }
 
@@ -104,7 +77,7 @@ export class KalmanService {
     * Set the process noise R
     * @param {Number} noise
     */
-    setProcessNoise(noise) {
+    public setProcessNoise(noise: any) {
         this.R = noise;
     }
 }

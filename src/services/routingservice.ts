@@ -29,12 +29,8 @@ export class RoutingService {
     public routingPolygon;
     public pHeadings: any[] = [];
     public pPaths: any[] = [];
-
-    // routing paths
     public rPathsC: any[] = [];
     public rPathsCC: any[] = [];
-
-    // intersect vertices
     public iPathsC: any[] = [];
     public iPathsCC: any[] = [];
 
@@ -108,12 +104,6 @@ export class RoutingService {
         } 
     }
 
-    /* let searchName = name.toUpperCase;
-    for (let x in routingPoints) {
-        let pointName = routingPoints[x].name.toUpperCase;
-        if (pointName.includes(searchName)) return {lat: parseFloat(routingPoints[x].lat), lng: parseFloat(routingPoints[x].lng)};
-    }  */
-
     /**
      * Returns nearby route point coordinates if equals type
      * @param routingPoints 
@@ -130,12 +120,22 @@ export class RoutingService {
         return {lat: routingPointsTypeDistances[0].lat, lng: routingPointsTypeDistances[0].lng, routing: routingPointsTypeDistances[0].routing};
     }
 
+    /**
+     * Returns route point from destination selection
+     * @param routingPoints 
+     * @param routeId 
+     */
     public getRoutePointByRouteId(routingPoints: any, routeId: String) {
         for (let x in routingPoints) {
             if (routingPoints[x].routing == routeId) return {lat: parseFloat(routingPoints[x].lat), lng: parseFloat(routingPoints[x].lng)};
         }
     }
 
+    /**
+     * Returns exit routing point
+     * @param routingPoints 
+     * @param positionLatLng 
+     */
     public getRoutePointByExit(routingPoints: any, positionLatLng) {
         let routingPointsExit: any[] = [];
         for (let x in routingPoints) {
@@ -346,10 +346,6 @@ export class RoutingService {
         let indexC = rStartIndex;
         let indexCC = rStartIndex;
 
-        // Push first triangle point into iPaths
-        /* this.iPathsC.push({lat: parseFloat(pPaths[indexC].lat), lng: parseFloat(pPaths[indexC].lng)});
-        this.iPathsCC.push({lat: parseFloat(pPaths[indexCC].lat), lng: parseFloat(pPaths[indexCC].lng)}); */
-
         // Iterate through all routingPolygon vertices (Funnel algorithm)
         let pLength = this.pPaths.length;
         for (let i = 1; i < pLength; i++) {  
@@ -512,7 +508,7 @@ export class RoutingService {
     }
 
     /**
-     * 
+     * Cleans final route from superfluous vertices
      * @param routePaths 
      */
     public cleanFinalRoute(routePaths: any) {
@@ -569,7 +565,6 @@ export class RoutingService {
         }
 
         // Exclude läuferpunkte from raw paths where
-        // ### TODO: replace elevation with calculation or average by building
         let pathsClean: any[] = [];
         for (let i = 0; i < pathsRawHeadings.length; i++) {
             if (i == 0) {
@@ -611,6 +606,7 @@ export class RoutingService {
     }
 
     /**
+     * Calculates distance between two laitude longitude points
      * https://stackoverflow.com/questions/27928/calculate-distance-between-two-latitude-longitude-points-haversine-formula
      * @param pointA 
      * @param pointB 
@@ -628,7 +624,7 @@ export class RoutingService {
     }
 
     /**
-     * 
+     * Checks bearing differenz between two vertices to remove Läuferpunkte from routing polygon
      * @param diff 
      * @param index 
      */
@@ -661,20 +657,20 @@ export class RoutingService {
         return positionNew;
     }    
 
-    getRadians(degrees) {
+    private getRadians(degrees: any) {
         return degrees * (Math.PI / 180);
     }
 
-    getDegrees(radians) {
+    private getDegrees(radians: any) {
         return radians * (180 / Math.PI);
     }
 
     /**
      * Calculates earth radius at specific latitude
+     * http://en.wikipedia.org/wiki/Earth_radius
      * @param latitudeRadians
      */
-    getEarthR(latitude) {
-        // http://en.wikipedia.org/wiki/Earth_radius
+    private getEarthR(latitude: any) {
         var a = 6378137;
         var b = 6356752.3142;
         var cosLat = math.cos(latitude);
@@ -689,12 +685,11 @@ export class RoutingService {
      * Returns the radius of curvature at specific position
      * @param latitude
      */
-    getN(latitude) {
+    private getN(latitude: any) {
         let latSin = math.sin(latitude);
         let N = math.divide(this.wgs84a, math.sqrt(1 - this.wgs84e2 * latSin * latSin))
         return N;
     }
-
     
     /**
      * Transformes a point from LLA coordinates to ECEF coordinates
@@ -790,10 +785,6 @@ export class RoutingService {
         return triLatLng;
     }   
 
-    // ############### //
-    // ### ROUTING ### //
-    // ############### //
-
     /**
      * Returns triangulation array with all triangle points
      * @param polygonPaths
@@ -881,7 +872,6 @@ export class RoutingService {
             try {
                 distance = this.computeDistance(connector, point);      
             } catch(e) {
-                console.log(e);
                 let pointA = {lat: point.lat(), lng: point.lng()};
                 distance = this.calcDistance(pointA, points[i]);
             }

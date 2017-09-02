@@ -25,7 +25,7 @@ enum Roomcolor {
 
 @Injectable()
 export class MapService {  
-    public googleKey = "AIzaSyCtPKTmtL83e8StfuawkBhXH74kgLcbNF0";
+    public googleKey = "AIzaSyCtPKTmtL83e8StfuawkBhXH74kgLcbNF0"; // TESTING
 
     constructor(private geolocation: Geolocation) {
     }     
@@ -48,6 +48,20 @@ export class MapService {
             //mapTypeId: google.maps.MapTypeId.SATELLITE
         }
     }
+    
+    /**
+     * Returns users position using gps
+     */
+    public getCurrentPositionGPS() {
+        return Observable.create(observer => {
+            let lat, lng;
+            this.geolocation.getCurrentPosition({enableHighAccuracy:true}).then((position) => {observer.next({lat: position.coords.latitude, lng: position.coords.longitude});
+                observer.complete();
+            }, (error) => {
+                console.error("ERROR: " + error);
+            });
+        });        
+    }
 
     /**
      * Returns custom maker with icon
@@ -58,6 +72,12 @@ export class MapService {
         let roomCentroid = this.getPolygonCentroid(paths);
         let position = new google.maps.LatLng(parseFloat(roomCentroid.lat), parseFloat(roomCentroid.lng));      
         switch(type) { 
+            case "lecture":
+                let pathLecture = "./assets/icon/lecture.png";
+                return this.createCustomMarker(position, pathLecture, 16);
+            case "lab":
+                let pathLab = "./assets/icon/lab.png";
+                return this.createCustomMarker(position, pathLab, 16);
             case "wc":                                          
                 let pathWc = "./assets/icon/wc.png";
                 return this.createCustomMarker(position, pathWc, 16);
@@ -93,7 +113,7 @@ export class MapService {
         else return currentLevel;
     }
 
-    // ######## POLYGONS
+    // POLYGONS
     
     /**
      * Creates room polygon for current level
@@ -156,7 +176,7 @@ export class MapService {
         return PolygonOptions;
     }
 
-    // ######## MARKERS
+    // MARKERS
 
     public createPositionMarker(position: any, url: any, size: any) {        
         let icon = this.getCustomMarkerIcon(url, size);
@@ -249,7 +269,7 @@ export class MapService {
         }     
     } 
 
-    // ######## POLYLINES
+    // POLYLINES
 
     /**
      * Creates routing polyline for Google map
@@ -283,72 +303,11 @@ export class MapService {
         return polyline;
     }
 
-    // ######## CIRCLE
-
-    /**
-     * Creates circle at current position
-     * @param position
-     * @param radius 
-     */
-    public createCircle(position: any, radius: any) {
-        let circle = new google.maps.Circle({
-            center: {lat: parseFloat(position.lat), lng: parseFloat(position.lng)},
-            strokeWeight: 0,
-            fillColor: '#EE342E',
-            fillOpacity: 1,
-            radius: parseFloat(radius),
-            zIndex: 1100
-        })
-        return circle;
-    }
-    
-    /**
-     * 
-     * @param zoom Returns circle radius on current zoom level
-     */
-    public getCircleRadius(zoom: any) {
-        let zoomDiff = 18 - zoom;
-        switch(true) {
-            case (zoomDiff > 0):
-                return 3 * (Math.pow(2, zoomDiff));
-            case (zoomDiff < 0):
-                return 3 / (Math.pow(2, Math.abs(zoomDiff)));
-            default:
-                return 3;
-        }     
-    }
-
-    // ######## INFO WINDOW
-
-    public createInfoWindow(position: any, text: String) {
-        return new google.maps.InfoWindow({
-            position: new google.maps.LatLng(position.lat, position.lng),
-            content: text,
-            disableAutoPan: true
-        });
-    }
-
-    // no Text labels available for google maps
-    /* public createMapLabel(point: any, text: any) {
-        let mapLabelOptions: any = {
-            text: text,
-            position: new google.maps.LatLng(point.lat, point.lng),
-            fontSize: 20,
-            align: 'center'
-        }
-        let mapLabel = new google.maps.MapLabel();
-        mapLabel.setOptions(mapLabelOptions);
-        return mapLabel;
-    } */
-
-    // ######## OTHER FUNCTIONS
-
     /**
      * Returns the altitude at specific position
      * @param lat 
      * @param lng 
      */
-    // https://maps.googleapis.com/maps/api/elevation/json?locations=52.5453461718,13.3554072734&key=AIzaSyCtPKTmtL83e8StfuawkBhXH74kgLcbNF0
     public getElevation(lat, lng) {
         return Observable.create(observer => {
             let url = 'https://maps.googleapis.com/maps/api/elevation/json?locations=' + lat + ',' + lng + '&key=' + this.googleKey;
@@ -356,7 +315,6 @@ export class MapService {
                 let jsonStr = JSON.stringify(results);
                 let jsonSub = jsonStr.substring(25);
                 let index = jsonSub.indexOf(",");
-                //return jsonSub.substring(0, index);
                 observer.next(parseFloat(jsonSub.substring(0, index)).toFixed(2));
                 observer.complete();
             }).catch(err => console.error(err));
@@ -375,7 +333,6 @@ export class MapService {
         }
         centroid.lat = centroid.lat / points.length;
         centroid.lng = centroid.lng / points.length;
-        //console.log("Polygon Centroid: " + centroid.lat + ", " + centroid.lng);
         return centroid;
     }
 
@@ -395,30 +352,4 @@ export class MapService {
         }
         return paths;
     }   
-
-    /**
-     * Returns users position using gps
-     */
-    public getCurrentPositionGPS() {
-        return Observable.create(observer => {
-            let lat, lng;
-            this.geolocation.getCurrentPosition({enableHighAccuracy:true}).then((position) => {observer.next({lat: position.coords.latitude, lng: position.coords.longitude});
-                observer.complete();
-            }, (error) => {
-                console.error("ERROR: " + error);
-            });
-        });        
-    }
-
-    /**
-     * Converts from Path String to LatLng Object
-     * @param path 
-     */
-    public getLatLngFromString(path: String) {
-        let latLngOrg = path.replace(/[()]/g, '');
-        let latLng = latLngOrg.split(',');
-         //console.log(latlang);
-        return new google.maps.LatLng(parseFloat(latLng[0]) , parseFloat(latLng[1]));
-    }  
-
 }

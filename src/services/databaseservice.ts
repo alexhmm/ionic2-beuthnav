@@ -34,7 +34,7 @@ export class DatabaseService {
             this.database.create(this.options).then(() => {
                 console.log("Database opened.");
             }, (error) => {
-                console.log("ERROR: ", error);
+                console.log("DATABASE ERROR: ", error);
         });
     }
     
@@ -47,7 +47,7 @@ export class DatabaseService {
     }
 
     /**
-     * Returns room attributes for Search ListView
+     * Returns room attributes for search listview
     */
     public getRoomsListView() {
         let roomsListView: any[] = [];
@@ -128,19 +128,6 @@ export class DatabaseService {
         return routingPolygons;
     }
 
-    public getRoutingPoints(data: any) {
-        let routingPoints: any[] = [];
-        for (let i = 0; i < data.rows.length; i++) {
-            let rows = data.rows;
-            routingPoints.push({lat: parseFloat(rows.item(i).y),
-                                lng: parseFloat(rows.item(i).x),
-                                type: rows.item(i).type,
-                                name: rows.item(i).name,
-                                routing: rows.item(i).routing});
-        }  
-        return routingPoints;                 
-    }
-
     /**
      * Returns routing polygons and points from specific building level
      * @param building 
@@ -148,7 +135,7 @@ export class DatabaseService {
      * @param rPointType 
      * @param rPointEndName 
      */
-    public getRoutingPolygonsPoints(building: String, level: any) {   
+    public getRoutingPolygonsPoints(building: String, level: number) {   
         let routingPolygons: any[] = [];
         let routingPoints: any[] = [];
 
@@ -175,63 +162,28 @@ export class DatabaseService {
                 })                    
             });                  
         })
-    }    
+    }   
 
+    
     /**
-     * Returns room attributes by shapeid
-     * @param tableAttr 
-     * @param shapeid 
+     * Returns routing points from specific building level
+     * @param data 
      */
-    public getAttributesByShapeId(tableAttr: String, shapeid: String) {
-        let queryAttr = "SELECT * FROM " + tableAttr + " WHERE shapeid LIKE '%" + shapeid + "%'";
-        return Observable.create(observer => {
-            this.sqlite.create(this.options).then((db: SQLiteObject) => {  
-                db.executeSql(queryAttr, {}).then((data) => {  
-                    observer.next(data.rows.item(0));
-                    console.log("OBSERVER: " + data.rows.item(0).name);
-                    observer.complete();     
-                })                           
-            });
-        })
-    }
-
-    public getCoordinatesByShapeId(tableCoords: String, shapeid: String) {
-        let coordinates: any[] = [];
-        let queryAttr = "SELECT * FROM " + tableCoords + " WHERE shapeid LIKE '%" + shapeid + "%'";
-        return Observable.create(observer => {
-            this.sqlite.create(this.options).then((db: SQLiteObject) => {  
-                db.executeSql(queryAttr, {}).then((data) => {  
-                    for (let i = 0; i < data.rows.length -1; i++) {
-                        coordinates.push({lat: data.rows.item(i).y, lng: data.rows.item(i).x});                      
-                        //console.log("OBSERVER: " + data.rows.item(i).y);
-                    }
-                    observer.next(coordinates);
-                    observer.complete();     
-                })                           
-            });
-        })
+    public getRoutingPoints(data: any) {
+        let routingPoints: any[] = [];
+        for (let i = 0; i < data.rows.length; i++) {
+            let rows = data.rows;
+            routingPoints.push({lat: parseFloat(rows.item(i).y),
+                                lng: parseFloat(rows.item(i).x),
+                                type: rows.item(i).type,
+                                name: rows.item(i).name,
+                                routing: rows.item(i).routing});
+        }  
+        return routingPoints;                 
     }
 
     /**
-     * Returns point coordinates from room
-     * @param tablePoints
-     * @param name 
-     */
-    public getCoordsByPoint(tablePoints: any, name: any) {
-        let queryAttr = "SELECT * FROM " + tablePoints + " WHERE name LIKE '%" + name + "%'";
-        return Observable.create(observer => {
-            this.sqlite.create(this.options).then((db: SQLiteObject) => {  
-                db.executeSql(queryAttr, {}).then((data) => {  
-                    observer.next(data.rows.item(0));
-                    console.log("OBSERVER POINTSCOORDS: " + data.rows.item(0).x + ", " + data.rows.item(0).y);
-                    observer.complete();     
-                })                           
-            });
-        })
-    }
-
-    /**
-     * Returns all building
+     * Returns building coordinates for skipped indoor mapping
      * @param table 
      * @param exclude 
      */
@@ -253,7 +205,7 @@ export class DatabaseService {
     }
 
     /**
-     * Returns all rooms with attributes of a floor
+     * Returns all rooms and attributes of a level
      * @param tableAttributes 
      * @param tableCoordinates 
      */
@@ -302,8 +254,7 @@ export class DatabaseService {
                             coordinatesStr += coordinateArray[x];
                         }
                         coordinatesStr = coordinatesStr.substring(0, coordinatesStr.length - 2);
-                        rooms[i].coordinates = coordinatesStr;         
-                        //console.log("NEW: " + this.rooms[i].name + " || " + this.rooms[i].coordinates);                                                
+                        rooms[i].coordinates = coordinatesStr;    
                     }     
                     for (let i = 0; i < rooms.length; i++) rooms[i].points = points;
                     observer.next(rooms);                
@@ -338,6 +289,12 @@ export class DatabaseService {
         })
     }
 
+    /**
+     * Returns room coordinates from search selection
+     * @param shapeid 
+     * @param building 
+     * @param level 
+     */
     public getRoomCoordinates(shapeid: number, building: String, level: number) {
         let tableCoords;
         for (let x in this.tables) {

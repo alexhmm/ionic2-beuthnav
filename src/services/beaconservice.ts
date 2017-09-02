@@ -21,7 +21,7 @@ export class BeaconService {
         }      
     } 
 
-    setupBeacons() {
+    public setupBeacons() {
         this.iBeacon.requestAlwaysAuthorization();
 
         // create a new delegate and register it with the native layer
@@ -41,9 +41,8 @@ export class BeaconService {
         .subscribe(
             data => {
                 let region = data.region;
-                let beacon = data.beacons; 
-                // if (region.identifier == "QIsB") for (let x in beacon) console.log(beacon[x]);                 
-                // Checks for current Beacons Array
+                let beacon = data.beacons;           
+                // Checks for current beacons array
                 if (typeof beacon[0] !== 'undefined') {
                     try {
                         let index = this.beacons.map(function(e) { return e.identifier; }).indexOf(region.identifier);
@@ -55,12 +54,9 @@ export class BeaconService {
                     try { indexData = this.beacondataStr.map(function(e) { return e.identifier; }).indexOf(region.identifier); }
                     catch(e) { console.error("Error: " + e); }
 
-                    // own accuracy calc -- still testing
-                    // let accuracyCalc = (Math.pow(10, (beacon[0].tx - beacon[0].rssi) / (10 * 3.5))).toFixed(2);
-
                     for (let x in this.rssis) {
-                        let rssiKalman = 0;
-                        let accuracyKalman = "";
+                        let rssiK = 0;
+                        let distanceK = "";
                         if (this.rssis[x].id == region.identifier) {
                             if (this.rssis[x].rssis.length < 20) {
                                 this.rssis[x].rssis.push(beacon[0].rssi);
@@ -75,17 +71,15 @@ export class BeaconService {
                                     return kalman.filter(v, 2, 10, 1, 0, 1);
                                 });
                                 let index = dataConstantKalman.length - 1;
-                                //console.log("Constant Kalman[length]: " + dataConstantKalman.length + ", " + dataConstantKalman[index]);
-                                rssiKalman = dataConstantKalman[index].toFixed(2);
-                                accuracyKalman = (Math.pow(10, (beacon[0].tx - rssiKalman) / (10 * 3))).toFixed(2);
+                                rssiK = dataConstantKalman[index].toFixed(2);
+                                distanceK = (Math.pow(10, (beacon[0].tx - rssiK) / (10 * 3))).toFixed(2);
                             }   
                             
                             this.beacons.push({identifier: region.identifier,
                                 tx: beacon[0].tx,
                                 rssi: beacon[0].rssi,
-                                rssiK: rssiKalman,
-                                acc: beacon[0].accuracy,
-                                accCK: accuracyKalman,
+                                rssiK: rssiK,
+                                distance: distanceK,
                                 coordinates: this.beacondataStr[indexData].coordinates});
                             break;
                         }
@@ -98,9 +92,8 @@ export class BeaconService {
         this.iBeacon.setDelegate(delegate);
     }
 
-    startRangingBeacons() {
+    public startRangingBeacons() {
         console.log("Started ranging beacons.");
-        //this.rssis = [];
         for (let i = 0; i < beacondata.beacons.length; i++) {
             let beaconRegion = this.iBeacon.BeaconRegion(
               beacondata.beacons[i].identifier,
@@ -117,7 +110,7 @@ export class BeaconService {
         }    
     }
 
-    startRangingBeacon() {
+    public startRangingBeacon() {
         console.log("Started ranging single beacon.");
         let beaconRegion = this.iBeacon.BeaconRegion(
               beacondata.beacons[1].identifier,
@@ -133,7 +126,7 @@ export class BeaconService {
         
     }
 
-    stopRangingBeacons() {
+    public stopRangingBeacons() {
         console.log("Stopped ranging beacons.");
         
         for (let i = 0; i < beacondata.beacons.length; i++) {
@@ -151,11 +144,12 @@ export class BeaconService {
         }
     }
 
-    getBeacons() {
+    public getBeacons() {
         return this.beacons;
     }
 
-    calcKalmanTest() {
+    // TESTING
+    /* public calcKalmanTest() {
         let rssis: any[] = [];
         let values = "0,-75;1,-73;2,-77;3,-73;4,-73;5,-75;6,-77;7,-74;8,-74;9,-76;10,-77;11,-76;12,-76;13,-76;14,-78;15,-76;16,-81;17,-79;18,-78;19,-79;0,-83;1,-85;2,-90;3,-84;4,-93;5,-77;6,-86;7,-78;8,-78;9,-82;10,-82;11,-84;12,-79;13,-78;14,-86;15,-84;16,-78;17,-86;18,-77;19,-78"
         let splitted: any[] = values.split(";");
@@ -175,10 +169,9 @@ export class BeaconService {
             console.log("Data:" + splitted[x] + ", " + dataConstantKalman[x]);
         }
     }
-
     public resetRSSIS() {
         for (let x in this.rssis) {
             this.rssis[x].rssis = [];
         }
-    }
+    } */
 }

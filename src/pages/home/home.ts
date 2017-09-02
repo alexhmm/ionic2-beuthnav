@@ -121,7 +121,7 @@ export class HomePage {
 
     ionViewDidLoad() {
         this.platform.ready().then(() => {   
-            // this.currentPosition = {lng: 13.35536653536712, lat: 52.54527924438224};
+            // this.currentPosition = {lng: 13.35536653536712, lat: 52.54527924438224}; // TESTING
 
             this.beaconService.setupBeacons();
             this.beaconService.startRangingBeacons();
@@ -199,7 +199,7 @@ export class HomePage {
         }
 
         if (this.currentAttr != null && this.currentLevel != null) {   
-            // SQLite Code with Observable    
+            // SQLite code with observable    
             this.dbService.getCurrentAttrCoords(this.currentAttr, this.currentCoords).subscribe(data => {
                 console.log("Loading map polygons.");
                 for (let x in data) {
@@ -233,14 +233,15 @@ export class HomePage {
                         })
                     }        
 
-                    if (room.type == "wc" || room.type == "staircase" || room.type == "lift" || room.type == "cafe" || room.type == "lib") {
+                    if (room.type == "lecture" || room.type == "lab" || room.type == "wc" || room.type == "staircase" ||
+                        room.type == "lift" || room.type == "cafe" || room.type == "lib") {                        
                         let customMarker = this.mapService.getIconForCustomMarker(room.type, paths);
                         customMarker.setMap(this.map);
                         this.roomMarkers.push(customMarker); 
                         google.maps.event.addListener(customMarker, 'click', (event) => {
                             let attributes = {shapeid: room.shapeid, name: room.name, desc: room.desc, building: this.currentBuilding, level: this.currentLevel};
                             this.selectRoom(attributes);
-                        })
+                        })                                            
                     }                    
                 }   
                 console.log("Polygons loaded: " + this.polygons.length + ", Custom markers: " + this.roomMarkers.length);
@@ -263,6 +264,7 @@ export class HomePage {
 
                         google.maps.event.addListener(polygon, 'click', (event) => {
                             this.currentPosition = {lat: event.latLng.lat(), lng: event.latLng.lng()};
+                            this.changeCurrentLevel(building.name, 0); // TESTING
                         })
                     }
                     loader.dismiss();
@@ -334,6 +336,7 @@ export class HomePage {
 
     /**
      * Changes the current level on google map
+     * @param building
      * @param direction 
      */
     public changeCurrentLevel(building: any, direction: any) {
@@ -392,16 +395,6 @@ export class HomePage {
     }
 
     /**
-     * Returns room attributes by shape id
-     * @param shapeid 
-     */
-    public getAttributesByShapeId(shapeid: any) {
-        this.dbService.getAttributesByShapeId(this.currentBuilding, shapeid).subscribe(data => {
-            return data;
-        })
-    }
-
-    /**
      * Selects room for routing and creates route marker
      * @param room 
      */
@@ -433,29 +426,16 @@ export class HomePage {
         });  
     }    
 
-    // ################# //
-    // #### BEACONS #### //
-    // ################# //
-    public checkBeacons() {
-        
+    /**
+     * Checks if beacons are available in proximity
+     */
+    public checkBeacons() {        
         try {
             this.beacons = this.beaconService.getBeacons();
-            /*for (let x in this.beacons) {
-                str += this.beacons[x].identifier + ", ";
-            }*/
             this.checkLog += "Beacons available: " + this.beacons.length + ", ";
-            //console.log(str);
-            //this.beaconService.getBeaconsC();
         } catch(e) {
             console.log(e);
         }
-    }
-
-    /**
-     * Starts to search for beacons in range
-     */
-    public startRangingBeacons() {
-        this.beaconService.startRangingBeacons();  
     }
 
     /**
@@ -465,24 +445,26 @@ export class HomePage {
         this.tricons = [];      
         for (let i = 0; i < 3; i++) {
             let latLngAlt = this.beacons[i].coordinates.split(", ");                
-            this.tricons.push({lat: latLngAlt[0], lng: latLngAlt[1], distance: this.beacons[i].accCK, elevation: latLngAlt[2]});         
+            this.tricons.push({lat: latLngAlt[0], lng: latLngAlt[1], distance: this.beacons[i].distance, elevation: latLngAlt[2]});         
         }    
         let triPoint: any = this.routingService.trilaterate(this.tricons);
         this.checkLog += "Beacons: " + triPoint.lat + ", " + triPoint.lng;
         return {lat: triPoint.lat, lng: triPoint.lng};        
     }
 
-    // ######################### \\
-    // ######## ROUTING ######## \\
-    // ######################### \\    
+    /**
+     * Starts routing based on destination input
+     * @param endName 
+     * @param endBuilding 
+     * @param endLevel 
+     * @param endPosition 
+     */
     public startRouting(endName: String, endBuilding: String, endLevel: number, endPosition: any) {
         console.log("Start routing algorithm: " + endName + ", " + endBuilding + ", " + endLevel);
         let currentPosition = this.currentPosition;
         let currentPositionLatLng = new google.maps.LatLng(currentPosition.lat, currentPosition.lng);
         let endPositionLatLng = new google.maps.LatLng(endPosition.lat, endPosition.lng);
-        // let currentPosition = {lng: 13.35537, lat: 52.54572}; // oben rechts
-        //let currentPosition = {lng: 13.35417, lat: 52.54486};  // unten links 1. og
-        let rPaths; // paths for routing polyline
+        let rPaths;
         this.routeState = 'on';
         if (this.infoViewState = 'in') this.toggleInfoView();
         if (this.marker != null) this.marker.setMap(null);
@@ -943,64 +925,5 @@ export class HomePage {
         this.routingPathsLevel = [];
         this.routingPathsLevelPosition = [];
         this.routingPathsRemain = [];
-    }
-    
-    // TESTING
-    public calcDistance() {
-        let dataB = [3.0023675707753243, 2.827496576265333, 1.4474813430164315, 3.832204320950111];
-        let resultB = 0;
-
-        for (let x in dataB) resultB += dataB[x];
-        resultB = resultB / dataB.length;
-        console.log("Average - B: " + resultB);
-
-        let dataG = [19.297666505635657, 9.51743552059129, 17.670235784163573, 9.478214841107738, 4.901063567302042, 7.263688767724918, 3.202087553214465, 11.235535685080439];
-        let resultG = 0;
-
-        for (let x in dataG) resultG += dataG[x];
-        resultG = resultG / dataG.length;
-        console.log("Average - G: " + resultG);
-        /* let c1 = {lat: 52.545433, lng: 13.354733};
-        let c2 = {lat: 52.545391, lng: 13.354649};
-
-        let b = this.routingService.calcBearing(c1, c2);
-        console.log("Bearing: " + b);
-
-        console.log("CalcDistance:");
-        let coordinatesB: any[] = [];
-        let coordinatesG: any[] = [];
-        // let real = new google.maps.LatLng(52.5454047506, 13.3549174452); // KG inside
-        // let real = new google.maps.LatLng(52.5455275954, 13.3551527145); // KG outisde  
-        // let real = new google.maps.LatLng(52.5454199756, 13.3548792411); // EG inside 
-        // let real = new google.maps.LatLng(52.5453287944, 13.3547302387); // EG outside
-        let real = new google.maps.LatLng(52.5452724743, 13.3553667454); // 1OG inside
-        // let real = new google.maps.LatLng(52.5451734094, 13.3553354693); // 1OG outside
-        // let real = new google.maps.LatLng(52.5453648944, 13.355074003); // 4OG inside
-        // let real = new google.maps.LatLng(52.5454257918, 13.3548524763); // 4OG outside
-
-        let dataB = [52.54527590248881, 13.3553596625353, 52.545279527623725, 13.355350652458145, 52.54524062201692, 13.355354390616687, 52.54526467782957, 13.355368769778254, 52.545270637978554, 13.355356458229224, 52.54527770946074, 13.355363248132347, 52.54528912143194, 13.35535159538737, 52.545279950190294, 13.355355706556745, 52.54528555367941, 13.355359230535718, 52.545286001275925, 13.355382966361608];
-        let dataG = [52.5453343, 13.354591, 52.545311, 13.3546098, 52.5452726, 13.3546665, 52.5453026, 13.3545905, 52.5453026, 13.3545905, 52.5452726, 13.3546665, 52.5452642, 13.3546473, 52.5452642, 13.3546473, 52.5453343, 13.354591, 52.5452726, 13.354541];
-        for (let i = 0; i < dataB.length; i += 2) coordinatesB.push(new google.maps.LatLng(dataB[i], dataB[i + 1]));
-        for (let i = 0; i < dataG.length; i += 2) coordinatesG.push(new google.maps.LatLng(dataG[i], dataG[i + 1]));
-
-        let distancesBStr = "[";
-        for (let x in coordinatesB) {
-            //let distance = this.routingService.computeDistance(real, coordinates[x]);
-            let distance = google.maps.geometry.spherical.computeDistanceBetween(real, coordinatesB[x]);
-            console.log(x + " - Distance: " + distance);
-            distancesBStr += distance + ", ";
-        }
-        console.log(distancesBStr);
-        console.log("###############################################");
-
-        let distancesGStr = "[";
-        for (let x in coordinatesG) {
-            //let distance = this.routingService.computeDistance(real, coordinates[x]);
-            let distance = google.maps.geometry.spherical.computeDistanceBetween(real, coordinatesG[x]);
-            console.log(x + " - Distance: " + distance);
-            distancesGStr += distance + ", ";
-        }
-        console.log(distancesGStr);
-        console.log("###############################################"); */
     }
 }
