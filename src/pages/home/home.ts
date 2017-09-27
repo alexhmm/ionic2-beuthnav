@@ -184,8 +184,6 @@ export class HomePage {
         google.maps.event.addListener(this.map, 'click', (event) => {
             console.log("Click on map: " + event.latLng);
             if (this.infoViewState = 'in') this.toggleInfoView();
-            // TESTING
-            if (this.routeState = 'on') this.currentPosition = {lat: event.latLng.lat(), lng: event.latLng.lng()};
         })
 
         // reset map elements
@@ -432,7 +430,8 @@ export class HomePage {
     public checkBeacons() {        
         try {
             this.beacons = this.beaconService.getBeacons();
-            this.checkLog += "Beacons available: " + this.beacons.length + ", ";
+            this.checkLog += "Beacons available: " + this.beacons.length + ", ";            
+            this.beaconService.cleanBeacons();
         } catch(e) {
             console.log(e);
         }
@@ -442,7 +441,7 @@ export class HomePage {
      * Sets current position from beacons
      */
     public getCurrentPositionBeacons() {
-        this.tricons = [];      
+        this.tricons = [];
         for (let i = 0; i < 3; i++) {
             let latLngAlt = this.beacons[i].coordinates.split(", ");                
             this.tricons.push({lat: latLngAlt[0], lng: latLngAlt[1], distance: this.beacons[i].distance, elevation: latLngAlt[2]});         

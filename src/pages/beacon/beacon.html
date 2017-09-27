@@ -22,11 +22,11 @@
   <button ion-button (click)="calcKalman()">Kalman</button>
   <p>Index: {{ index }} / Failure: {{ failureIndex }} / QIsB: {{ stateQIsB }} / Position: {{ statePos }}</p> 
   <p><b>Beacon #{{QIsB.identifier}}</b>: TX: {{QIsB.tx}}, R: {{QIsB.rssi}}, R-K: {{QIsB.rssiK}}</p>
-  <p> Acc: {{QIsB.acc}}, AccCK: {{QIsB.accCK}}</p>  
+  <p>Distance: {{QIsB.distance}}</p>  
    <ion-list>
       <ion-item *ngFor="let beacon of beacons">
         <p><b>Beacon #{{beacon.identifier}}</b>: TX: {{beacon.tx}}, R: {{beacon.rssi}}, R-K: {{beacon.rssiK}}</p>
-        <p> Acc: {{beacon.acc}}, AccCK: {{beacon.accCK}}</p>
+        <p>Distance: {{beacon.distance}}</p>
       </ion-item>
   </ion-list> 
   <p>P-Bea: {{ posBeacons }}</p>

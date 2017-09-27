@@ -72,14 +72,12 @@ export class BeaconPage {
             if (this.statePos == 'on') {
                 this.logPositionData();
             }
-            let posBeacons = this.getCurrentPositionBeacons();
-            this.posBeacons = posBeacons.lat + ", " + posBeacons.lng;
-            //this.getCurrentPositionGPS();
-        }, 950); 
-        setInterval(() => { 
-            console.log("Beacons: " + this.posBeacons);
-            console.log("GPS: " + this.posGPS);
-        }, 10000);        
+            /* if (this.beacons.length > 2) {
+                let posBeacons = this.getCurrentPositionBeacons();
+                this.posBeacons = posBeacons.lat + ", " + posBeacons.lng;
+            } */
+            //this.getCurrentPositionGPS();            
+        }, 3000);   
     }    
 
     public checkBeacons() {
@@ -91,6 +89,7 @@ export class BeaconPage {
                     break;
                 }
             }
+            this.beaconService.cleanBeacons();
         } catch(e) {
             console.log("BEACON ERROR: " + e);
         }
@@ -119,7 +118,7 @@ export class BeaconPage {
             this.dataQIsB_RSSIK = "RSSI-K: [";
             this.dataQIsB_AccK = "Acc-K: [";            
             this.failure = "No signal: ";
-            this.beaconService.resetRSSIS();
+            //this.beaconService.resetRSSIS();
         } else {
             this.stateQIsB = 'off';
             let data = this.dataX + "] \n" + this.dataQIsB_RSSI + "] \n" + this.dataQIsB_RSSIK + "] \n"

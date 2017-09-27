@@ -19,7 +19,7 @@ export class MyApp {
   @ViewChild(Nav) nav: Nav;
 
   rootPage: any = HomePage;
-  //rootPage: any = HotSpotPage;
+  //rootPage: any = BeaconPage;
 
   pages: Array<{title: string, component: any}>;
 
@@ -37,7 +37,8 @@ export class MyApp {
       { title: 'Test', component: TestPage } */
       { title: 'Home', component: HomePage },
       { title: 'Einstellungen', component: ListPage },
-      { title: 'Impressum', component: DatabasePage }
+      { title: 'Impressum', component: DatabasePage },
+      { title: 'Beacon', component: BeaconPage }
     ];
 
   }

@@ -144,6 +144,10 @@ export class BeaconService {
         }
     }
 
+    public cleanBeacons() {
+        this.beacons = [];
+    }
+
     public getBeacons() {
         return this.beacons;
     }

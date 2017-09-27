@@ -19,11 +19,13 @@
       </button>
   </div>  
   <div ion-fixed class="listView" [@listViewInOut]="listViewState">
-    <ion-list>
-      <ion-item *ngFor="let room of roomsListView" no-lines (click)="selectRoom(room)">
-        <b>{{ room.name }}</b> {{ room.desc }}
-      </ion-item>
-    </ion-list>
+    <ion-scroll scrollY="true">
+      <ion-list>      
+        <ion-item *ngFor="let room of roomsListView" no-lines (click)="selectRoom(room)">
+          <b>{{ room.name }}</b> {{ room.desc }}
+        </ion-item>   
+      </ion-list>           
+    </ion-scroll>
   </div>
   <div ion-fixed class="infoView" [@infoViewInOut]="infoViewState">
     <ion-grid padding>
