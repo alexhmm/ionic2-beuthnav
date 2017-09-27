@@ -116,13 +116,14 @@ export class HomePage {
                 public mapService: MapService,
                 public motionService: MotionService,
                 public routingService: RoutingService) {    
-        this.initializeRoomListView();        
+        //this.initializeRoomListView();        
     }
 
     ionViewDidLoad() {
         this.platform.ready().then(() => {   
             // this.currentPosition = {lng: 13.35536653536712, lat: 52.54527924438224}; // TESTING
 
+            this.initializeRoomListView();        
             this.beaconService.setupBeacons();
             this.beaconService.startRangingBeacons();
 
@@ -150,12 +151,16 @@ export class HomePage {
     }
 
     public initializeRoomListView() {  
-        console.log("Initialize ListView.")  
-        this.dbService.getRoomsListView().subscribe(data => {
-            this.roomsListView = data;
-            this.roomsListViewBackup = this.roomsListView;
-        });
-        
+        console.log("Initialize ListView.");      
+        let loader = this.loadCtrl.create({
+                content: "Gebäudedaten geladen...",
+            });
+        loader.present();
+        this.dbService.getRoomsListView().subscribe(data => {  
+            this.roomsListView = data;    
+            this.roomsListViewBackup = this.roomsListView;    
+            loader.dismiss();
+        });        
     }
 
     /**
@@ -374,7 +379,7 @@ export class HomePage {
         if (this.infoViewState == 'in') {
                 this.toggleInfoView();
         }   
-        this.roomsListView = this.roomsListViewBackup;
+        if (this.roomsListViewBackup != null) this.roomsListView = this.roomsListViewBackup;
 
         let value = event.target.value;
 

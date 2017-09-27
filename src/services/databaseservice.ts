@@ -65,12 +65,17 @@ export class DatabaseService {
                                                     building: this.tables[x].building,
                                                     level: this.tables[x].level}).toString;
                             }
-                        }
+                        }   
+                        roomsListView.sort((a, b) => {
+                            if (a.name < b.name) return -1;
+                            if (a.name > b.name) return 1;
+                            return 0;
+                        })                     
                     })
                 });
             }            
             observer.next(roomsListView);
-            observer.complete();
+            observer.complete(); 
         })
     }
 
