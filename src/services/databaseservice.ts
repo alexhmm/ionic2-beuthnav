@@ -58,7 +58,8 @@ export class DatabaseService {
                     db.executeSql(query, {}).then((data) => { 
                         let rows = data.rows;
                         for (let i = 0; i < rows.length; i++) {
-                            if (rows.item(i).type == "lab" || "lecture" || "office" || "cafe" || "mensa" || "lib") {
+                            if (rows.item(i).type == "lab" || rows.item(i).type == "lecture" || rows.item(i).type == "office" || rows.item(i).type == "cafe" ||
+                                rows.item(i).type == "service" || rows.item(i).type == "lib") {
                                 roomsListView.push({shapeid: rows.item(i).shapeid,
                                                     name: rows.item(i).name,
                                                     desc: rows.item(i).desc,
