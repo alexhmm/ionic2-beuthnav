@@ -60,7 +60,6 @@ export class HomePage {
     public infoViewState = 'out';
     public levelViewState = 'in';
     public mapViewState = 'on';
-    public testState = 'off';
     public positionState = 'on';
 
     // room data
@@ -89,6 +88,10 @@ export class HomePage {
     public routingPathsLevel: any[] = [];
     public routingPathsRemain: any[][] = [];
     public routingLevels: any[][] = [];
+
+    // testing
+    public routingLevel: any[] = [];
+    public routingLevelsRemain: any[] = [];
 
     // beacon variables
     public beacons: any[] = [];
@@ -132,7 +135,7 @@ export class HomePage {
                 this.checkLog = "";
                 this.checkBeacons();
                 this.getCurrentPosition();
-                if (this.routeState == 'on') this.updateRoute();
+                if (this.routeState == 'on' && this.routingLevel.length > 0) this.updateRoute();
              }, 3000);            
         });
     }
@@ -187,8 +190,9 @@ export class HomePage {
         });
 
         google.maps.event.addListener(this.map, 'click', (event) => {
-            console.log("Click on map: " + event.latLng);
             if (this.infoViewState = 'in') this.toggleInfoView();
+            this.positionState = 'off';
+            this.currentPosition = {lat: event.latLng.lat(), lng: event.latLng.lng()};
         })
 
         // reset map elements
@@ -245,9 +249,23 @@ export class HomePage {
                             let attributes = {shapeid: room.shapeid, name: room.name, desc: room.desc, building: this.currentBuilding, level: this.currentLevel};
                             this.selectRoom(attributes);
                         })                                            
-                    }                    
+                    } 
                 }   
-                console.log("Polygons loaded: " + this.polygons.length + ", Custom markers: " + this.roomMarkers.length);
+                console.log("Polygons loaded: " + this.polygons.length + ", Custom markers: " + this.roomMarkers.length);                   
+                    
+                // Next level routing elements
+                if (this.routeState == 'on' && this.routingLevelsRemain.length > 0) {
+                    console.log("RoutingLevelsRemain.length: " + this.routingLevelsRemain.length);
+                    for (let x in this.routingPolylinesRemain) this.routingPolylinesRemain[x].setMap(null);
+                    for (let x in this.markersRemain) this.markersRemain[x].setMap(null);
+                    this.markersRemain = [];
+        
+                    this.routingLevel.push(this.routingLevelsRemain[0][1], this.routingLevelsRemain[0][2]);
+                    this.routingLevelsRemain.splice(0, 1);
+        
+                    this.createRoutingElements(this.routingLevel, this.routingLevelsRemain);
+                    console.log("RoutingLevelsRemain.length: " + this.routingLevelsRemain.length);
+                }
 
                 this.dbService.getAllBuildingsAttrCoords(this.currentBuilding).subscribe(data => {
                     console.log("Loading map buildings.");
@@ -316,12 +334,14 @@ export class HomePage {
      * Checks for the current displayed building by current user position
      */
     public getCurrentBuilding() {
+        console.log("Get current building 1: " + this.currentBuilding + ", " + this.currentLevel + " // " + this.previousBuilding + ", " + this.previousLevel);
         this.previousBuilding = this.currentBuilding;
         let buildings = this.dbService.getBuildingsCentroids();
         let positionLatLng = new google.maps.LatLng(this.currentPosition.lat, this.currentPosition.lng);
         
         let buildingsSort = this.routingService.sortByDistance(buildings, positionLatLng);
         this.currentBuilding = buildingsSort[0].name;
+        console.log("Get current building 2: " + this.currentBuilding + ", " + this.currentLevel + " // " + this.previousBuilding + ", " + this.previousLevel);
         this.checkLog += ", Current Building: " + this.currentBuilding;  
 
         if (this.currentBuilding != this.previousBuilding || this.currentLevel != this.previousLevel) {
@@ -329,7 +349,8 @@ export class HomePage {
             this.currentAttr = tables.attr;
             this.currentCoords = tables.coords;
             this.currentPoints = tables.points;
-            this.loadMap(); 
+            console.log("LOADMAP GETCURRENTBUILDING: " + this.currentBuilding + ", " + this.currentLevel);
+            this.loadMap();
             this.dbService.getCurrentPoints(this.currentPoints).subscribe(data => {
                 this.allPoints = data;   
             });   
@@ -337,23 +358,22 @@ export class HomePage {
         this.previousLevel = this.currentLevel;
     }
 
+    public clickLevel(direction: any) {
+        this.changeCurrentLevel(this.currentBuilding, this.currentLevel + direction);
+    }
+
     /**
      * Changes the current level on google map
      * @param building
-     * @param direction 
+     * @param newLevel 
      */
-    public changeCurrentLevel(building: any, direction: any) {
+    public changeCurrentLevel(building: any, newLevel: any) {
+        console.log("Change current level: " + this.currentLevel + ", " + newLevel);
         let buildingLevels = this.dbService.getBuildingLevels(this.currentBuilding);
-        this.currentLevel = this.mapService.changeCurrentLevel(this.currentLevel, buildingLevels, direction);
-        this.getCurrentBuilding();
-        if (this.testState == 'on') {
-            let markersPathsRemain = this.markersPathsRemain[0];       
-            for (let x in markersPathsRemain) {  
-                let marker = this.mapService.createRouteMarker(markersPathsRemain[x].position, markersPathsRemain[x].url, 48);
-                marker.setMap(this.map);
-                this.markersLevel.push(marker);
-            } 
-        }
+        this.currentLevel = this.mapService.changeCurrentLevel(this.currentLevel, buildingLevels, newLevel);
+        console.log("LOADMAP CHANGECURRENTLEVEL: " + this.currentBuilding + ", " + this.currentLevel);
+        this.loadMap();       
+        this.previousLevel = this.currentLevel; 
     }
 
     public cleanPolygons(polygons: any) {
@@ -478,25 +498,22 @@ export class HomePage {
         if (endBuilding == this.currentBuilding && endLevel == this.currentLevel) { 
             this.dbService.getRoutingPolygonsPoints(this.currentBuilding, this.currentLevel).subscribe(data => {    
                 let routingPolygonsRawSBSL = data[0];
-                let routingPointsSBSL = data[1];                
-
-                this.routingPolygons = this.routingService.getRoutePolygonsLatLngCoordinates(routingPolygonsRawSBSL);                
-                for (let x in this.routingPolygons) this.routingPolygons[x].polygon.setMap(this.map);
+                let routingPointsSBSL = data[1];    
+                
+                this.createRoutingPolygons(routingPolygonsRawSBSL);
 
                 let rStartSBSL = this.routingService.getRouteStart(currentPosition, this.routingPolygons, routingPointsSBSL);
                 let rEndSBSL = this.routingService.getRoutePointByName(routingPointsSBSL, endName);
 
-                this.routingPathsLevel = this.routingService.createRouteInLevel(rStartSBSL, rEndSBSL, this.routingPolygons, routingPointsSBSL); 
-                this.routingPathsLevel.splice(0, 1); // removes current position for update, temporary
-                let polyline = this.mapService.createRoutePolyline(this.routingPathsLevel);                
-                polyline.setMap(this.map);                
-                this.routingPolylineLevel = polyline;    
+                let rPathsLevel = this.routingService.createRouteInLevel(rStartSBSL, rEndSBSL, this.routingPolygons, routingPointsSBSL); 
+                rPathsLevel.splice(0, 1); // removes current position for update, temporary
 
-                let end = new google.maps.LatLng(rEndSBSL.lat, rEndSBSL.lng);
-                let url = "./assets/icon/marker.png";
-                let marker = this.mapService.createRouteMarker(end, url, 48);
-                marker.setMap(this.map); 
-                this.markersLevel.push(marker);
+                let mLevelPos = new google.maps.LatLng(rEndSBSL.lat, rEndSBSL.lng);
+                let mLevelUrl = "./assets/icon/marker.png";
+
+                this.routingLevel.push(rPathsLevel, [mLevelPos, mLevelUrl]);
+                this.createRoutingElements(this.routingLevel, null);
+                console.log("RoutingLevelsRemain.length: " + this.routingLevelsRemain.length);
             });    
 
         // 1    EndBuilding == CurrentBuilding && EndLevel != CurrentLevel
@@ -508,53 +525,39 @@ export class HomePage {
                 let routingPolygonsRawSBSL = data[0];
                 let routingPointsSBSL = data[1];
 
-                this.routingPolygons = this.routingService.getRoutePolygonsLatLngCoordinates(routingPolygonsRawSBSL);                
-                for (let x in this.routingPolygons) this.routingPolygons[x].polygon.setMap(this.map);
+                this.createRoutingPolygons(routingPolygonsRawSBSL);
 
                 let rStartSBSL = this.routingService.getRouteStart(currentPosition, this.routingPolygons, routingPointsSBSL);
                 let rEndSBSL = this.routingService.getRoutePointByType(routingPointsSBSL, "staircase", currentPositionLatLng);
 
-                this.routingPathsLevel = this.routingService.createRouteInLevel(rStartSBSL, rEndSBSL, this.routingPolygons, routingPointsSBSL); 
-                this.routingPathsLevel.splice(0, 1); // removes current position for update, temporary
-                let polyline = this.mapService.createRoutePolyline(this.routingPathsLevel);                
-                polyline.setMap(this.map);                
-                this.routingPolylineLevel = polyline;     
+                let rPathsLevel = this.routingService.createRouteInLevel(rStartSBSL, rEndSBSL, this.routingPolygons, routingPointsSBSL); 
+                rPathsLevel.splice(0, 1); // removes current position for update, temporary
 
-                let end = new google.maps.LatLng(rEndSBSL.lat, rEndSBSL.lng);
-                let url = "./assets/icon/markerChange.png";
-                let marker = this.mapService.createRouteMarker(end, url, 48);
-                marker.setMap(this.map);
-                this.markersLevel.push(marker);
+                let mLevelPos = new google.maps.LatLng(rEndSBSL.lat, rEndSBSL.lng);
+                let mLevelUrl = "./assets/icon/markerChange.png";
+                
+                this.routingLevel.push(rPathsLevel, [mLevelPos, mLevelUrl]);
 
                 // start building, end level
                 this.dbService.getRoutingPolygonsPoints(this.currentBuilding, endLevel).subscribe(dataEL => {        
                     let routingPolygonsRawSBEL = dataEL[0];
                     let routingPointsSBEL = dataEL[1];
 
-                    this.routingPolygons = this.cleanPolygons(this.routingPolygons);  
-                    this.routingPolygons = this.routingService.getRoutePolygonsLatLngCoordinates(routingPolygonsRawSBEL);                
-                    for (let x in this.routingPolygons) this.routingPolygons[x].polygon.setMap(this.map);  
+                    this.createRoutingPolygons(routingPolygonsRawSBEL);
                     
                     let rStartSBEL = this.routingService.getRoutePointByRouteId(routingPointsSBEL, rEndSBSL.routing);
                     let rEndSBEL = this.routingService.getRoutePointByName(routingPointsSBEL, endName);
 
-                    let rPaths = this.routingService.createRouteInLevel(rStartSBEL, rEndSBEL, this.routingPolygons, routingPointsSBEL);                     
-                    let polyline = this.mapService.createRoutePolylineRemain(rPaths);                
-                    polyline.setMap(this.map);     
-                    this.routingPathsRemain.push(rPaths);   
-                    this.routingPolylinesRemain.push(polyline);
+                    let rPaths = this.routingService.createRouteInLevel(rStartSBEL, rEndSBEL, this.routingPolygons, routingPointsSBEL); 
     
-                    let end = new google.maps.LatLng(rEndSBEL.lat, rEndSBEL.lng);
-                    let url = "./assets/icon/marker.png";
-                    let marker = this.mapService.createRouteMarkerRemain(end, url, 48);
-                    marker.setMap(this.map);                    
-                    this.markersRemain.push([marker]);                     
-                    this.markersPathsRemain.push([{position: end, url: url}]);                    
+                    let mPos = new google.maps.LatLng(rEndSBEL.lat, rEndSBEL.lng);
+                    let mUrl = "./assets/icon/marker.png";
 
-                    this.routingLevels.push([this.currentBuilding, endLevel]);
+                    this.routingLevelsRemain.push([[this.currentBuilding, endLevel], rPaths, [mPos, mUrl]]);
+                    this.createRoutingElements(this.routingLevel, this.routingLevelsRemain);
+                    console.log("RoutingLevelsRemain.length: " + this.routingLevelsRemain.length);
                 });
             });
-            // if tempEnd distance to currentPosition is < 1m getCurrentBuilding(currentBuilding, endLevel);
         // 2    EndBuilding != CurrentBuilding
         } else if (endBuilding != this.currentBuilding) {
             console.log("2: endBuilding: " + endBuilding + " != this.currentBuilding: ");   
@@ -565,24 +568,18 @@ export class HomePage {
                     let routingPolygonsRawSBSL = dataSBSL[0];
                     let routingPointsSBSL = dataSBSL[1];
 
-                    this.routingPolygons = this.cleanPolygons(this.routingPolygons);  
-                    this.routingPolygons = this.routingService.getRoutePolygonsLatLngCoordinates(routingPolygonsRawSBSL);                
-                    for (let x in this.routingPolygons) this.routingPolygons[x].polygon.setMap(this.map);  
+                    this.createRoutingPolygons(routingPolygonsRawSBSL);
                     
                     let rStartSBSL = this.routingService.getRouteStart(currentPosition, this.routingPolygons, routingPointsSBSL);
                     let rEndSBSL = this.routingService.getRoutePointByType(routingPointsSBSL, "exit", endPositionLatLng);
 
-                    this.routingPathsLevel = this.routingService.createRouteInLevel(rStartSBSL, rEndSBSL, this.routingPolygons, routingPointsSBSL); 
-                    this.routingPathsLevel.splice(0, 1); // removes current position for update, temporary
-                    let polyline = this.mapService.createRoutePolyline(this.routingPathsLevel);                
-                    polyline.setMap(this.map);                
-                    this.routingPolylineLevel = polyline;     
+                    let rPathsLevel = this.routingService.createRouteInLevel(rStartSBSL, rEndSBSL, this.routingPolygons, routingPointsSBSL); 
+                    rPathsLevel.splice(0, 1); // removes current position for update, temporary  
     
-                    let end = new google.maps.LatLng(rEndSBSL.lat, rEndSBSL.lng);
-                    let url = "./assets/icon/markerExit.png";
-                    let marker = this.mapService.createRouteMarker(end, url, 48);
-                    marker.setMap(this.map);
-                    this.markersLevel.push(marker);
+                    let mLevelPos = new google.maps.LatLng(rEndSBSL.lat, rEndSBSL.lng);
+                    let mLevelUrl = "./assets/icon/markerExit.png";
+                    
+                    this.routingLevel.push(rPathsLevel, [mLevelPos, mLevelUrl]);
 
                     if (endLevel == 0) {
                         // end building, start level
@@ -591,36 +588,21 @@ export class HomePage {
                             let routingPolygonsRawEBSL = dataEBSL[0];
                             let routingPointsEBSL = dataEBSL[1];
             
-                            this.routingPolygons = this.cleanPolygons(this.routingPolygons);  
-                            this.routingPolygons = this.routingService.getRoutePolygonsLatLngCoordinates(routingPolygonsRawEBSL);                
-                            for (let x in this.routingPolygons) this.routingPolygons[x].polygon.setMap(this.map);
+                            this.createRoutingPolygons(routingPolygonsRawEBSL);
             
                             let positionExit = new google.maps.LatLng(parseFloat(rEndSBSL.lat), parseFloat(rEndSBSL.lng));
-                            let rStartEBSL = this.routingService.getRoutePointByExit(routingPointsEBSL, positionExit);
                             
+                            let rStartEBSL = this.routingService.getRoutePointByExit(routingPointsEBSL, positionExit);                            
                             let rEndEBSL = this.routingService.getRoutePointByName(routingPointsEBSL, endName);
 
                             let rPaths = this.routingService.createRouteInLevel(rStartEBSL, rEndEBSL, this.routingPolygons, routingPointsEBSL);                     
-                            let polyline = this.mapService.createRoutePolylineRemain(rPaths);                
-                            polyline.setMap(this.map);     
-                            this.routingPathsRemain.push(rPaths);   
-                            this.routingPolylinesRemain.push(polyline);
-
-                            let start = new google.maps.LatLng(parseFloat(rStartEBSL.lat), parseFloat(rStartEBSL.lng));
-                            let urlStart = "./assets/icon/markerExit.png";
-                            let markerStart = this.mapService.createRouteMarker(start, urlStart, 48);
-                            markerStart.setMap(this.map);                    
-                            this.markersRemain.push([markerStart]);                     
-                            this.markersPathsRemain.push([{position: start, url: urlStart}]);     
-            
-                            let end = new google.maps.LatLng(rEndEBSL.lat, rEndEBSL.lng);
-                            let urlEnd = "./assets/icon/marker.png";
-                            let markerEnd = this.mapService.createRouteMarkerRemain(end, urlEnd, 48);
-                            markerEnd.setMap(this.map);                    
-                            this.markersRemain.push([markerEnd]);                     
-                            this.markersPathsRemain.push([{position: end, url: urlEnd}]);                    
-        
-                            this.routingLevels.push([endBuilding, endLevel]);            
+                                        
+                            let mPos = new google.maps.LatLng(rEndEBSL.lat, rEndEBSL.lng);
+                            let mUrl = "./assets/icon/marker.png";
+                            
+                            this.routingLevelsRemain.push([[endBuilding, endLevel], rPaths, [mPos, mUrl]]);
+                            this.createRoutingElements(this.routingLevel, this.routingLevelsRemain);
+                            console.log("RoutingLevelsRemain.length: " + this.routingLevelsRemain.length);
                         });
                     } else {
                         // end building, start level
@@ -629,9 +611,7 @@ export class HomePage {
                             let routingPolygonsRawEBSL = dataEBSL[0];
                             let routingPointsEBSL = dataEBSL[1];
             
-                            this.routingPolygons = this.cleanPolygons(this.routingPolygons);
-                            this.routingPolygons = this.routingService.getRoutePolygonsLatLngCoordinates(routingPolygonsRawEBSL);                
-                            for (let x in this.routingPolygons) this.routingPolygons[x].polygon.setMap(this.map);
+                            this.createRoutingPolygons(routingPolygonsRawEBSL);
             
                             let positionExit = new google.maps.LatLng(parseFloat(rEndSBSL.lat), parseFloat(rEndSBSL.lng));
                             let rStartEBSL = this.routingService.getRoutePointByExit(routingPointsEBSL, positionExit);
@@ -639,25 +619,11 @@ export class HomePage {
                             let rEndEBSL = this.routingService.getRoutePointByType(routingPointsEBSL, "staircase", start);
 
                             let rPaths = this.routingService.createRouteInLevel(rStartEBSL, rEndEBSL, this.routingPolygons, routingPointsEBSL);                     
-                            let polyline = this.mapService.createRoutePolylineRemain(rPaths);                
-                            polyline.setMap(this.map);     
-                            this.routingPathsRemain.push(rPaths);   
-                            this.routingPolylinesRemain.push(polyline);
+                                                                    
+                            let mPos = new google.maps.LatLng(rEndEBSL.lat, rEndEBSL.lng);
+                            let mUrl = "./assets/icon/markerChange.png";
                             
-                            let urlStart = "./assets/icon/markerExit.png";
-                            let markerStart = this.mapService.createRouteMarker(start, urlStart, 48);
-                            markerStart.setMap(this.map);                    
-                            this.markersRemain.push([markerStart]);                     
-                            this.markersPathsRemain.push([{position: start, url: urlStart}]);     
-            
-                            let end = new google.maps.LatLng(rEndEBSL.lat, rEndEBSL.lng);
-                            let urlEnd = "./assets/icon/markerChange.png";
-                            let markerEnd = this.mapService.createRouteMarkerRemain(end, urlEnd, 48);
-                            markerEnd.setMap(this.map);                    
-                            this.markersRemain.push([markerEnd]);                     
-                            this.markersPathsRemain.push([{position: end, url: urlEnd}]);                    
-        
-                            this.routingLevels.push([endBuilding, 0]);
+                            this.routingLevelsRemain.push([[endBuilding, 0], rPaths, [mPos, mUrl]]);
 
                             // end building, end level
                             console.log("2: end building, end level.");
@@ -665,27 +631,19 @@ export class HomePage {
                                 let routingPolygonsRawEBEL = dataEBEL[0];
                                 let routingPointsEBEL = dataEBEL[1];
             
-                                this.routingPolygons = this.cleanPolygons(this.routingPolygons);  
-                                this.routingPolygons = this.routingService.getRoutePolygonsLatLngCoordinates(routingPolygonsRawEBEL);                
-                                for (let x in this.routingPolygons) this.routingPolygons[x].polygon.setMap(this.map);  
+                                this.createRoutingPolygons(routingPolygonsRawEBEL);
                                 
                                 let rStartEBEL = this.routingService.getRoutePointByRouteId(routingPointsEBEL, rEndEBSL.routing);
                                 let rEndEBEL = this.routingService.getRoutePointByName(routingPointsEBEL, endName);
 
                                 let rPaths = this.routingService.createRouteInLevel(rStartEBEL, rEndEBEL, this.routingPolygons, routingPointsEBEL);                     
-                                let polyline = this.mapService.createRoutePolylineRemain(rPaths);                
-                                polyline.setMap(this.map);     
-                                this.routingPathsRemain.push(rPaths);   
-                                this.routingPolylinesRemain.push(polyline);
-                
-                                let end = new google.maps.LatLng(rEndEBEL.lat, rEndEBEL.lng);
-                                let url = "./assets/icon/marker.png";
-                                let marker = this.mapService.createRouteMarkerRemain(end, url, 48);
-                                marker.setMap(this.map);                    
-                                this.markersRemain.push([marker]);                     
-                                this.markersPathsRemain.push([{position: end, url: url}]);                    
-            
-                                this.routingLevels.push([endBuilding, endLevel]);
+                                                
+                                let mPos = new google.maps.LatLng(rEndEBEL.lat, rEndEBEL.lng);
+                                let mUrl = "./assets/icon/marker.png";
+
+                                this.routingLevelsRemain.push([[endBuilding, endLevel], rPaths, [mPos, mUrl]]);
+                                this.createRoutingElements(this.routingLevel, this.routingLevelsRemain);
+                                console.log("RoutingLevelsRemain.length: " + this.routingLevelsRemain.length);
                             });   
                         });
                     }
@@ -697,23 +655,18 @@ export class HomePage {
                     let routingPolygonsRawSBSL = dataSBSL[0];
                     let routingPointsSBSL = dataSBSL[1];
     
-                    this.routingPolygons = this.routingService.getRoutePolygonsLatLngCoordinates(routingPolygonsRawSBSL);                
-                    for (let x in this.routingPolygons) this.routingPolygons[x].polygon.setMap(this.map);
+                    this.createRoutingPolygons(routingPolygonsRawSBSL);
     
                     let rStartSBSL = this.routingService.getRouteStart(currentPosition, this.routingPolygons, routingPointsSBSL);
                     let rEndSBSL = this.routingService.getRoutePointByType(routingPointsSBSL, "staircase", currentPositionLatLng);
 
-                    this.routingPathsLevel = this.routingService.createRouteInLevel(rStartSBSL, rEndSBSL, this.routingPolygons, routingPointsSBSL); 
-                    this.routingPathsLevel.splice(0, 1); // removes current position for update, temporary
-                    let polyline = this.mapService.createRoutePolyline(this.routingPathsLevel);                
-                    polyline.setMap(this.map);                
-                    this.routingPolylineLevel = polyline;     
+                    let rPathsLevel = this.routingService.createRouteInLevel(rStartSBSL, rEndSBSL, this.routingPolygons, routingPointsSBSL); 
+                    rPathsLevel.splice(0, 1); // removes current position for update, temporary
     
-                    let end = new google.maps.LatLng(rEndSBSL.lat, rEndSBSL.lng);
-                    let url = "./assets/icon/markerChange.png";
-                    let marker = this.mapService.createRouteMarker(end, url, 48);
-                    marker.setMap(this.map);
-                    this.markersLevel.push(marker);
+                    let mLevelPos = new google.maps.LatLng(rEndSBSL.lat, rEndSBSL.lng);
+                    let mLevelUrl = "./assets/icon/markerChange.png";
+                    
+                    this.routingLevel.push(rPathsLevel, [mLevelPos, mLevelUrl]);
 
                     // start building, level 0
                     console.log("2: start building, end level.");
@@ -721,27 +674,17 @@ export class HomePage {
                         let routingPolygonsRawSBEL = dataSBSL[0];
                         let routingPointsSBEL = dataSBSL[1];
     
-                        this.routingPolygons = this.cleanPolygons(this.routingPolygons);  
-                        this.routingPolygons = this.routingService.getRoutePolygonsLatLngCoordinates(routingPolygonsRawSBEL);                
-                        for (let x in this.routingPolygons) this.routingPolygons[x].polygon.setMap(this.map);  
+                        this.createRoutingPolygons(routingPolygonsRawSBEL);
                         
                         let rStartSBEL = this.routingService.getRoutePointByRouteId(routingPointsSBEL, rEndSBSL.routing);
                         let rEndSBEL = this.routingService.getRoutePointByType(routingPointsSBEL, "exit", endPositionLatLng);
 
                         let rPaths = this.routingService.createRouteInLevel(rStartSBEL, rEndSBEL, this.routingPolygons, routingPointsSBEL);                     
-                        let polyline = this.mapService.createRoutePolylineRemain(rPaths);                
-                        polyline.setMap(this.map);     
-                        this.routingPathsRemain.push(rPaths);   
-                        this.routingPolylinesRemain.push(polyline);
-        
-                        let end = new google.maps.LatLng(rEndSBEL.lat, rEndSBEL.lng);
-                        let url = "./assets/icon/markerExit.png";
-                        let marker = this.mapService.createRouteMarkerRemain(end, url, 48);
-                        marker.setMap(this.map);                    
-                        this.markersRemain.push([marker]);                     
-                        this.markersPathsRemain.push([{position: end, url: url}]);                    
+                                
+                        let mPos = new google.maps.LatLng(rEndSBEL.lat, rEndSBEL.lng);
+                        let mUrl = "./assets/icon/markerExit.png";                          
     
-                        this.routingLevels.push([this.currentBuilding, this.currentLevel]);
+                        this.routingLevelsRemain.push([[this.currentBuilding, 0], rPaths, [mPos, mUrl]]);
 
                         if (endLevel == 0) {
                             // end building, start level
@@ -749,62 +692,44 @@ export class HomePage {
                             this.dbService.getRoutingPolygonsPoints(endBuilding, 0).subscribe(dataEBSL => {    
                                 let routingPolygonsRawEBSL = dataEBSL[0];
                                 let routingPointsEBSL = dataEBSL[1];
-                
-                                this.routingPolygons = this.cleanPolygons(this.routingPolygons);  
-                                this.routingPolygons = this.routingService.getRoutePolygonsLatLngCoordinates(routingPolygonsRawEBSL);                
-                                for (let x in this.routingPolygons) this.routingPolygons[x].polygon.setMap(this.map);
-                
-                                let positionExit = new google.maps.LatLng(parseFloat(rEndSBEL.lat), parseFloat(rEndSBEL.lng));
-                                let rStartEBSL = this.routingService.getRoutePointByExit(routingPointsEBSL, positionExit);
+
+                                this.createRoutingPolygons(routingPolygonsRawEBSL);
                                 
+                                let positionExit = new google.maps.LatLng(parseFloat(rEndSBSL.lat), parseFloat(rEndSBSL.lng));
+                                
+                                let rStartEBSL = this.routingService.getRoutePointByExit(routingPointsEBSL, positionExit);                            
                                 let rEndEBSL = this.routingService.getRoutePointByName(routingPointsEBSL, endName);
+    
+                                let rPaths = this.routingService.createRouteInLevel(rStartEBSL, rEndEBSL, this.routingPolygons, routingPointsEBSL);                     
+                                            
+                                let mPos = new google.maps.LatLng(rEndEBSL.lat, rEndEBSL.lng);
+                                let mUrl = "./assets/icon/marker.png";
                                 
-                                let start = new google.maps.LatLng(parseFloat(rStartEBSL.lat), parseFloat(rStartEBSL.lng));
-                                let urlStart = "./assets/icon/markerExit.png";
-                                let markerStart = this.mapService.createRouteMarker(start, urlStart, 48);
-                                markerStart.setMap(this.map);                    
-                                this.markersRemain.push([markerStart]);                     
-                                this.markersPathsRemain.push([{position: start, url: urlStart}]);     
-                
-                                let end = new google.maps.LatLng(rEndEBSL.lat, rEndEBSL.lng);
-                                let urlEnd = "./assets/icon/markerChange.png";
-                                let markerEnd = this.mapService.createRouteMarkerRemain(end, urlEnd, 48);
-                                markerEnd.setMap(this.map);                    
-                                this.markersRemain.push([markerEnd]);                     
-                                this.markersPathsRemain.push([{position: end, url: urlEnd}]);                    
-            
-                                this.routingLevels.push([endBuilding, 0]);
+                                this.routingLevelsRemain.push([[endBuilding, endLevel], rPaths, [mPos, mUrl]]);
+                                this.createRoutingElements(this.routingLevel, this.routingLevelsRemain);
+                                console.log("RoutingLevelsRemain.length: " + this.routingLevelsRemain.length);
                             });
                         } else {
                             // end building, start level
                             console.log("2: end building, start level.");
                             this.dbService.getRoutingPolygonsPoints(endBuilding, 0).subscribe(dataEBSL => {    
+
                                 let routingPolygonsRawEBSL = dataEBSL[0];
                                 let routingPointsEBSL = dataEBSL[1];
                 
-                                this.routingPolygons = this.cleanPolygons(this.routingPolygons);
-                                this.routingPolygons = this.routingService.getRoutePolygonsLatLngCoordinates(routingPolygonsRawEBSL);                
-                                for (let x in this.routingPolygons) this.routingPolygons[x].polygon.setMap(this.map);
+                                this.createRoutingPolygons(routingPolygonsRawEBSL);
                 
                                 let positionExit = new google.maps.LatLng(parseFloat(rEndSBEL.lat), parseFloat(rEndSBEL.lng));
                                 let rStartEBSL = this.routingService.getRoutePointByExit(routingPointsEBSL, positionExit);
                                 let start = new google.maps.LatLng(parseFloat(rStartEBSL.lat), parseFloat(rStartEBSL.lng));
                                 let rEndEBSL = this.routingService.getRoutePointByType(routingPointsEBSL, "staircase", start);
 
-                                let urlStart = "./assets/icon/markerExit.png";
-                                let markerStart = this.mapService.createRouteMarker(start, urlStart, 48);
-                                markerStart.setMap(this.map);                    
-                                this.markersRemain.push([markerStart]);                     
-                                this.markersPathsRemain.push([{position: start, url: urlStart}]);     
-                
-                                let end = new google.maps.LatLng(rEndEBSL.lat, rEndEBSL.lng);
-                                let urlEnd = "./assets/icon/markerChange.png";
-                                let markerEnd = this.mapService.createRouteMarkerRemain(end, urlEnd, 48);
-                                markerEnd.setMap(this.map);                    
-                                this.markersRemain.push([markerEnd]);                     
-                                this.markersPathsRemain.push([{position: end, url: urlEnd}]);                    
-            
-                                this.routingLevels.push([endBuilding, 0]);
+                                let rPaths = this.routingService.createRouteInLevel(rStartEBSL, rEndEBSL, this.routingPolygons, routingPointsEBSL);                     
+                                                
+                                let mPos = new google.maps.LatLng(rEndEBSL.lat, rEndEBSL.lng);
+                                let mUrl = "./assets/icon/markerChange.png";
+                                
+                                this.routingLevelsRemain.push([[endBuilding, 0], rPaths, [mPos, mUrl]]);
 
                                 // end building, end level
                                 console.log("2: end building, end level.");
@@ -812,73 +737,49 @@ export class HomePage {
                                     let routingPolygonsRawEBEL = dataEBEL[0];
                                     let routingPointsEBEL = dataEBEL[1];
                 
-                                    this.routingPolygons = this.cleanPolygons(this.routingPolygons);  
-                                    this.routingPolygons = this.routingService.getRoutePolygonsLatLngCoordinates(routingPolygonsRawEBEL);                
-                                    for (let x in this.routingPolygons) this.routingPolygons[x].polygon.setMap(this.map);  
+                                    this.createRoutingPolygons(routingPolygonsRawEBEL);
                                     
                                     let rStartEBEL = this.routingService.getRoutePointByRouteId(routingPointsEBEL, rEndEBSL.routing);
                                     let rEndEBEL = this.routingService.getRoutePointByName(routingPointsEBEL, endName);
 
                                     let rPaths = this.routingService.createRouteInLevel(rStartEBEL, rEndEBEL, this.routingPolygons, routingPointsEBEL);                     
-                                    let polyline = this.mapService.createRoutePolylineRemain(rPaths);                
-                                    polyline.setMap(this.map);     
-                                    this.routingPathsRemain.push(rPaths);   
-                                    this.routingPolylinesRemain.push(polyline);
-                    
-                                    let end = new google.maps.LatLng(rEndEBEL.lat, rEndEBEL.lng);
-                                    let url = "./assets/icon/marker.png";
-                                    let marker = this.mapService.createRouteMarkerRemain(end, url, 48);
-                                    marker.setMap(this.map);                    
-                                    this.markersRemain.push([marker]);                     
-                                    this.markersPathsRemain.push([{position: end, url: url}]);                    
-                
-                                    this.routingLevels.push([endBuilding, endLevel]);
+                                                        
+                                    let mPos = new google.maps.LatLng(rEndEBEL.lat, rEndEBEL.lng);
+                                    let mUrl = "./assets/icon/marker.png";
+                                   
+                                    this.routingLevelsRemain.push([[endBuilding, endLevel], rPaths, [mPos, mUrl]]);
+                                    this.createRoutingElements(this.routingLevel, this.routingLevelsRemain);
+                                    console.log("RoutingLevelsRemain.length: " + this.routingLevelsRemain.length);
                                 });   
                             });
                         }
                     });
                 });
             }   
-        }             
+        }         
     }
 
     public updateRoute() {
         console.log("Update route.");
         let currentLatLng = new google.maps.LatLng(parseFloat(this.currentPosition.lat), parseFloat(this.currentPosition.lng));
-        let firstPathLatLng = new google.maps.LatLng(parseFloat(this.routingPathsLevel[0].lat), parseFloat(this.routingPathsLevel[0].lng));
+        let firstPathLatLng = new google.maps.LatLng(parseFloat(this.routingLevel[0][0].lat), parseFloat(this.routingLevel[0][0].lng));
         if (this.routingService.computeDistance(currentLatLng, firstPathLatLng) < 5) {
-            if (this.routingPathsLevel.length < 2) {
+            if (this.routingLevel[0].length < 2) {
                 // Level change
-                if (this.routingPathsRemain.length > 0) {
-                    console.log("rPathsRemain > 0: " + this.routingPathsRemain.length);
+                if (this.routingLevelsRemain.length > 0) {
+                    console.log("rLevelsRemain > 0: " + this.routingLevelsRemain.length);
                     // Remove old new level paths / polylines and set new ones
-                    this.routingPolylineLevel.setMap(null);
-                    this.routingPathsLevel = this.routingPathsRemain[0];                    
-                    this.routingPathsRemain.splice(0, 1);
-                    this.routingPolylinesRemain[0].setMap(null);
-                    this.routingPolylinesRemain.splice(0, 1);                      
-                    this.routingPolylineLevel = this.mapService.createRoutePolyline(this.routingPathsLevel);  
-                    this.routingPolylineLevel.setMap(this.map);
+                    this.routingPolylineLevel.setMap(null);  
+                    
+                    this.routingLevel = [];
 
                     // Remove old level markers and set new ones
-                    for (let x in this.markersLevel) this.markersLevel[x].setMap(null)    
-                    let markersRemain = this.markersRemain[0];
-                    for (let x in markersRemain) markersRemain[x].setMap(null);
-                    this.markersRemain.splice(0, 1);    
-                                 
+                    for (let x in this.markersLevel) this.markersLevel[x].setMap(null); 
                     this.markersLevel = [];                    
 
-                    //  Change current level
-                    let checkBuilding = this.routingLevels[0][0];
-                    if (this.currentBuilding == checkBuilding) this.changeCurrentLevel(this.routingLevels[0][0], this.routingLevels[0][1]);
-                    else (this.testState = 'on');
-                    let markersPathsRemain = this.markersPathsRemain[0];       
-                    for (let x in markersPathsRemain) {
-                        let marker = this.mapService.createRouteMarker(markersPathsRemain[x].position, markersPathsRemain[x].url, 48);
-                        marker.setMap(this.map);
-                        this.markersLevel.push(marker);
-                    } 
-                    this.routingLevels.splice(0, 1);
+                    // Change current level
+                    let checkBuilding = this.routingLevelsRemain[0][0][0];
+                    if (this.currentBuilding == checkBuilding) this.changeCurrentLevel(this.routingLevelsRemain[0][0][0], this.routingLevelsRemain[0][0][1]);    
                 } else {
                     // finish route
                     console.log("Finished navigation.");                
@@ -894,20 +795,22 @@ export class HomePage {
                 }                
             } else {
                 console.log("Splice routing path level.");
-                this.routingPathsLevel.splice(0, 1);
+                this.routingLevel[0].splice(0, 1);
                 this.routingPolylineLevel.setMap(null);
-                this.routingPolylineLevel = this.mapService.createRoutePolyline(this.routingPathsLevel);
-                this.routingPolylineLevel.setMap(this.map);
-            }
+                this.routingPolylineLevel = this.mapService.createRoutePolyline(this.routingLevel[0]);
+                this.routingPolylineLevel.setMap(this.map);    
+            }   
         }
         // updates polyline from current position to first path of level route polyline
         if (this.routeState == 'on') {
             if (this.routingPolylineLevelPosition != null) this.routingPolylineLevelPosition.setMap(null);   
             if (this.routingPathsLevelPosition != null) this.routingPathsLevelPosition = [];
-            this.routingPathsLevelPosition.push(this.currentPosition);
-            this.routingPathsLevelPosition.push(this.routingPathsLevel[0]);
-            this.routingPolylineLevelPosition = this.mapService.createRoutePolyline(this.routingPathsLevelPosition);
-            this.routingPolylineLevelPosition.setMap(this.map);
+            if (this.routingLevel[0] != null) {
+                this.routingPathsLevelPosition.push(this.currentPosition);
+                this.routingPathsLevelPosition.push(this.routingLevel[0][0]);
+                this.routingPolylineLevelPosition = this.mapService.createRoutePolyline(this.routingPathsLevelPosition);
+                this.routingPolylineLevelPosition.setMap(this.map);
+            }
         }
     }
 
@@ -920,14 +823,47 @@ export class HomePage {
         if (this.routingPolylineLevelPosition != null) this.routingPolylineLevelPosition.setMap(null);
         if (this.markersLevel != null) for (let x in this.markersLevel) this.markersLevel[x].setMap(null);
         if (this.markersRemain != null) {
-            for (let i = 0; i < this.markersRemain.length; i++) {
-                for (let j = 0; j < this.markersRemain[i].length; j++) this.markersRemain[i][j].setMap(null);
+            for (let i = 0; i < this.markersRemain.length; i++) for (let j = 0; j < this.markersRemain[i].length; j++) this.markersRemain[i][j].setMap(null);
+        }
+        if (this.routingPolylinesRemain != null) for (let i = 0; i < this.routingPolylinesRemain.length; i++) this.routingPolylinesRemain[i].setMap(null);
+        this.routingPathsLevelPosition = [];
+        this.routingLevel = [];
+        this.routingLevelsRemain = [];
+    }
+
+    /**
+     * Creates routing polygons for specific level calculation
+     * @param rawPolygons 
+     */
+    private createRoutingPolygons(routingPolygonsRaw: any) {
+        if (this.routingPolygons != null) this.routingPolygons = this.cleanPolygons(this.routingPolygons);  
+        this.routingPolygons = this.routingService.getRoutePolygonsLatLngCoordinates(routingPolygonsRaw);                
+        for (let x in this.routingPolygons) this.routingPolygons[x].polygon.setMap(this.map);  
+    }
+
+    /**
+     * 
+     * @param routingLevel 
+     * @param routingLevelsRemain 
+     */
+    private createRoutingElements(routingLevel: any, routingLevelsRemain: any) {        
+        this.routingPolylineLevel = this.mapService.createRoutePolyline(routingLevel[0]);
+        this.routingPolylineLevel.setMap(this.map);    
+
+        let markerLevel = this.mapService.createRouteMarker(routingLevel[1][0], routingLevel[1][1], 48);
+        markerLevel.setMap(this.map);
+        this.markersLevel.push(markerLevel);
+
+        if (routingLevelsRemain != null) {
+            for (let x in routingLevelsRemain) {
+                let polyline = this.mapService.createRoutePolylineRemain(routingLevelsRemain[x][1]);                
+                polyline.setMap(this.map);
+                this.routingPolylinesRemain.push(polyline);
+                    
+                let markerRemain = this.mapService.createRouteMarkerRemain(routingLevelsRemain[x][2][0], routingLevelsRemain[x][2][1], 48);
+                markerRemain.setMap(this.map);                     
+                this.markersRemain.push(markerRemain);
             }
         }
-        this.markersPathsLevel = [];
-        this.markersPathsRemain = [];
-        this.routingPathsLevel = [];
-        this.routingPathsLevelPosition = [];
-        this.routingPathsRemain = [];
     }
 }

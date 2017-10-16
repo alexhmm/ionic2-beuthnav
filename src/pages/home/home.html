@@ -11,10 +11,10 @@
 <ion-content>  
   <div #map class="map"></div>  
   <div ion-fixed class="levelView"><!-- [@levelViewInOut]="levelViewState">-->
-    <button ion-button class="beuthButton" (click)="changeCurrentLevel(currentBuilding, 1)" no-border>
+    <button ion-button class="beuthButton" (click)="clickLevel(1)" no-border>
         <ion-icon name="add" secondary></ion-icon>
       </button>
-      <button ion-button class="beuthButton" (click)="changeCurrentLevel(currentBuilding, -1)" no-border>
+      <button ion-button class="beuthButton" (click)="clickLevel(-1)" no-border>
         <ion-icon name="remove" secondary></ion-icon>
       </button>
   </div>  

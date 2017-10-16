@@ -107,8 +107,7 @@ export class MapService {
      * @param buildingLevels 
      * @param direction 
      */
-    public changeCurrentLevel(currentLevel: any, buildingLevels: any, direction: any) {
-        let newLevel = currentLevel + direction;
+    public changeCurrentLevel(currentLevel: any, buildingLevels: any, newLevel: any) {
         if (newLevel > buildingLevels[0] - 1 && newLevel < buildingLevels[1] + 1 ) return newLevel;
         else return currentLevel;
     }
