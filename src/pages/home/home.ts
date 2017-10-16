@@ -334,14 +334,12 @@ export class HomePage {
      * Checks for the current displayed building by current user position
      */
     public getCurrentBuilding() {
-        console.log("Get current building 1: " + this.currentBuilding + ", " + this.currentLevel + " // " + this.previousBuilding + ", " + this.previousLevel);
         this.previousBuilding = this.currentBuilding;
         let buildings = this.dbService.getBuildingsCentroids();
         let positionLatLng = new google.maps.LatLng(this.currentPosition.lat, this.currentPosition.lng);
         
         let buildingsSort = this.routingService.sortByDistance(buildings, positionLatLng);
         this.currentBuilding = buildingsSort[0].name;
-        console.log("Get current building 2: " + this.currentBuilding + ", " + this.currentLevel + " // " + this.previousBuilding + ", " + this.previousLevel);
         this.checkLog += ", Current Building: " + this.currentBuilding;  
 
         if (this.currentBuilding != this.previousBuilding || this.currentLevel != this.previousLevel) {
@@ -349,7 +347,6 @@ export class HomePage {
             this.currentAttr = tables.attr;
             this.currentCoords = tables.coords;
             this.currentPoints = tables.points;
-            console.log("LOADMAP GETCURRENTBUILDING: " + this.currentBuilding + ", " + this.currentLevel);
             this.loadMap();
             this.dbService.getCurrentPoints(this.currentPoints).subscribe(data => {
                 this.allPoints = data;   
@@ -371,7 +368,6 @@ export class HomePage {
         console.log("Change current level: " + this.currentLevel + ", " + newLevel);
         let buildingLevels = this.dbService.getBuildingLevels(this.currentBuilding);
         this.currentLevel = this.mapService.changeCurrentLevel(this.currentLevel, buildingLevels, newLevel);
-        console.log("LOADMAP CHANGECURRENTLEVEL: " + this.currentBuilding + ", " + this.currentLevel);
         this.loadMap();       
         this.previousLevel = this.currentLevel; 
     }
@@ -514,6 +510,7 @@ export class HomePage {
                 this.routingLevel.push(rPathsLevel, [mLevelPos, mLevelUrl]);
                 this.createRoutingElements(this.routingLevel, null);
                 console.log("RoutingLevelsRemain.length: " + this.routingLevelsRemain.length);
+                this.fitMapToMarkerBounds();
             });    
 
         // 1    EndBuilding == CurrentBuilding && EndLevel != CurrentLevel
@@ -556,6 +553,7 @@ export class HomePage {
                     this.routingLevelsRemain.push([[this.currentBuilding, endLevel], rPaths, [mPos, mUrl]]);
                     this.createRoutingElements(this.routingLevel, this.routingLevelsRemain);
                     console.log("RoutingLevelsRemain.length: " + this.routingLevelsRemain.length);
+                    this.fitMapToMarkerBounds();
                 });
             });
         // 2    EndBuilding != CurrentBuilding
@@ -603,6 +601,7 @@ export class HomePage {
                             this.routingLevelsRemain.push([[endBuilding, endLevel], rPaths, [mPos, mUrl]]);
                             this.createRoutingElements(this.routingLevel, this.routingLevelsRemain);
                             console.log("RoutingLevelsRemain.length: " + this.routingLevelsRemain.length);
+                            this.fitMapToMarkerBounds();
                         });
                     } else {
                         // end building, start level
@@ -644,6 +643,7 @@ export class HomePage {
                                 this.routingLevelsRemain.push([[endBuilding, endLevel], rPaths, [mPos, mUrl]]);
                                 this.createRoutingElements(this.routingLevel, this.routingLevelsRemain);
                                 console.log("RoutingLevelsRemain.length: " + this.routingLevelsRemain.length);
+                                this.fitMapToMarkerBounds();
                             });   
                         });
                     }
@@ -708,6 +708,7 @@ export class HomePage {
                                 this.routingLevelsRemain.push([[endBuilding, endLevel], rPaths, [mPos, mUrl]]);
                                 this.createRoutingElements(this.routingLevel, this.routingLevelsRemain);
                                 console.log("RoutingLevelsRemain.length: " + this.routingLevelsRemain.length);
+                                this.fitMapToMarkerBounds();
                             });
                         } else {
                             // end building, start level
@@ -750,6 +751,7 @@ export class HomePage {
                                     this.routingLevelsRemain.push([[endBuilding, endLevel], rPaths, [mPos, mUrl]]);
                                     this.createRoutingElements(this.routingLevel, this.routingLevelsRemain);
                                     console.log("RoutingLevelsRemain.length: " + this.routingLevelsRemain.length);
+                                    this.fitMapToMarkerBounds();
                                 });   
                             });
                         }
@@ -865,5 +867,19 @@ export class HomePage {
                 this.markersRemain.push(markerRemain);
             }
         }
+    }
+
+    private fitMapToMarkerBounds() {
+        let bounds = new google.maps.LatLngBounds();
+        //for (let x in this.routingLevel)
+        bounds.extend(this.routingLevel[1][0]);
+        if (this.routingLevelsRemain != null)
+            for (let x in this.routingLevelsRemain) bounds.extend(this.routingLevelsRemain[x][2][0]);
+        this.map.fitBounds(bounds);
+        setTimeout(() => { 
+            var center = new google.maps.LatLng(this.currentPosition.lat, this.currentPosition.lng);
+            this.map.panTo(center)
+            this.map.setZoom(20);
+        }, 5000);  
     }
 }
