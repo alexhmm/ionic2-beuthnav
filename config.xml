@@ -24,8 +24,8 @@
     <preference name="SplashScreen" value="screen" />
     <preference name="loadUrlTimeoutValue" value="700000" />
     <preference name="SplashScreenDelay" value="3000" />
-    <preference name="StatusBarBackgroundColor" value="#0098a1"/>
-    <preference name="navigationBarColor" value="#0098a1"/>
+    <preference name="StatusBarBackgroundColor" value="#0098a1" />
+    <preference name="navigationBarColor" value="#0098a1" />
     <platform name="android">
         <allow-intent href="market:*" />
         <icon density="ldpi" src="resources/android/icon/drawable-ldpi-icon.png" />
@@ -89,4 +89,5 @@
     <plugin name="ionic-plugin-keyboard" spec="~2.2.1" />
     <plugin name="com.unarin.cordova.beacon" spec="~3.4.0" />
     <plugin name="cordova-sqlite-ext" spec="~0.10.4" />
+    <engine name="android" spec="~6.1.2" />
 </widget>

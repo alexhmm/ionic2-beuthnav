@@ -60,6 +60,7 @@ export class HomePage {
     public infoViewState = 'out';
     public levelViewState = 'in';
     public mapViewState = 'on';
+    public mapLoadState = 'off';
     public positionState = 'on';
 
     // room data
@@ -170,6 +171,7 @@ export class HomePage {
      * Loads polygon data on google map
      */
     public loadMap() { 
+        this.mapLoadState = 'off';
         let loader = this.loadCtrl.create({
             content: "Karte wird geladen...",
         });
@@ -287,8 +289,9 @@ export class HomePage {
                             this.currentPosition = {lat: event.latLng.lat(), lng: event.latLng.lng()};
                             this.changeCurrentLevel(building.name, 0); // TESTING
                         })
-                    }
+                    }                    
                     loader.dismiss();
+                    this.mapLoadState = 'on';
                 })
             })              
         }
@@ -310,6 +313,10 @@ export class HomePage {
                     console.log(this.checkLog);
                 });            
             }  
+            if (this.currentPosition != null && this.mapLoadState == 'on' && this.infoViewState == 'out') {
+                var center = new google.maps.LatLng(this.currentPosition.lat, this.currentPosition.lng);
+                this.map.panTo(center);
+            }
         }
         if (this.currentPosition != null) {
             this.getCurrentBuilding();
@@ -486,7 +493,7 @@ export class HomePage {
         let endPositionLatLng = new google.maps.LatLng(endPosition.lat, endPosition.lng);
         let rPaths;
         this.routeState = 'on';
-        if (this.infoViewState = 'in') this.toggleInfoView();
+        //if (this.infoViewState = 'in') this.toggleInfoView();
         if (this.marker != null) this.marker.setMap(null);
 
         // Routing through multiple levels
@@ -880,6 +887,7 @@ export class HomePage {
             var center = new google.maps.LatLng(this.currentPosition.lat, this.currentPosition.lng);
             this.map.panTo(center)
             this.map.setZoom(20);
+            if (this.infoViewState = 'in') this.toggleInfoView();
         }, 5000);  
     }
 }
