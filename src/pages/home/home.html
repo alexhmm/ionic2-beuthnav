@@ -12,11 +12,11 @@
   <div #map class="map"></div>  
   <div ion-fixed class="levelView"><!-- [@levelViewInOut]="levelViewState">-->
     <button ion-button class="beuthButton" (click)="clickLevel(1)" no-border>
-        <ion-icon name="add" secondary></ion-icon>
-      </button>
-      <button ion-button class="beuthButton" (click)="clickLevel(-1)" no-border>
-        <ion-icon name="remove" secondary></ion-icon>
-      </button>
+      <ion-icon name="add" secondary></ion-icon>
+    </button>
+    <button ion-button class="beuthButton" (click)="clickLevel(-1)" no-border>
+      <ion-icon name="remove" secondary></ion-icon>
+    </button>
   </div>  
   <div ion-fixed class="listView" [@listViewInOut]="listViewState">
     <ion-scroll scrollY="true">

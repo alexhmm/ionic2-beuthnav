@@ -55,7 +55,8 @@ export class MapService {
     public getCurrentPositionGPS() {
         return Observable.create(observer => {
             let lat, lng;
-            this.geolocation.getCurrentPosition({enableHighAccuracy:true}).then((position) => {observer.next({lat: position.coords.latitude, lng: position.coords.longitude});
+            this.geolocation.getCurrentPosition({enableHighAccuracy:true}).then((position) => { 
+                observer.next({lat: position.coords.latitude, lng: position.coords.longitude});
                 observer.complete();
             }, (error) => {
                 console.error("ERROR: " + error);
@@ -108,7 +109,7 @@ export class MapService {
      * @param direction 
      */
     public changeCurrentLevel(currentLevel: any, buildingLevels: any, newLevel: any) {
-        if (newLevel > buildingLevels[0] - 1 && newLevel < buildingLevels[1] + 1 ) return newLevel;
+        if (newLevel > buildingLevels[0] - 1 && newLevel < buildingLevels[1] + 1) return newLevel;
         else return currentLevel;
     }
 
