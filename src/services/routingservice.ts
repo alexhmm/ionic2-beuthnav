@@ -381,6 +381,7 @@ export class RoutingService {
             let pEndC = new google.maps.LatLng(parseFloat(this.iPathsC[this.iPathsC.length - 1].lat), parseFloat(this.iPathsC[this.iPathsC.length - 1].lng));
             let pEndCC = new google.maps.LatLng(parseFloat(this.iPathsCC[this.iPathsCC.length - 1].lat), parseFloat(this.iPathsCC[this.iPathsCC.length - 1].lng));
             
+            debugger;
             if (google.maps.geometry.poly.containsLocation(pEndC, this.triangles[tEndIndex])) {
                 let continueVertex = null;
                 // 1st check

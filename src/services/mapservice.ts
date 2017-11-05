@@ -198,7 +198,7 @@ export class MapService {
         return customMarker;
     }
 
-    public createRouteMarker(position: any, url: any, size: any) {        
+    public createRouteMarker(position: any, url: any, size: any) {  
         let icon = this.getRouteMarkerIcon(url, size);
         let routeMarker = new google.maps.Marker({
             animation: google.maps.Animation.DROP,

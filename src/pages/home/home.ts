@@ -197,10 +197,11 @@ export class HomePage {
             }
         });
 
-        google.maps.event.addListener(this.map, 'click', (event) => {
-            if (this.infoViewState = 'in') this.toggleInfoView();
+        google.maps.event.addListener(this.map, 'click', (event) => {            
             this.positionState = 'off';
             this.currentPosition = {lat: event.latLng.lat(), lng: event.latLng.lng()};
+            if (this.infoViewState = 'in') this.toggleInfoView();
+            this.cleanRouteElements();
         })
 
         // reset map elements
@@ -252,6 +253,8 @@ export class HomePage {
                         google.maps.event.addListener(polygon, 'click', (event) => {
                             this.positionState = 'off';
                             this.currentPosition = {lat: event.latLng.lat(), lng: event.latLng.lng()};
+                            if (this.infoViewState = 'in') this.toggleInfoView();
+                            this.cleanRouteElements();
                         })
                     }        
 
@@ -445,7 +448,8 @@ export class HomePage {
      * Selects room for routing and creates route marker
      * @param room 
      */
-    public selectRoom(room: any) {
+    public selectRoom(room: any) {   
+        this.cleanRouteElements();
         this.dbService.getRoomCoordinates(room.shapeid, room.building, room.level).subscribe(data => {
             let roomCentroid = this.mapService.getPolygonCentroid(data);
             let position = new google.maps.LatLng(parseFloat(roomCentroid.lat), parseFloat(roomCentroid.lng)); 
@@ -456,11 +460,6 @@ export class HomePage {
             this.attributes.level = room.level;
             this.attributes.position = roomCentroid;
 
-            this.cleanRouteElements();
-
-            if (this.marker != null) {
-                this.marker.setMap(null);
-            }   
             this.marker = this.mapService.createRouteMarker(position, "./assets/icon/marker.png", 48);
             this.marker.setMap(this.map);
 
@@ -854,13 +853,17 @@ export class HomePage {
      * Cleans all route markers and polylines from google map
      */
     private cleanRouteElements() {
+        if (this.marker != null) this.marker.setMap(null);
         if (this.routingPolygons != null) this.routingPolygons = this.cleanPolygons(this.routingPolygons);
         if (this.routingPolylineLevel != null) this.routingPolylineLevel.setMap(null);
         if (this.routingPolylineLevelPosition != null) this.routingPolylineLevelPosition.setMap(null);
         if (this.markersLevel != null) for (let x in this.markersLevel) this.markersLevel[x].setMap(null);
-        if (this.markersRemain != null) {
+        for (let x in this.markersRemain) this.markersRemain[x].setMap(null);
+        this.markersRemain = [];
+        // OLD for double marker
+        /* if (this.markersRemain != null) {
             for (let i = 0; i < this.markersRemain.length; i++) for (let j = 0; j < this.markersRemain[i].length; j++) this.markersRemain[i][j].setMap(null);
-        }
+        } */
         if (this.routingPolylinesRemain != null) for (let i = 0; i < this.routingPolylinesRemain.length; i++) this.routingPolylinesRemain[i].setMap(null);
         this.routingPathsLevelPosition = [];
         this.routingLevel = [];
