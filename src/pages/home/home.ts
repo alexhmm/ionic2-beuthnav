@@ -798,7 +798,7 @@ export class HomePage {
         console.log("Update route.");
         let currentLatLng = new google.maps.LatLng(parseFloat(this.currentPosition.lat), parseFloat(this.currentPosition.lng));
         let firstPathLatLng = new google.maps.LatLng(parseFloat(this.routingLevel[0][0].lat), parseFloat(this.routingLevel[0][0].lng));
-        if (this.routingService.computeDistance(currentLatLng, firstPathLatLng) < 5) {
+        if (this.routingService.computeDistance(currentLatLng, firstPathLatLng) < 2) {
             if (this.routingLevel[0].length < 2) {
                 // Level change
                 if (this.routingLevelsRemain.length > 0) {

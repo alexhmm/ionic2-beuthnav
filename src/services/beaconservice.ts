@@ -3,7 +3,7 @@ import { IBeacon } from '@ionic-native/ibeacon';
 import { KalmanService } from './kalmanservice';
 import { Observable } from 'rxjs/Observable';
 
-import * as beacondata from '../assets/data/beacondataDE17.json';
+import * as beacondata from '../assets/data/beacondataDE17Weit.json';
 
 @Injectable()
 export class BeaconService {  

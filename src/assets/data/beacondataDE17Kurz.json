@@ -1,0 +1,30 @@
+{"beacons": [
+            {                
+                "identifier": "PWC8",
+				"uuid": "f7826da6-4fa2-4e98-8024-bc5b71e0893e",
+				"major": 31092,
+				"minor": 61454,
+				"coordinates": "52.5453208734, 13.3543044468, 37"
+            },
+            {                
+                "identifier": "QIsB",
+				"uuid": "f7826da6-4fa2-4e98-8024-bc5b71e0893e",
+				"major": 14191,
+				"minor": 1594,
+				"coordinates": "52.5452583246, 13.3543907693, 37"
+            },
+			{                
+                "identifier": "dOV5",
+				"uuid": "f7826da6-4fa2-4e98-8024-bc5b71e0893e",
+				"major": 9109,
+				"minor": 3245,
+				"coordinates": "52.5451633837, 13.3542774043, 37"
+            },
+			{                
+                "identifier": "scYM",
+				"uuid": "f7826da6-4fa2-4e98-8024-bc5b71e0893e",
+				"major": 33290,
+				"minor": 51627,
+				"coordinates": "52.5452263725, 13.3543310361, 37"
+            }
+]}
