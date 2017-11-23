@@ -27,7 +27,7 @@
     "@ionic-native/core": "^3.4.2",
     "@ionic-native/device-motion": "^3.14.0",
     "@ionic-native/device-orientation": "^3.10.2",
-    "@ionic-native/file": "^4.3.3",
+    "@ionic-native/file": "^4.4.2",
     "@ionic-native/geolocation": "^3.14.0",
     "@ionic-native/ibeacon": "^3.6.1",
     "@ionic-native/keyboard": "^3.6.1",
