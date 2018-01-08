@@ -5,7 +5,7 @@
 <img src="screens/beuthNavMap.png" width=300px>
 
 
-<b>Integrated SearchListView with name filtering.<br></b>
+<b>Integrated SearchListView with name filtering using a SQLite database connection.<br></b>
 <img src="screens/beuthNavSearch.png" width=300px>
 
 
